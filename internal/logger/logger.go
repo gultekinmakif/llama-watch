@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/gultekinmakif/go-http-server/internal/config"
+	"github.com/gultekinmakif/llama-watch/internal/config"
 	"github.com/lmittmann/tint"
 )
 

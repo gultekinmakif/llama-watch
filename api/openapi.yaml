@@ -1,7 +1,7 @@
 openapi: 3.1.0
 
 info:
-  title: go-http-server
+  title: llama-watch
   version: 0.1.0
   description: |
     Minimal Go HTTP server template demonstrating Postgres + GORM via a

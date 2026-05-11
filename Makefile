@@ -25,8 +25,8 @@ tidy: ## Tidy go.mod / go.sum
 docs: ## Render api/openapi.yaml to docs/index.html (Redoc) for GitHub Pages
 	npx --yes @redocly/cli build-docs api/openapi.yaml -o docs/index.html
 
-docker-build: ## Build the Docker image (tag: go-http-server:dev)
-	docker build -t go-http-server:dev .
+docker-build: ## Build the Docker image (tag: llama-watch:dev)
+	docker build -t llama-watch:dev .
 
 docker-up: ## Start app + postgres via docker compose
 	docker compose up --build

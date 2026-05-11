@@ -7,10 +7,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gultekinmakif/go-http-server/internal/config"
-	"github.com/gultekinmakif/go-http-server/internal/db/postgres"
-	"github.com/gultekinmakif/go-http-server/internal/logger"
-	"github.com/gultekinmakif/go-http-server/internal/server"
+	"github.com/gultekinmakif/llama-watch/internal/config"
+	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
+	"github.com/gultekinmakif/llama-watch/internal/logger"
+	"github.com/gultekinmakif/llama-watch/internal/server"
 )
 
 func main() {

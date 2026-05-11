@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/gultekinmakif/go-http-server/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/models"
 	gormpg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

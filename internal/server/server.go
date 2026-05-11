@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gultekinmakif/go-http-server/internal/config"
-	"github.com/gultekinmakif/go-http-server/internal/handlers"
-	"github.com/gultekinmakif/go-http-server/internal/middleware"
+	"github.com/gultekinmakif/llama-watch/internal/config"
+	"github.com/gultekinmakif/llama-watch/internal/handlers"
+	"github.com/gultekinmakif/llama-watch/internal/middleware"
 )
 
 type Server struct {

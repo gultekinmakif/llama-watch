@@ -1,13 +1,13 @@
 services:
   app:
     build: .
-    image: go-http-server:dev
+    image: llama-watch:dev
     environment:
       PORT: "3000"
       ENV: "dev"
       LOG_LEVEL: "debug"
       SHUTDOWN_TIMEOUT: "10s"
-      DATABASE_URL: "postgres://postgres:postgres@db:5432/http_server?sslmode=disable"
+      DATABASE_URL: "postgres://postgres:postgres@db:5432/llama_watch?sslmode=disable"
     ports:
       - "3000:3000"
     depends_on:
@@ -18,7 +18,7 @@ services:
     image: postgres:16
     environment:
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: http_server
+      POSTGRES_DB: llama_watch
     ports:
       - "5432:5432"
     healthcheck:

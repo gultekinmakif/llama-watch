@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/gultekinmakif/go-http-server/internal/db/postgres"
-	"github.com/gultekinmakif/go-http-server/internal/models"
-	"github.com/gultekinmakif/go-http-server/internal/utils"
+	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
+	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/utils"
 	"gorm.io/gorm"
 )
 
