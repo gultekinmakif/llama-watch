@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+bin
+tmp
+*.log
+.env
+.*.env
+README.md
+plan.md
+LICENSE
+api
+scripts

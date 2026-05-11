@@ -1,0 +1,198 @@
+openapi: 3.1.0
+
+info:
+  title: go-http-server
+  version: 0.1.0
+  description: |
+    Minimal Go HTTP server template demonstrating Postgres + GORM via a
+    /posts CRUD surface. Stays on the standard library net/http router
+    (Go 1.22+ method-prefix routing); no framework lock-in.
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: meta
+    description: Liveness + diagnostic endpoints
+  - name: posts
+    description: Demo CRUD entity
+
+paths:
+  /:
+    get:
+      tags: [meta]
+      summary: Root
+      description: Returns 200 with an empty body — useful as a "is anything up" probe.
+      responses:
+        '200':
+          description: OK
+
+  /health:
+    get:
+      tags: [meta]
+      summary: Liveness probe
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /posts:
+    get:
+      tags: [posts]
+      summary: List all posts
+      description: |
+        Returns the public projection (slug/title/body only); id and
+        timestamps are intentionally stripped from list responses.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [posts]
+      summary: Create a post
+      description: |
+        Create response is the full record (id, timestamps included) — useful
+        as a receipt so the client can deep-link to the new resource. Reads
+        return the projection only; see `GET /posts/{slug}`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: |
+            Validation error or constraint violation. Returned for: malformed
+            JSON, missing title, missing slug, or duplicate slug.
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                missingTitle:
+                  value: title is required
+                missingSlug:
+                  value: slug is required
+                duplicate:
+                  value: post creation failed
+
+  /posts/{slug}:
+    get:
+      tags: [posts]
+      summary: Get a post by slug
+      description: Returns the public projection (slug/title/body only).
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostContent'
+        '404':
+          description: Not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: not found
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    PostContent:
+      type: object
+      required: [slug, title, body]
+      description: |
+        Public projection of a Post. What `GET /posts` and `GET /posts/{slug}`
+        return — id and timestamps are stripped.
+      properties:
+        slug:
+          type: string
+          example: my-first-post
+        title:
+          type: string
+          example: My first post
+        body:
+          type: string
+
+    Post:
+      type: object
+      required: [id, slug, title, body, created_at, updated_at]
+      description: |
+        Full post record including DB-managed fields. Currently only returned
+        by `POST /posts` as a creation receipt; reads use `PostContent`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-generated via gen_random_uuid().
+          example: 43bca205-ec29-406e-abcf-62bef8806b24
+        slug:
+          type: string
+          example: my-first-post
+        title:
+          type: string
+          example: My first post
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreatePostRequest:
+      type: object
+      required: [title, body]
+      description: |
+        Slug is derived server-side from the title
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+
+  responses:
+    InternalError:
+      description: Internal server error
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: internal error
