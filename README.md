@@ -1,11 +1,11 @@
-# go-http-server
+# llama-watch
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/gultekinmakif/go-http-server)](https://goreportcard.com/report/github.com/gultekinmakif/go-http-server)
-[![Template](https://img.shields.io/badge/template-use%20this-2ea44f)](https://github.com/gultekinmakif/go-http-server/generate)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gultekinmakif/llama-watch)](https://goreportcard.com/report/github.com/gultekinmakif/llama-watch)
+[![Template](https://img.shields.io/badge/template-use%20this-2ea44f)](https://github.com/gultekinmakif/llama-watch/generate)
 
 > **This is a GitHub template.** Click **"Use this template"** at the top of the repo (or the badge above) to spin up a fresh service. See [Use this template](#use-this-template) below for the one-command rename.
 
-Minimal Go HTTP server template. See docs at [gultekinmakif.github.io/go-http-server](https://gultekinmakif.github.io/go-http-server/).
+Minimal Go HTTP server template. See docs at [gultekinmakif.github.io/llama-watch](https://gultekinmakif.github.io/llama-watch/).
 
 Standard library `net/http` with:
 
@@ -21,7 +21,7 @@ Standard library `net/http` with:
 
 Create a new repo from this template (or click "Use this template" in the UI):
 ```sh
-gh repo create my-go-server --template gultekinmakif/go-http-server --private --clone
+gh repo create my-go-server --template gultekinmakif/llama-watch --private --clone
 cd my-go-server
 
 # 2. Rename the module path + DB name + Docker tag in one shot
@@ -56,7 +56,7 @@ make help
 | `GET` | `/posts` | List all posts |
 | `GET` | `/posts/{slug}` | Read by slug. 404 on miss. |
 
-See docs at [gultekinmakif.github.io/go-http-server](https://gultekinmakif.github.io/go-http-server/).
+See docs at [gultekinmakif.github.io/llama-watch](https://gultekinmakif.github.io/llama-watch/).
 
 
 ## Configuration
@@ -67,7 +67,7 @@ See docs at [gultekinmakif.github.io/go-http-server](https://gultekinmakif.githu
 | `ENV` | `dev` | `dev` → tint pretty logs, `prod` → JSON |
 | `LOG_LEVEL` | `debug` | `debug` / `info` / `warn` / `error` |
 | `SHUTDOWN_TIMEOUT` | `10s` | Graceful drain timeout |
-| `DATABASE_URL` | *(required)* | Postgres DSN, e.g. `postgres://postgres:postgres@localhost:5432/http_server?sslmode=disable` |
+| `DATABASE_URL` | *(required)* | Postgres DSN, e.g. `postgres://postgres:postgres@localhost:5432/llama_watch?sslmode=disable` |
 
 ## License
 

@@ -1,4 +1,4 @@
-module github.com/gultekinmakif/go-http-server
+module github.com/gultekinmakif/llama-watch
 
 go 1.26.1
 
