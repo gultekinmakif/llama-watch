@@ -22,10 +22,6 @@ func New(cfg *config.Config) *Server {
 	mux.HandleFunc("GET /", handlers.Root)
 	mux.HandleFunc("GET /health", handlers.Health)
 
-	mux.HandleFunc("POST /posts", handlers.CreatePost)
-	mux.HandleFunc("GET /posts", handlers.GetAllPost)
-	mux.HandleFunc("GET /posts/{slug}", handlers.GetPost)
-
 	return &Server{
 		config: cfg,
 		server: &http.Server{

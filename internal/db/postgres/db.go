@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gultekinmakif/llama-watch/internal/models"
 	gormpg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -58,5 +57,5 @@ func Close() error {
 
 // Migrate applies the current schema via AutoMigrate.
 func Migrate() error {
-	return db.AutoMigrate(&models.Post{})
+	return nil
 }
