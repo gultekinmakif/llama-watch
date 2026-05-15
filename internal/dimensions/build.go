@@ -2,6 +2,7 @@
 package dimensions
 
 import (
+	"path"
 	"strings"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
@@ -47,7 +48,7 @@ func buildOne(
 	rp RawProtocol,
 	dataFile string,
 ) error {
-	p, err := insertProtocol(tx, rp, dataFile)
+	p, err := upsertProtocol(tx, rp, dataFile)
 	if err != nil {
 		return err
 	}
@@ -59,8 +60,8 @@ func buildOne(
 	return nil
 }
 
-// insertProtocol inserts or updates a protocols row keyed by canonical slug.
-func insertProtocol(tx *gorm.DB, rp RawProtocol, dataFile string) (*models.Protocol, error) {
+// upsertProtocol inserts or updates a protocols row keyed by canonical slug.
+func upsertProtocol(tx *gorm.DB, rp RawProtocol, dataFile string) (*models.Protocol, error) {
 	chains := normalizeChains(rp.Chains)
 	df := dataFile
 	var category *string
@@ -105,21 +106,21 @@ func resolveTVL(
 		DimensionID:   nil,
 		Repo:          "defillama-adapters",
 		Path:          "projects/" + module,
-		Slug:          module,
+		Slug:          moduleStem(module),
 		DimensionKind: "tvl",
 		Orphan:        false,
 	}
-	if err := insertAdapterFile(tx, &row); err != nil {
+	if err := upsertAdapterFile(tx, &row); err != nil {
 		return err
 	}
 	_ = a
 	return nil
 }
 
-// insertAdapterFile uses ON CONFLICT against the (repo, path, dimension_kind)
+// upsertAdapterFile uses ON CONFLICT against the (repo, path, dimension_kind)
 // unique index so re-runs are idempotent and the protocol_id / dimension_id
 // associations stay current.
-func insertAdapterFile(tx *gorm.DB, row *models.AdapterFile) error {
+func upsertAdapterFile(tx *gorm.DB, row *models.AdapterFile) error {
 	return tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "repo"},
@@ -142,4 +143,23 @@ func normalizeChains(chains []string) pq.StringArray {
 		out[i] = strings.ToLower(c)
 	}
 	return out
+}
+
+// moduleStem extracts the canonical stem from a module reference like
+// "uniswap-v2/index.js" or "wbtc.js".
+func moduleStem(module string) string {
+	s := strings.TrimRight(module, "/")
+	if s == "" {
+		return ""
+	}
+	base := path.Base(s)
+	base = strings.TrimSuffix(base, ".js")
+	base = strings.TrimSuffix(base, ".ts")
+	if base == "index" {
+		parent := path.Dir(s)
+		if parent != "." && parent != "/" {
+			return path.Base(parent)
+		}
+	}
+	return base
 }
