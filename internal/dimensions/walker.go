@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// Adapter represents one adapter file.
-// The walker emits; parsing consumes.
+// Adapter represents one adapter file, emitted by the walker.
 type Adapter struct {
 	Type    string // "tvl" for DefiLlama-Adapters/projects/, else dimension folder name (fees, dexs, options, ...)
 	RelPath string // relative to upstreamDir, e.g. "DefiLlama-Adapters/projects/uniswap-v2/index.js"

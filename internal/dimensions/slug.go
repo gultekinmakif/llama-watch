@@ -1,4 +1,4 @@
-// Package dimensions parses the upstream DefiLlama clones into the db tables
+// dimensions package: joins upstream adapter clones with the extracted protocols JSON.
 package dimensions
 
 import "strings"
