@@ -1,11 +1,10 @@
 package dimensions
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/gultekinmakif/llama-watch/internal/testutil"
 )
 
 func TestLoadProtocols(t *testing.T) {
@@ -19,7 +18,7 @@ func TestLoadProtocols(t *testing.T) {
 	}{
 		{
 			name: "basic shape preserves keys and dimensions",
-			path: writeJSON(t, root, "basic.json", map[string][]RawProtocol{
+			path: testutil.WriteJSON(t, root, "basic.json", map[string][]RawProtocol{
 				"data1": {{
 					Name:       "Uniswap V2",
 					Category:   "Dexes",
@@ -52,7 +51,7 @@ func TestLoadProtocols(t *testing.T) {
 		},
 		{
 			name: "multi version siblings preserved",
-			path: writeJSON(t, root, "multi.json", map[string][]RawProtocol{
+			path: testutil.WriteJSON(t, root, "multi.json", map[string][]RawProtocol{
 				"data1": {
 					{Name: "Uniswap V2", Module: "uniswap-v2/index.js"},
 					{Name: "Uniswap V3", Module: "uniswap-v3/index.js"},
@@ -67,7 +66,7 @@ func TestLoadProtocols(t *testing.T) {
 		},
 		{
 			name: "empty json returns empty map",
-			path: writeJSON(t, root, "empty.json", map[string][]RawProtocol{}),
+			path: testutil.WriteJSON(t, root, "empty.json", map[string][]RawProtocol{}),
 			check: func(t *testing.T, got map[string][]RawProtocol) {
 				if len(got) != 0 {
 					t.Fatalf("want 0, got %d", len(got))
@@ -81,7 +80,7 @@ func TestLoadProtocols(t *testing.T) {
 		},
 		{
 			name:    "malformed json errors",
-			path:    writeRaw(t, root, "bad.json", []byte("not json")),
+			path:    testutil.WriteFile(t, root, "bad.json", "not json"),
 			wantErr: true,
 		},
 	}
@@ -102,28 +101,4 @@ func TestLoadProtocols(t *testing.T) {
 			tc.check(t, got)
 		})
 	}
-}
-
-// writeJSON writes a JSON-marshalled value to root/name and returns the absolute path.
-func writeJSON(t *testing.T, root, name string, v any) string {
-	t.Helper()
-	full := filepath.Join(root, name)
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("marshal %s: %v", name, err)
-	}
-	if err := os.WriteFile(full, b, 0o644); err != nil {
-		t.Fatalf("write %s: %v", full, err)
-	}
-	return full
-}
-
-// writeRaw writes raw bytes to root/name and returns the absolute path.
-func writeRaw(t *testing.T, root, name string, body []byte) string {
-	t.Helper()
-	full := filepath.Join(root, name)
-	if err := os.WriteFile(full, body, 0o644); err != nil {
-		t.Fatalf("write %s: %v", full, err)
-	}
-	return full
 }
