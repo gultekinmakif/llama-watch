@@ -22,11 +22,20 @@ func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *s
 
 	byRel := indexAdapters(adapters)
 
+	var dims map[string]uint64
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		var err error
+		dims, err = loadDimensionIDs(tx)
+		return err
+	}); err != nil {
+		return err
+	}
+
 	err := db.Transaction(func(tx *gorm.DB) error {
 		for src, list := range raw {
 			dataFile := src + ".ts"
 			for _, rp := range list {
-				if err := buildOne(tx, log, byRel, rp, dataFile); err != nil {
+				if err := buildOne(tx, log, byRel, dims, rp, dataFile); err != nil {
 					return err
 				}
 			}
@@ -53,6 +62,7 @@ func buildOne(
 	tx *gorm.DB,
 	log *slog.Logger,
 	byRel map[string]Adapter,
+	dims map[string]uint64,
 	rp RawProtocol,
 	dataFile string,
 ) error {
@@ -65,6 +75,11 @@ func buildOne(
 		return err
 	}
 
+	for dimType, dimSlug := range rp.Dimensions {
+		if err := resolveDimension(tx, log, byRel, dims, p.ID, dimType, dimSlug); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -125,6 +140,82 @@ func resolveTVL(
 		return err
 	}
 	_ = a
+	return nil
+}
+
+// loadDimensionIDs reads the dimensions table into kind -> id
+func loadDimensionIDs(tx *gorm.DB) (map[string]uint64, error) {
+	var rows []models.Dimension
+	if err := tx.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[string]uint64, len(rows))
+	for _, r := range rows {
+		out[r.Kind] = r.ID
+	}
+	return out, nil
+}
+
+// resolveDimension locates a dimension-adapter file for a (type, slug) pair,
+// detects which sub-metric kinds it emits, and inserts one row per kind.
+func resolveDimension(
+	tx *gorm.DB,
+	log *slog.Logger,
+	byRel map[string]Adapter,
+	dims map[string]uint64,
+	protocolID uint64,
+	dimType, dimSlug string,
+) error {
+	candidates := []string{
+		"dimension-adapters/" + dimType + "/" + dimSlug + ".ts",
+		"dimension-adapters/" + dimType + "/" + dimSlug + "/index.ts",
+	}
+	var resolved Adapter
+	found := false
+	for _, c := range candidates {
+		if a, ok := byRel[c]; ok {
+			resolved = a
+			found = true
+			break
+		}
+	}
+	if !found {
+		log.Warn("dimension adapter missing on disk", "type", dimType, "slug", dimSlug)
+		return nil
+	}
+
+	kinds, err := DetectKinds(resolved.AbsPath, dimType)
+	if err != nil {
+		return err
+	}
+	if len(kinds) == 0 {
+		return nil
+	}
+
+	relPath := strings.TrimPrefix(resolved.RelPath, "dimension-adapters/")
+	for _, kind := range kinds {
+		did, ok := dims[kind]
+		if !ok {
+			// Dimension seed is missing this kind. Surface it and skip the row
+			// rather than violate the FK.
+			log.Warn("dimension kind not seeded", "kind", kind)
+			continue
+		}
+		pid := protocolID
+		dimID := did
+		row := models.AdapterFile{
+			ProtocolID:    &pid,
+			DimensionID:   &dimID,
+			Repo:          "dimension-adapters",
+			Path:          relPath,
+			Slug:          resolved.Slug,
+			DimensionKind: kind,
+			Orphan:        false,
+		}
+		if err := upsertAdapterFile(tx, &row); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
