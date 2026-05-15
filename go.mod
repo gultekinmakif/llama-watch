@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/lib/pq v1.10.9
 	github.com/lmittmann/tint v1.1.3
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
