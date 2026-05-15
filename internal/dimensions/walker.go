@@ -14,6 +14,7 @@ type Adapter struct {
 	Type    string // "tvl" for DefiLlama-Adapters/projects/, else dimension folder name (fees, dexs, options, ...)
 	RelPath string // relative to upstreamDir, e.g. "DefiLlama-Adapters/projects/uniswap-v2/index.js"
 	AbsPath string // full path on disk
+	Slug    string // FromFilename to be used as a default fallback
 }
 
 // Walk enumerates adapter file candidates under upstreamDir.
@@ -27,6 +28,17 @@ func Walk(upstreamDir string) ([]Adapter, error) {
 	out = append(out, tvl...)
 
 	return out, nil
+}
+
+// excludedChilds:under DefiLlama-Adapters/projects/ some are not adapter files:
+// helper / treasury / entities / config / stacks / test
+var excludedChilds = map[string]struct{}{
+	"helper":   {},
+	"treasury": {},
+	"entities": {},
+	"config":   {},
+	"stacks":   {},
+	"test":     {},
 }
 
 // walkTVL handles DefiLlama-Adapters/projects/.
@@ -53,6 +65,13 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 			if isHidden(name) {
 				return fs.SkipDir
 			}
+			// Exclusions only apply at the immediate child level of projects/.
+			parent := filepath.Dir(path)
+			if parent == root {
+				if _, skip := excludedChilds[name]; skip {
+					return fs.SkipDir
+				}
+			}
 			return nil
 		}
 
@@ -68,6 +87,16 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 	return out, nil
 }
 
+// resolveSlug: index.{ts,js} resolves to the parent directory's basename;
+// anything else uses the file basename itself.
+func resolveSlug(absPath, name string) string {
+	stem := strings.TrimSuffix(strings.TrimSuffix(name, ".ts"), ".js")
+	if strings.EqualFold(stem, "index") {
+		return FromFilename(filepath.Base(filepath.Dir(absPath)))
+	}
+	return FromFilename(name)
+}
+
 func appendAdapter(out *[]Adapter, upstreamDir, absPath, repo, typeName, name string) error {
 	rel, err := filepath.Rel(upstreamDir, absPath)
 	if err != nil {
@@ -77,6 +106,7 @@ func appendAdapter(out *[]Adapter, upstreamDir, absPath, repo, typeName, name st
 		Type:    typeName,
 		RelPath: filepath.ToSlash(rel),
 		AbsPath: absPath,
+		Slug:    resolveSlug(absPath, name),
 	})
 	return nil
 }
