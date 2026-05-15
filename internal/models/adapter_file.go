@@ -18,3 +18,5 @@ type AdapterFile struct {
 	Protocol  *Protocol  `gorm:"foreignKey:ProtocolID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	Dimension *Dimension `gorm:"foreignKey:DimensionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 }
+
+func (AdapterFile) TableName() string { return "adapter_files" }

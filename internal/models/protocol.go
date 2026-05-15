@@ -17,3 +17,5 @@ type Protocol struct {
 	CreatedAt time.Time      `gorm:"column:created_at;not null"`
 	UpdatedAt time.Time      `gorm:"column:updated_at;not null"`
 }
+
+func (Protocol) TableName() string { return "protocols" }
