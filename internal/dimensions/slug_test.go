@@ -49,6 +49,7 @@ func TestFromFilename(t *testing.T) {
 		{"only an extension", ".ts", ""},
 		{"empty", "", ""},
 		{"no extension lowercased", "WBTC", "wbtc"},
+		{"apostrophe preserved (diverges from Canonical)", "d'cent.ts", "d'cent"},
 	}
 	for _, tc := range cases {
 		tc := tc

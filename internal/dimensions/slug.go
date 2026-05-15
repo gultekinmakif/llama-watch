@@ -13,6 +13,9 @@ func Canonical(name string) string {
 
 // FromFilename is the default fallback.
 // It is used when `data{N}.ts` did not ref the adapter to a TVL adapter.
+//
+// > Intentionally diverges from Canonical: no `'` stripping, because
+// filenames don't carry apostrophes and there are protocols with `'` in their names.
 func FromFilename(basename string) string {
 	s := strings.ToLower(basename)
 	s = strings.TrimSuffix(s, ".ts")
@@ -21,7 +24,6 @@ func FromFilename(basename string) string {
 	s = strings.ReplaceAll(s, " ", "-")
 	for strings.Contains(s, "--") {
 		s = strings.ReplaceAll(s, "--", "-")
-		s = strings.ReplaceAll(s, "'", "")
 	}
 	s = strings.Trim(s, "-")
 	return s
