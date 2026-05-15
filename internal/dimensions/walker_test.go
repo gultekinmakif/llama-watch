@@ -1,35 +1,12 @@
 package dimensions
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/gultekinmakif/llama-watch/internal/testutil"
 )
-
-// mkfile writes an empty file at rel under root, creating parents.
-// The walker never reads file contents, so content-less fixtures are fine.
-func mkfile(t *testing.T, root, rel string) {
-	t.Helper()
-	full := filepath.Join(root, filepath.FromSlash(rel))
-	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-		t.Fatalf("mkdir %s: %v", filepath.Dir(full), err)
-	}
-	f, err := os.Create(full)
-	if err != nil {
-		t.Fatalf("create %s: %v", full, err)
-	}
-	f.Close()
-}
-
-func mkdir(t *testing.T, root, rel string) {
-	t.Helper()
-	full := filepath.Join(root, filepath.FromSlash(rel))
-	if err := os.MkdirAll(full, 0o755); err != nil {
-		t.Fatalf("mkdir %s: %v", full, err)
-	}
-}
 
 func relset(cs []Adapter) []string {
 	out := make([]string, 0, len(cs))
@@ -61,7 +38,7 @@ func TestWalk_MissingUpstreamDirs(t *testing.T) {
 
 func TestWalk_PartialMissing(t *testing.T) {
 	root := t.TempDir()
-	mkfile(t, root, "dimension-adapters/fees/wbtc.ts")
+	testutil.WriteFile(t, root, "dimension-adapters/fees/wbtc.ts", "")
 	got, err := Walk(root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
@@ -77,13 +54,13 @@ func TestWalk_PartialMissing(t *testing.T) {
 func TestWalk_TVLShapes(t *testing.T) {
 	root := t.TempDir()
 	// projects/<slug>/index.js
-	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js", "")
 	// projects/<slug>.ts
-	mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/wbtc.ts", "")
 	// projects/<slug>.js (bare flat .js shape with no parent dir)
-	mkfile(t, root, "DefiLlama-Adapters/projects/foo.js")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo.js", "")
 	// projects/<slug>/index.ts
-	mkfile(t, root, "DefiLlama-Adapters/projects/aave-v2/index.ts")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/aave-v2/index.ts", "")
 
 	got, err := Walk(root)
 	if err != nil {
@@ -125,11 +102,11 @@ func TestWalk_TVLShapes(t *testing.T) {
 
 func TestWalk_DimensionShapes(t *testing.T) {
 	root := t.TempDir()
-	mkfile(t, root, "dimension-adapters/fees/aave-v2.ts")
-	mkfile(t, root, "dimension-adapters/fees/wbtc.ts")
-	mkfile(t, root, "dimension-adapters/dexs/uniswap-v3/index.ts")
-	mkfile(t, root, "dimension-adapters/options/lyra.ts")
-	mkfile(t, root, "dimension-adapters/open-interest/gmx/index.ts")
+	testutil.WriteFile(t, root, "dimension-adapters/fees/aave-v2.ts", "")
+	testutil.WriteFile(t, root, "dimension-adapters/fees/wbtc.ts", "")
+	testutil.WriteFile(t, root, "dimension-adapters/dexs/uniswap-v3/index.ts", "")
+	testutil.WriteFile(t, root, "dimension-adapters/options/lyra.ts", "")
+	testutil.WriteFile(t, root, "dimension-adapters/open-interest/gmx/index.ts", "")
 
 	got, err := Walk(root)
 	if err != nil {
@@ -171,9 +148,9 @@ func TestWalk_DimensionShapes(t *testing.T) {
 func TestWalk_MultiVersionSiblings(t *testing.T) {
 	// Multi-version protocol siblings are separate rows and must not collapse. Uniswap V2, V3, V4 each get their own slug.
 	root := t.TempDir()
-	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js")
-	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v3/index.js")
-	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v4/index.js")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js", "")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v3/index.js", "")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v4/index.js", "")
 
 	got, err := Walk(root)
 	if err != nil {
@@ -196,10 +173,10 @@ func TestWalk_MultiVersionSiblings(t *testing.T) {
 func TestWalk_Skips(t *testing.T) {
 	t.Run("hidden_dirs", func(t *testing.T) {
 		root := t.TempDir()
-		mkfile(t, root, "DefiLlama-Adapters/projects/.git/HEAD")
-		mkfile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml")
-		mkfile(t, root, "dimension-adapters/.git/HEAD")
-		mkfile(t, root, "dimension-adapters/fees/.hidden/sneaky.ts")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/.git/HEAD", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml", "")
+		testutil.WriteFile(t, root, "dimension-adapters/.git/HEAD", "")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/.hidden/sneaky.ts", "")
 		got, err := Walk(root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
@@ -211,8 +188,8 @@ func TestWalk_Skips(t *testing.T) {
 
 	t.Run("node_modules", func(t *testing.T) {
 		root := t.TempDir()
-		mkfile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts")
-		mkfile(t, root, "dimension-adapters/fees/node_modules/dep/index.ts")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts", "")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/node_modules/dep/index.ts", "")
 		got, err := Walk(root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
@@ -224,8 +201,8 @@ func TestWalk_Skips(t *testing.T) {
 
 	t.Run("declaration_files_dot_d_ts", func(t *testing.T) {
 		root := t.TempDir()
-		mkfile(t, root, "DefiLlama-Adapters/projects/types.d.ts")
-		mkfile(t, root, "dimension-adapters/fees/types.d.ts")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/types.d.ts", "")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/types.d.ts", "")
 		got, err := Walk(root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
@@ -238,7 +215,7 @@ func TestWalk_Skips(t *testing.T) {
 	t.Run("excluded_tvl_subtrees", func(t *testing.T) {
 		root := t.TempDir()
 		for _, excluded := range []string{"helper", "treasury", "entities", "config", "stacks", "test"} {
-			mkfile(t, root, "DefiLlama-Adapters/projects/"+excluded+"/util.ts")
+			testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/"+excluded+"/util.ts", "")
 		}
 		got, err := Walk(root)
 		if err != nil {
@@ -251,8 +228,8 @@ func TestWalk_Skips(t *testing.T) {
 
 	t.Run("non_js_ts_files", func(t *testing.T) {
 		root := t.TempDir()
-		mkfile(t, root, "dimension-adapters/fees/README.md")
-		mkfile(t, root, "DefiLlama-Adapters/projects/foo/package.json")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/README.md", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo/package.json", "")
 		got, err := Walk(root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
@@ -265,15 +242,15 @@ func TestWalk_Skips(t *testing.T) {
 	t.Run("real_candidates_survive_mixed_noise", func(t *testing.T) {
 		root := t.TempDir()
 		// Real adapters that must be picked up.
-		mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
-		mkfile(t, root, "dimension-adapters/fees/aave-v2.ts")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/wbtc.ts", "")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/aave-v2.ts", "")
 		// One representative of every skip category, intermixed.
-		mkfile(t, root, "DefiLlama-Adapters/.git/HEAD")
-		mkfile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml")
-		mkfile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts")
-		mkfile(t, root, "DefiLlama-Adapters/projects/types.d.ts")
-		mkfile(t, root, "DefiLlama-Adapters/projects/helper/util.ts")
-		mkfile(t, root, "dimension-adapters/fees/README.md")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/.git/HEAD", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/types.d.ts", "")
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/helper/util.ts", "")
+		testutil.WriteFile(t, root, "dimension-adapters/fees/README.md", "")
 
 		got, err := Walk(root)
 		if err != nil {
@@ -302,9 +279,9 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 	// FromFilename is exercised here through resolveSlug, mainly to confirm
 	// underscores and casing in directory/file names route through correctly.
 	root := t.TempDir()
-	mkfile(t, root, "DefiLlama-Adapters/projects/Uniswap_V2/index.js")
-	mkfile(t, root, "dimension-adapters/fees/Uniswap_V2.ts")
-	mkfile(t, root, "dimension-adapters/dexs/Foo_Bar/index.ts")
+	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/Uniswap_V2/index.js", "")
+	testutil.WriteFile(t, root, "dimension-adapters/fees/Uniswap_V2.ts", "")
+	testutil.WriteFile(t, root, "dimension-adapters/dexs/Foo_Bar/index.ts", "")
 
 	got, err := Walk(root)
 	if err != nil {
@@ -333,9 +310,9 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 
 func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	root := t.TempDir()
-	mkdir(t, root, "DefiLlama-Adapters/projects")
-	mkdir(t, root, "dimension-adapters/fees")
-	mkdir(t, root, "dimension-adapters/dexs")
+	testutil.Mkdir(t, root, "DefiLlama-Adapters/projects")
+	testutil.Mkdir(t, root, "dimension-adapters/fees")
+	testutil.Mkdir(t, root, "dimension-adapters/dexs")
 
 	got, err := Walk(root)
 	if err != nil {
