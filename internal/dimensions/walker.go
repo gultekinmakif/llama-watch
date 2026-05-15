@@ -17,25 +17,6 @@ type Adapter struct {
 	Slug    string // FromFilename to be used as a default fallback
 }
 
-// Walk enumerates adapter file candidates under upstreamDir.
-func Walk(upstreamDir string) ([]Adapter, error) {
-	out := make([]Adapter, 0, 1024)
-
-	tvl, err := walkTVL(upstreamDir)
-	if err != nil {
-		return nil, err
-	}
-	out = append(out, tvl...)
-
-	dims, err := walkDims(upstreamDir)
-	if err != nil {
-		return nil, err
-	}
-	out = append(out, dims...)
-
-	return out, nil
-}
-
 // excludedChilds: some folders under DefiLlama-Adapters/projects/ are not adapters:
 // helper / treasury / entities / config / stacks / test
 var excludedChilds = map[string]struct{}{
@@ -47,12 +28,59 @@ var excludedChilds = map[string]struct{}{
 	"test":     {},
 }
 
-// walkTVL handles DefiLlama-Adapters/projects/
-// Two shapes:
-//   - projects/<slug>/index.{ts,js}
-//   - projects/<slug>.{ts,js}
-func walkTVL(upstreamDir string) ([]Adapter, error) {
-	root := filepath.Join(upstreamDir, "DefiLlama-Adapters", "projects")
+// Walk enumerates adapter file candidates under upstreamDir.
+// upstreamDir is the parent of the two repo clones (var/upstream/).
+func Walk(upstreamDir string) ([]Adapter, error) {
+	out := make([]Adapter, 0, 1024)
+
+	tvlRoot := filepath.Join(upstreamDir, "DefiLlama-Adapters", "projects")
+	tvl, err := collect(upstreamDir, tvlRoot, tvlTypeFn, tvlSkipChild)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, tvl...)
+
+	dimsRoot := filepath.Join(upstreamDir, "dimension-adapters")
+	dims, err := collect(upstreamDir, dimsRoot, dimsTypeFn(dimsRoot), nil)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, dims...)
+
+	return out, nil
+}
+
+// tvlTypeFn returns the fixed TVL type
+func tvlTypeFn(string) string { return "tvl" }
+
+// tvlSkipChild skips DefiLlama-Adapters/projects/<excluded>/ subtrees at depth 1.
+func tvlSkipChild(name string, depth int) bool {
+	if depth != 1 {
+		return false
+	}
+	_, skip := excludedChilds[name]
+	return skip
+}
+
+// dimsTypeFn returns a typeFn that derives the dimension type from the first
+// path segment relative to root (e.g. "fees", "dexs", "options").
+func dimsTypeFn(root string) func(absPath string) string {
+	return func(absPath string) string {
+		rel, _ := filepath.Rel(root, absPath)
+		return strings.Split(filepath.ToSlash(rel), "/")[0]
+	}
+}
+
+// collect walks a single adapter subtree rooted at root and appends one
+// Adapter per qualifying file.
+func collect(
+	upstreamDir, root string,
+	typeFn func(absPath string) string,
+	skipChild func(dirName string, depth int) bool,
+) ([]Adapter, error) {
+	if typeFn == nil {
+		panic("dimensions.collect: typeFn is required")
+	}
 	if !dirExists(root) {
 		return nil, nil
 	}
@@ -71,10 +99,13 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 			if isHidden(name) {
 				return fs.SkipDir
 			}
-			// Exclusions only apply at the immediate child level of projects/.
-			parent := filepath.Dir(path)
-			if parent == root {
-				if _, skip := excludedChilds[name]; skip {
+			if skipChild != nil {
+				rel, rerr := filepath.Rel(root, path)
+				if rerr != nil {
+					return rerr
+				}
+				depth := len(strings.Split(filepath.ToSlash(rel), "/"))
+				if skipChild(name, depth) {
 					return fs.SkipDir
 				}
 			}
@@ -84,8 +115,7 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 		if !isAdapterExt(name) {
 			return nil
 		}
-
-		return appendAdapter(&out, upstreamDir, path, strings.ToLower("DefiLlama-Adapters"), "tvl", name)
+		return appendAdapter(&out, upstreamDir, path, typeFn(path), name)
 	})
 	if err != nil {
 		return nil, err
@@ -93,66 +123,7 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 	return out, nil
 }
 
-// walkDims handles dimension-adapters/<type>/
-// Two shapes:
-//   - <type>/<slug>.{ts,js}
-//   - <type>/<slug>/index.{ts,js}
-func walkDims(upstreamDir string) ([]Adapter, error) {
-	root := filepath.Join(upstreamDir, "projects")
-	if !dirExists(root) {
-		return nil, nil
-	}
-
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return nil, err
-	}
-
-	var out []Adapter
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		if isHidden(e.Name()) {
-			continue
-		}
-		typeName := e.Name()
-		typeRoot := filepath.Join(root, typeName)
-
-		werr := filepath.WalkDir(typeRoot, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() {
-				if path != typeRoot && isHidden(d.Name()) {
-					return fs.SkipDir
-				}
-				return nil
-			}
-			if !isAdapterExt(d.Name()) {
-				return nil
-			}
-
-			return appendAdapter(&out, upstreamDir, path, "dimension-adapters", typeName, d.Name())
-		})
-		if werr != nil {
-			return nil, werr
-		}
-	}
-	return out, nil
-}
-
-// resolveSlug: index.{ts,js} resolves to the parent directory's basename;
-// anything else uses the file basename itself.
-func resolveSlug(absPath, name string) string {
-	stem := strings.TrimSuffix(strings.TrimSuffix(name, ".ts"), ".js")
-	if strings.EqualFold(stem, "index") {
-		return FromFilename(filepath.Base(filepath.Dir(absPath)))
-	}
-	return FromFilename(name)
-}
-
-func appendAdapter(out *[]Adapter, upstreamDir, absPath, repo, typeName, name string) error {
+func appendAdapter(out *[]Adapter, upstreamDir, absPath, typeName, name string) error {
 	rel, err := filepath.Rel(upstreamDir, absPath)
 	if err != nil {
 		return err
@@ -164,6 +135,16 @@ func appendAdapter(out *[]Adapter, upstreamDir, absPath, repo, typeName, name st
 		Slug:    resolveSlug(absPath, name),
 	})
 	return nil
+}
+
+// resolveSlug: index.{ts,js} resolves to the parent directory's basename;
+// anything else uses the file basename itself.
+func resolveSlug(absPath, name string) string {
+	stem := strings.TrimSuffix(strings.TrimSuffix(name, ".ts"), ".js")
+	if strings.EqualFold(stem, "index") {
+		return FromFilename(filepath.Base(filepath.Dir(absPath)))
+	}
+	return FromFilename(name)
 }
 
 // isAdapterExt accepts .ts and .js but rejects .d.ts (declaration files).
@@ -187,5 +168,4 @@ func dirExists(p string) bool {
 		return false
 	}
 	return info.IsDir()
-
 }
