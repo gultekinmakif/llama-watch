@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/gultekinmakif/llama-watch/internal/models"
 	gormpg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Package handle. Set by New, read by Get.
@@ -55,7 +57,35 @@ func Close() error {
 	return sqlDB.Close()
 }
 
-// Migrate applies the current schema via AutoMigrate.
+// dimensionSeed is the static set referenced by SCHEMA §dimensions. New kinds
+// added by hand — keep in lockstep with adapter_files.dimension_kind values.
+var dimensionSeed = []models.Dimension{
+	{Kind: "tvl", DisplayName: "TVL"},
+	{Kind: "dailyFees", DisplayName: "Daily Fees"},
+	{Kind: "dailyRevenue", DisplayName: "Daily Revenue"},
+	{Kind: "dailyVolume", DisplayName: "Daily Volume"},
+	{Kind: "dailyNotionalVolume", DisplayName: "Daily Notional Volume"},
+	{Kind: "dailyPremiumVolume", DisplayName: "Daily Premium Volume"},
+	{Kind: "openInterestAtEnd", DisplayName: "Open Interest"},
+	{Kind: "dailyBridgeVolume", DisplayName: "Daily Bridge Volume"},
+	{Kind: "dailyActiveUsers", DisplayName: "Daily Active Users"},
+}
+
+// Migrate applies the current schema via AutoMigrate, then UPSERTs the static
+// dimensions rows. Order matters: dimensions and protocols are parents for the
+// FKs in adapter_files;
 func Migrate() error {
-	return nil
+	if err := db.AutoMigrate(
+		&models.Dimension{},
+		&models.Protocol{},
+		&models.AdapterFile{},
+		&models.RefreshRun{},
+	); err != nil {
+		return err
+	}
+
+	return db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "kind"}},
+		DoUpdates: clause.AssignmentColumns([]string{"display_name"}),
+	}).Create(&dimensionSeed).Error
 }
