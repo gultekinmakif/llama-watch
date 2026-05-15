@@ -71,6 +71,12 @@ func TestDetectKinds(t *testing.T) {
 			dimType: "fees",
 			want:    nil,
 		},
+		{
+			name:    "keyword in comment matches (TODO: NEED TO FIX)",
+			path:    testutil.WriteFile(t, root, "fees/comment.ts", "// dailyFees stub, real implementation pending\nexport default { foo: 1 };"),
+			dimType: "fees",
+			want:    []string{"dailyFees"},
+		},
 	}
 
 	for _, tc := range cases {

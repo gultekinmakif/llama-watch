@@ -83,6 +83,11 @@ func TestLoadProtocols(t *testing.T) {
 			path:    testutil.WriteFile(t, root, "bad.json", "not json"),
 			wantErr: true,
 		},
+		{
+			name:    "empty array errors",
+			path:    testutil.WriteFile(t, root, "array.json", "[]"),
+			wantErr: true,
+		},
 	}
 
 	for _, tc := range cases {
