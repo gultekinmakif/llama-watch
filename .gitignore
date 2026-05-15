@@ -32,6 +32,7 @@ tmp/
 
 # Plan + runtime data
 /plan.md
+/specs/
 /var/
 /web/out/
 /web/.next/
