@@ -3,6 +3,7 @@ package dimensions
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"testing"
 )
@@ -39,13 +40,12 @@ func relset(cs []Adapter) []string {
 	return out
 }
 
-func findByRel(cs []Adapter, rel string) (Adapter, bool) {
+func indexByRel(cs []Adapter) map[string]Adapter {
+	out := make(map[string]Adapter, len(cs))
 	for _, c := range cs {
-		if c.RelPath == rel {
-			return c, true
-		}
+		out[c.RelPath] = c
 	}
-	return Adapter{}, false
+	return out
 }
 
 func TestWalk_MissingUpstreamDirs(t *testing.T) {
@@ -61,7 +61,6 @@ func TestWalk_MissingUpstreamDirs(t *testing.T) {
 
 func TestWalk_PartialMissing(t *testing.T) {
 	root := t.TempDir()
-	// Only one of the two repos exists.
 	mkfile(t, root, "dimension-adapters/fees/wbtc.ts")
 	got, err := Walk(root)
 	if err != nil {
@@ -81,6 +80,8 @@ func TestWalk_TVLShapes(t *testing.T) {
 	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js")
 	// projects/<slug>.ts
 	mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
+	// projects/<slug>.js (bare flat .js shape per PARSER.md §line 16)
+	mkfile(t, root, "DefiLlama-Adapters/projects/foo.js")
 	// projects/<slug>/index.ts
 	mkfile(t, root, "DefiLlama-Adapters/projects/aave-v2/index.ts")
 
@@ -88,9 +89,10 @@ func TestWalk_TVLShapes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
-	if len(got) != 3 {
-		t.Fatalf("want 3 candidates, got %d (%v)", len(got), relset(got))
+	if len(got) != 4 {
+		t.Fatalf("want 4 candidates, got %d (%v)", len(got), relset(got))
 	}
+	byRel := indexByRel(got)
 
 	cases := []struct {
 		rel  string
@@ -98,12 +100,13 @@ func TestWalk_TVLShapes(t *testing.T) {
 	}{
 		{"DefiLlama-Adapters/projects/uniswap-v2/index.js", "uniswap-v2"},
 		{"DefiLlama-Adapters/projects/wbtc.ts", "wbtc"},
+		{"DefiLlama-Adapters/projects/foo.js", "foo"},
 		{"DefiLlama-Adapters/projects/aave-v2/index.ts", "aave-v2"},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.rel, func(t *testing.T) {
-			c, ok := findByRel(got, tc.rel)
+			c, ok := byRel[tc.rel]
 			if !ok {
 				t.Fatalf("missing candidate %s in %v", tc.rel, relset(got))
 			}
@@ -135,6 +138,7 @@ func TestWalk_DimensionShapes(t *testing.T) {
 	if len(got) != 5 {
 		t.Fatalf("want 5 candidates, got %d (%v)", len(got), relset(got))
 	}
+	byRel := indexByRel(got)
 
 	cases := []struct {
 		rel  string
@@ -150,7 +154,7 @@ func TestWalk_DimensionShapes(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.rel, func(t *testing.T) {
-			c, ok := findByRel(got, tc.rel)
+			c, ok := byRel[tc.rel]
 			if !ok {
 				t.Fatalf("missing candidate %s in %v", tc.rel, relset(got))
 			}
@@ -190,47 +194,108 @@ func TestWalk_MultiVersionSiblings(t *testing.T) {
 }
 
 func TestWalk_Skips(t *testing.T) {
-	root := t.TempDir()
+	t.Run("hidden_dirs", func(t *testing.T) {
+		root := t.TempDir()
+		mkfile(t, root, "DefiLlama-Adapters/projects/.git/HEAD")
+		mkfile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml")
+		mkfile(t, root, "dimension-adapters/.git/HEAD")
+		mkfile(t, root, "dimension-adapters/fees/.hidden/sneaky.ts")
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("want 0, got %v", relset(got))
+		}
+	})
 
-	// Real adapter that must be picked up.
-	mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
-	mkfile(t, root, "dimension-adapters/fees/aave-v2.ts")
+	t.Run("node_modules", func(t *testing.T) {
+		root := t.TempDir()
+		mkfile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts")
+		mkfile(t, root, "dimension-adapters/fees/node_modules/dep/index.ts")
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("want 0, got %v", relset(got))
+		}
+	})
 
-	// Hidden dirs anywhere in the tree.
-	mkfile(t, root, "DefiLlama-Adapters/.git/HEAD")
-	mkfile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml")
-	mkfile(t, root, "dimension-adapters/.git/HEAD")
-	mkfile(t, root, "dimension-adapters/fees/.hidden/sneaky.ts")
+	t.Run("declaration_files_dot_d_ts", func(t *testing.T) {
+		root := t.TempDir()
+		mkfile(t, root, "DefiLlama-Adapters/projects/types.d.ts")
+		mkfile(t, root, "dimension-adapters/fees/types.d.ts")
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("want 0, got %v", relset(got))
+		}
+	})
 
-	// node_modules anywhere.
-	mkfile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts")
-	mkfile(t, root, "dimension-adapters/fees/node_modules/dep/index.ts")
+	t.Run("excluded_tvl_subtrees", func(t *testing.T) {
+		root := t.TempDir()
+		for _, excluded := range []string{"helper", "treasury", "entities", "config", "stacks", "test"} {
+			mkfile(t, root, "DefiLlama-Adapters/projects/"+excluded+"/util.ts")
+		}
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("want 0, got %v", relset(got))
+		}
+	})
 
-	// .d.ts declaration files.
-	mkfile(t, root, "DefiLlama-Adapters/projects/types.d.ts")
-	mkfile(t, root, "dimension-adapters/fees/types.d.ts")
+	t.Run("non_js_ts_files", func(t *testing.T) {
+		root := t.TempDir()
+		mkfile(t, root, "dimension-adapters/fees/README.md")
+		mkfile(t, root, "DefiLlama-Adapters/projects/foo/package.json")
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("want 0, got %v", relset(got))
+		}
+	})
 
-	// PARSER.md §21 excluded subtrees under projects/.
-	for _, excluded := range []string{"helper", "treasury", "entities", "config", "stacks", "test"} {
-		mkfile(t, root, "DefiLlama-Adapters/projects/"+excluded+"/util.ts")
-	}
+	t.Run("real_candidates_survive_mixed_noise", func(t *testing.T) {
+		root := t.TempDir()
+		// Real adapters that must be picked up.
+		mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
+		mkfile(t, root, "dimension-adapters/fees/aave-v2.ts")
+		// One representative of every skip category, intermixed.
+		mkfile(t, root, "DefiLlama-Adapters/.git/HEAD")
+		mkfile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml")
+		mkfile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts")
+		mkfile(t, root, "DefiLlama-Adapters/projects/types.d.ts")
+		mkfile(t, root, "DefiLlama-Adapters/projects/helper/util.ts")
+		mkfile(t, root, "dimension-adapters/fees/README.md")
 
-	// Non-JS/TS noise.
-	mkfile(t, root, "dimension-adapters/fees/README.md")
-	mkfile(t, root, "DefiLlama-Adapters/projects/foo/package.json")
+		got, err := Walk(root)
+		if err != nil {
+			t.Fatalf("Walk: %v", err)
+		}
 
-	got, err := Walk(root)
-	if err != nil {
-		t.Fatalf("Walk: %v", err)
-	}
+		wantRels := []string{
+			"DefiLlama-Adapters/projects/wbtc.ts",
+			"dimension-adapters/fees/aave-v2.ts",
+		}
+		if g := relset(got); !reflect.DeepEqual(g, wantRels) {
+			t.Fatalf("want %v, got %v", wantRels, g)
+		}
 
-	wantRels := []string{
-		"DefiLlama-Adapters/projects/wbtc.ts",
-		"dimension-adapters/fees/aave-v2.ts",
-	}
-	if g := relset(got); !equalStrs(g, wantRels) {
-		t.Fatalf("want %v, got %v", wantRels, g)
-	}
+		byRel := indexByRel(got)
+		if c := byRel["DefiLlama-Adapters/projects/wbtc.ts"]; c.Type != "tvl" || c.Slug != "wbtc" {
+			t.Fatalf("tvl candidate wrong: %+v", c)
+		}
+		if c := byRel["dimension-adapters/fees/aave-v2.ts"]; c.Type != "fees" || c.Slug != "aave-v2" {
+			t.Fatalf("dim candidate wrong: %+v", c)
+		}
+	})
 }
 
 func TestWalk_FilenameNormalization(t *testing.T) {
@@ -248,6 +313,7 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("want 3, got %d (%v)", len(got), relset(got))
 	}
+	byRel := indexByRel(got)
 
 	want := map[string]string{
 		"DefiLlama-Adapters/projects/Uniswap_V2/index.js": "uniswap-v2",
@@ -255,7 +321,7 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 		"dimension-adapters/dexs/Foo_Bar/index.ts":        "foo-bar",
 	}
 	for rel, slug := range want {
-		c, ok := findByRel(got, rel)
+		c, ok := byRel[rel]
 		if !ok {
 			t.Fatalf("missing %s", rel)
 		}
@@ -278,16 +344,4 @@ func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	if len(got) != 0 {
 		t.Fatalf("want 0, got %d (%v)", len(got), relset(got))
 	}
-}
-
-func equalStrs(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
