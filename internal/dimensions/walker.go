@@ -27,10 +27,16 @@ func Walk(upstreamDir string) ([]Adapter, error) {
 	}
 	out = append(out, tvl...)
 
+	dims, err := walkDims(upstreamDir)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, dims...)
+
 	return out, nil
 }
 
-// excludedChilds:under DefiLlama-Adapters/projects/ some are not adapter files:
+// excludedChilds: some folders under DefiLlama-Adapters/projects/ are not adapters:
 // helper / treasury / entities / config / stacks / test
 var excludedChilds = map[string]struct{}{
 	"helper":   {},
@@ -41,7 +47,7 @@ var excludedChilds = map[string]struct{}{
 	"test":     {},
 }
 
-// walkTVL handles DefiLlama-Adapters/projects/.
+// walkTVL handles DefiLlama-Adapters/projects/
 // Two shapes:
 //   - projects/<slug>/index.{ts,js}
 //   - projects/<slug>.{ts,js}
@@ -83,6 +89,55 @@ func walkTVL(upstreamDir string) ([]Adapter, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+	return out, nil
+}
+
+// walkDims handles dimension-adapters/<type>/
+// Two shapes:
+//   - <type>/<slug>.{ts,js}
+//   - <type>/<slug>/index.{ts,js}
+func walkDims(upstreamDir string) ([]Adapter, error) {
+	root := filepath.Join(upstreamDir, "projects")
+	if !dirExists(root) {
+		return nil, nil
+	}
+
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []Adapter
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		if isHidden(e.Name()) {
+			continue
+		}
+		typeName := e.Name()
+		typeRoot := filepath.Join(root, typeName)
+
+		werr := filepath.WalkDir(typeRoot, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				if path != typeRoot && isHidden(d.Name()) {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if !isAdapterExt(d.Name()) {
+				return nil
+			}
+
+			return appendAdapter(&out, upstreamDir, path, "dimension-adapters", typeName, d.Name())
+		})
+		if werr != nil {
+			return nil, werr
+		}
 	}
 	return out, nil
 }
