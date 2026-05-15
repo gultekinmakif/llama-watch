@@ -22,7 +22,7 @@ paths:
     get:
       tags: [meta]
       summary: Root
-      description: Returns 200 with an empty body — useful as a "is anything up" probe.
+      description: Returns 200 with an empty body. Useful as a liveness probe.
       responses:
         '200':
           description: OK

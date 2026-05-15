@@ -80,7 +80,7 @@ func TestWalk_TVLShapes(t *testing.T) {
 	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js")
 	// projects/<slug>.ts
 	mkfile(t, root, "DefiLlama-Adapters/projects/wbtc.ts")
-	// projects/<slug>.js (bare flat .js shape per PARSER.md §line 16)
+	// projects/<slug>.js (bare flat .js shape with no parent dir)
 	mkfile(t, root, "DefiLlama-Adapters/projects/foo.js")
 	// projects/<slug>/index.ts
 	mkfile(t, root, "DefiLlama-Adapters/projects/aave-v2/index.ts")
@@ -169,7 +169,7 @@ func TestWalk_DimensionShapes(t *testing.T) {
 }
 
 func TestWalk_MultiVersionSiblings(t *testing.T) {
-	// PARSER.md §132 — must NOT collapse Uniswap V2/V3/V4.
+	// Multi-version protocol siblings are separate rows and must not collapse. Uniswap V2, V3, V4 each get their own slug.
 	root := t.TempDir()
 	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js")
 	mkfile(t, root, "DefiLlama-Adapters/projects/uniswap-v3/index.js")

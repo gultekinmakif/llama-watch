@@ -40,7 +40,7 @@ func New(dsn string) error {
 	return nil
 }
 
-// Get returns the package handle. Panics if New hasn't run — misuse is a programming error.
+// Get returns the package handle. Panics if New has not run because that is a programming error.
 func Get() *gorm.DB {
 	if db == nil {
 		panic("postgres: not initialized")
@@ -57,8 +57,9 @@ func Close() error {
 	return sqlDB.Close()
 }
 
-// dimensionSeed is the static set referenced by SCHEMA §dimensions. New kinds
-// added by hand — keep in lockstep with adapter_files.dimension_kind values.
+// dimensionSeed is the static set of dimension kinds the schema expects to
+// exist before any adapter_files rows are inserted. New kinds are added by
+// hand. Keep this list in lockstep with adapter_files.dimension_kind values.
 var dimensionSeed = []models.Dimension{
 	{Kind: "tvl", DisplayName: "TVL"},
 	{Kind: "dailyFees", DisplayName: "Daily Fees"},
