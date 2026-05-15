@@ -73,12 +73,13 @@ var dimensionSeed = []models.Dimension{
 
 // Migrate applies the current schema via AutoMigrate, then UPSERTs the static
 // dimensions rows. Order matters: dimensions and protocols are parents for the
-// FKs in adapter_files;
+// FKs in adapter_files; commit_refs FK-references adapter_files.
 func Migrate() error {
 	if err := db.AutoMigrate(
 		&models.Dimension{},
 		&models.Protocol{},
 		&models.AdapterFile{},
+		&models.CommitRef{},
 		&models.RefreshRun{},
 	); err != nil {
 		return err
