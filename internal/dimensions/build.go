@@ -1,4 +1,4 @@
-// Pass 1 of the slug-join algorithm.
+// Pass 0 of the slug-join algorithm.
 // Reads the extracted protocols JSON plus the walker output, and writes
 // protocols and adapter_files rows inside one transaction.
 package dimensions
@@ -14,8 +14,18 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+type BuildStats struct {
+	Protocols    int
+	AdapterFiles int
+	// Skipped also counts adapter files referenced by data{N}.ts but missing on disk.
+	Skipped int
+}
+
 // Build runs Pass 1 of the slug-join algorithm in one DB transaction.
-func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *slog.Logger) error {
+// raw is the LoadProtocols output keyed by source data file ("data1", ..., "data6").
+// adapters is the Walk output of every adapter file on disk.
+// log may be nil; the default slog handler is used in that case.
+func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *slog.Logger) (BuildStats, error) {
 	if log == nil {
 		log = slog.Default()
 	}
@@ -28,14 +38,15 @@ func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *s
 		dims, err = loadDimensionIDs(tx)
 		return err
 	}); err != nil {
-		return err
+		return BuildStats{}, err
 	}
 
+	var stats BuildStats
 	err := db.Transaction(func(tx *gorm.DB) error {
 		for src, list := range raw {
 			dataFile := src + ".ts"
 			for _, rp := range list {
-				if err := buildOne(tx, log, byRel, dims, rp, dataFile); err != nil {
+				if err := buildOne(tx, log, byRel, dims, rp, dataFile, &stats); err != nil {
 					return err
 				}
 			}
@@ -43,9 +54,9 @@ func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *s
 		return nil
 	})
 	if err != nil {
-		return err
+		return BuildStats{}, err
 	}
-	return nil
+	return stats, nil
 }
 
 // indexAdapters builds an O(1) lookup keyed by RelPath.
@@ -57,7 +68,8 @@ func indexAdapters(adapters []Adapter) map[string]Adapter {
 	return out
 }
 
-// buildOne handles a single RawProtocol
+// buildOne handles a single RawProtocol: upsert the protocol row and resolve
+// its TVL adapter plus every dimension-adapter file it references.
 func buildOne(
 	tx *gorm.DB,
 	log *slog.Logger,
@@ -65,18 +77,20 @@ func buildOne(
 	dims map[string]uint64,
 	rp RawProtocol,
 	dataFile string,
+	stats *BuildStats,
 ) error {
 	p, err := upsertProtocol(tx, rp, dataFile)
 	if err != nil {
 		return err
 	}
+	stats.Protocols++
 
-	if err := resolveTVL(tx, log, byRel, p.ID, rp.Module); err != nil {
+	if err := resolveTVL(tx, log, byRel, p.ID, rp.Module, stats); err != nil {
 		return err
 	}
 
 	for dimType, dimSlug := range rp.Dimensions {
-		if err := resolveDimension(tx, log, byRel, dims, p.ID, dimType, dimSlug); err != nil {
+		if err := resolveDimension(tx, log, byRel, dims, p.ID, dimType, dimSlug, stats); err != nil {
 			return err
 		}
 	}
@@ -84,6 +98,8 @@ func buildOne(
 }
 
 // upsertProtocol inserts or updates a protocols row keyed by canonical slug.
+// Updates on conflict cover name, category, chains, and data_file so a later
+// data{N}.ts file overrides an earlier one deterministically.
 func upsertProtocol(tx *gorm.DB, rp RawProtocol, dataFile string) (*models.Protocol, error) {
 	chains := normalizeChains(rp.Chains)
 	df := dataFile
@@ -119,11 +135,13 @@ func resolveTVL(
 	byRel map[string]Adapter,
 	protocolID uint64,
 	module string,
+	stats *BuildStats,
 ) error {
 	rel := "DefiLlama-Adapters/projects/" + module
 	a, ok := byRel[rel]
 	if !ok {
 		log.Warn("tvl adapter missing on disk", "module", module)
+		stats.Skipped++
 		return nil
 	}
 	pid := protocolID
@@ -139,11 +157,14 @@ func resolveTVL(
 	if err := upsertAdapterFile(tx, &row); err != nil {
 		return err
 	}
+	stats.AdapterFiles++
 	_ = a
 	return nil
 }
 
-// loadDimensionIDs reads the dimensions table into kind -> id
+// loadDimensionIDs reads the dimensions table into kind -> id so adapter_files
+// rows can be populated without a per-row query. The dimensions seed is written
+// by postgres.Migrate before Build ever runs.
 func loadDimensionIDs(tx *gorm.DB) (map[string]uint64, error) {
 	var rows []models.Dimension
 	if err := tx.Find(&rows).Error; err != nil {
@@ -165,6 +186,7 @@ func resolveDimension(
 	dims map[string]uint64,
 	protocolID uint64,
 	dimType, dimSlug string,
+	stats *BuildStats,
 ) error {
 	candidates := []string{
 		"dimension-adapters/" + dimType + "/" + dimSlug + ".ts",
@@ -181,6 +203,7 @@ func resolveDimension(
 	}
 	if !found {
 		log.Warn("dimension adapter missing on disk", "type", dimType, "slug", dimSlug)
+		stats.Skipped++
 		return nil
 	}
 
@@ -215,6 +238,7 @@ func resolveDimension(
 		if err := upsertAdapterFile(tx, &row); err != nil {
 			return err
 		}
+		stats.AdapterFiles++
 	}
 	return nil
 }
@@ -238,7 +262,8 @@ func upsertAdapterFile(tx *gorm.DB, row *models.AdapterFile) error {
 	}).Create(row).Error
 }
 
-// normalizeChains lowercases every entry and returns a pq.StringArray, protocols.chains expects.
+// normalizeChains lowercases every entry and returns a pq.StringArray, which is
+// the column type the protocols.chains field expects.
 func normalizeChains(chains []string) pq.StringArray {
 	out := make(pq.StringArray, len(chains))
 	for i, c := range chains {
@@ -248,7 +273,8 @@ func normalizeChains(chains []string) pq.StringArray {
 }
 
 // moduleStem extracts the canonical stem from a module reference like
-// "uniswap-v2/index.js" or "wbtc.js".
+// "uniswap-v2/index.js" or "wbtc.js". It is intentionally lighter than
+// FromFilename: no separator normalization, just basename + extension strip.
 func moduleStem(module string) string {
 	s := strings.TrimRight(module, "/")
 	if s == "" {
