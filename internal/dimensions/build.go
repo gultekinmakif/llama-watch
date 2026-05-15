@@ -1,7 +1,10 @@
 // Pass 1 of the slug-join algorithm.
+// Reads the extracted protocols JSON plus the walker output, and writes
+// protocols and adapter_files rows inside one transaction.
 package dimensions
 
 import (
+	"log/slog"
 	"path"
 	"strings"
 
@@ -12,14 +15,18 @@ import (
 )
 
 // Build runs Pass 1 of the slug-join algorithm in one DB transaction.
-func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter) error {
+func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *slog.Logger) error {
+	if log == nil {
+		log = slog.Default()
+	}
+
 	byRel := indexAdapters(adapters)
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		for src, list := range raw {
 			dataFile := src + ".ts"
 			for _, rp := range list {
-				if err := buildOne(tx, byRel, rp, dataFile); err != nil {
+				if err := buildOne(tx, log, byRel, rp, dataFile); err != nil {
 					return err
 				}
 			}
@@ -44,6 +51,7 @@ func indexAdapters(adapters []Adapter) map[string]Adapter {
 // buildOne handles a single RawProtocol
 func buildOne(
 	tx *gorm.DB,
+	log *slog.Logger,
 	byRel map[string]Adapter,
 	rp RawProtocol,
 	dataFile string,
@@ -53,7 +61,7 @@ func buildOne(
 		return err
 	}
 
-	if err := resolveTVL(tx, byRel, p.ID, rp.Module); err != nil {
+	if err := resolveTVL(tx, log, byRel, p.ID, rp.Module); err != nil {
 		return err
 	}
 
@@ -89,8 +97,10 @@ func upsertProtocol(tx *gorm.DB, rp RawProtocol, dataFile string) (*models.Proto
 }
 
 // resolveTVL looks up the DefiLlama-Adapters file for a protocol module.
+// Missing files are logged and counted as skipped; no row is created.
 func resolveTVL(
 	tx *gorm.DB,
+	log *slog.Logger,
 	byRel map[string]Adapter,
 	protocolID uint64,
 	module string,
@@ -98,6 +108,7 @@ func resolveTVL(
 	rel := "DefiLlama-Adapters/projects/" + module
 	a, ok := byRel[rel]
 	if !ok {
+		log.Warn("tvl adapter missing on disk", "module", module)
 		return nil
 	}
 	pid := protocolID
