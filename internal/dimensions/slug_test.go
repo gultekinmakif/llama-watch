@@ -16,6 +16,7 @@ func TestCanonical(t *testing.T) {
 		{"multiple apostrophes stripped", "L'Anza's Vault", "lanzas-vault"},
 		{"multiple spaces each become dash", "Lido Finance V2", "lido-finance-v2"},
 		{"adjacent spaces produce adjacent dashes (upstream parity)", "Aave  V2", "aave--v2"},
+		{"empty", "", ""},
 		{"already-canonical untouched", "uniswap-v2", "uniswap-v2"},
 		{"punctuation other than apostrophe survives", "0x_Protocol", "0x_protocol"},
 	}
@@ -45,6 +46,8 @@ func TestFromFilename(t *testing.T) {
 		{"underscore plus collapse", "uniswap__v2.ts", "uniswap-v2"},
 		{"mixed underscore-dash collapse", "foo_-bar.ts", "foo-bar"},
 		{"space treated as dash", "Aave V2.ts", "aave-v2"},
+		{"only an extension", ".ts", ""},
+		{"empty", "", ""},
 		{"no extension lowercased", "WBTC", "wbtc"},
 	}
 	for _, tc := range cases {
