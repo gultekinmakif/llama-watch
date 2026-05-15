@@ -29,3 +29,10 @@ tmp/
 # Environment
 .env
 .*.env
+
+# Plan + runtime data
+/plan.md
+/var/
+/web/out/
+/web/.next/
+/web/node_modules/
