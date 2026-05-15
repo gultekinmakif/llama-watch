@@ -26,3 +26,20 @@ func TestModuleStem(t *testing.T) {
 		})
 	}
 }
+
+func TestIndexAdapters(t *testing.T) {
+	in := []Adapter{
+		{Type: "tvl", RelPath: "DefiLlama-Adapters/projects/a/index.js", AbsPath: "/x/a", Slug: "a"},
+		{Type: "fees", RelPath: "dimension-adapters/fees/a.ts", AbsPath: "/x/fa", Slug: "a"},
+	}
+	idx := indexAdapters(in)
+	if len(idx) != 2 {
+		t.Fatalf("len = %d, want 2", len(idx))
+	}
+	if got := idx["dimension-adapters/fees/a.ts"]; got.Type != "fees" {
+		t.Fatalf("fees lookup miss: %+v", got)
+	}
+	if _, ok := idx["nope"]; ok {
+		t.Fatalf("unexpected hit for missing key")
+	}
+}
