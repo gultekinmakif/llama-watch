@@ -1,5 +1,5 @@
 // 1.1: One-shot orchestrator. Invoked by scripts/refresh.sh.
-// Runs once per cron tick: gate by recent refresh_run, then walk + load + build, then record outcome.
+// Runs once per cron tick: gate by recent refresh_run, then walk + load + build + snapshot, then record outcome.
 package main
 
 import (
@@ -14,11 +14,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gultekinmakif/llama-watch/internal/api"
 	"github.com/gultekinmakif/llama-watch/internal/config"
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 	"github.com/gultekinmakif/llama-watch/internal/dimensions"
 	"github.com/gultekinmakif/llama-watch/internal/logger"
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/snapshot"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +28,7 @@ func main() {
 	intervalSec := flag.Int("interval", 3300, "seconds; skip if the last refresh finished within this window")
 	upstreamDir := flag.String("upstream-dir", "var/upstream", "parent of the cloned upstream repos")
 	protocolsJSON := flag.String("protocols-json", "var/extracted/protocols.json", "path to the bun extractor output")
-	flag.String("snapshot-out", "var/snapshot/snapshot.json", "snapshot writer output path; wired in a later step")
+	snapshotOut := flag.String("snapshot-out", "var/snapshot/snapshot.json", "snapshot writer output path")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -44,6 +46,7 @@ func main() {
 		"interval", *intervalSec,
 		"upstream_dir", *upstreamDir,
 		"protocols_json", *protocolsJSON,
+		"snapshot_out", *snapshotOut,
 	)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -82,7 +85,7 @@ func main() {
 	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
 
 	started := time.Now()
-	stats, phase, err := runPipeline(ctx, db, lg, *upstreamDir, *protocolsJSON)
+	stats, phase, err := runPipeline(ctx, db, lg, *upstreamDir, *protocolsJSON, *snapshotOut)
 	if err != nil {
 		_ = recordFailure(db, lg, started, phase, err)
 		os.Exit(1)
@@ -103,9 +106,9 @@ func main() {
 	)
 }
 
-// runPipeline orchestrates walk + load + build.
-// On failure it returns the phase name alongside the error
-func runPipeline(ctx context.Context, db *gorm.DB, lg *slog.Logger, upstreamDir, protocolsJSON string) (dimensions.BuildStats, string, error) {
+// runPipeline orchestrates walk + load + build + snapshot.
+// On failure it returns the phase name alongside the error.
+func runPipeline(ctx context.Context, db *gorm.DB, lg *slog.Logger, upstreamDir, protocolsJSON, snapshotOut string) (dimensions.BuildStats, string, error) {
 	adapters, err := dimensions.Walk(ctx, upstreamDir)
 	if err != nil {
 		return dimensions.BuildStats{}, "walk", err
@@ -127,6 +130,16 @@ func runPipeline(ctx context.Context, db *gorm.DB, lg *slog.Logger, upstreamDir,
 		"adapter_files", stats.AdapterFiles,
 		"skipped", stats.Skipped,
 	)
+
+	payload, err := api.BuildMatrixSnapshot(ctx, db)
+	if err != nil {
+		return stats, "snapshot", err
+	}
+	if err := snapshot.Snapshot(ctx, snapshotOut, payload); err != nil {
+		return stats, "snapshot", err
+	}
+	lg.Info("snapshot done", "path", snapshotOut, "rows", payload.Total)
+
 	return stats, "", nil
 }
 
