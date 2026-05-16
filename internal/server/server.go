@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gultekinmakif/llama-watch/internal/api"
 	"github.com/gultekinmakif/llama-watch/internal/config"
 	"github.com/gultekinmakif/llama-watch/internal/handlers"
 	"github.com/gultekinmakif/llama-watch/internal/middleware"
@@ -23,6 +24,7 @@ func New(cfg *config.Config) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.Root)
 	mux.HandleFunc("GET /health", handlers.Health)
+	mux.HandleFunc("GET /api/matrix", api.Matrix)
 
 	return &Server{
 		config: cfg,
