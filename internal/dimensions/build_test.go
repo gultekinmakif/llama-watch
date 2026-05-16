@@ -1,6 +1,7 @@
 package dimensions
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -22,6 +23,64 @@ func TestModuleStem(t *testing.T) {
 			got := moduleStem(c.in)
 			if got != c.want {
 				t.Fatalf("moduleStem(%q) = %q, want %q", c.in, got, c.want)
+			}
+		})
+	}
+}
+
+func TestDimensionCandidates(t *testing.T) {
+	cases := []struct {
+		name            string
+		dimType, dimSlug string
+		want            []string
+	}{
+		{
+			name:    "common",
+			dimType: "fees", dimSlug: "aave-v2",
+			want: []string{
+				"dimension-adapters/fees/aave-v2.ts",
+				"dimension-adapters/fees/aave-v2/index.ts",
+			},
+		},
+		{
+			name:    "hyphenated dimType",
+			dimType: "open-interest", dimSlug: "gmx",
+			want: []string{
+				"dimension-adapters/open-interest/gmx.ts",
+				"dimension-adapters/open-interest/gmx/index.ts",
+			},
+		},
+		{
+			name:    "hyphenated slug",
+			dimType: "dexs", dimSlug: "uniswap-v3",
+			want: []string{
+				"dimension-adapters/dexs/uniswap-v3.ts",
+				"dimension-adapters/dexs/uniswap-v3/index.ts",
+			},
+		},
+		{
+			name:    "multi-version sibling slug",
+			dimType: "fees", dimSlug: "uniswap-v2",
+			want: []string{
+				"dimension-adapters/fees/uniswap-v2.ts",
+				"dimension-adapters/fees/uniswap-v2/index.ts",
+			},
+		},
+		{
+			name:    "empty inputs",
+			dimType: "", dimSlug: "",
+			want: []string{
+				"dimension-adapters//.ts",
+				"dimension-adapters///index.ts",
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := dimensionCandidates(tc.dimType, tc.dimSlug)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("dimensionCandidates(%q, %q) = %#v, want %#v",
+					tc.dimType, tc.dimSlug, got, tc.want)
 			}
 		})
 	}
