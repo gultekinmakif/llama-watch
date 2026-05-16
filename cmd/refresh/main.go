@@ -100,28 +100,33 @@ func main() {
 		"skipped", stats.Skipped,
 	)
 
+	row := newRefreshRun(started, stats, nil)
+	if err := db.Create(row).Error; err != nil {
+		slog.Error("refresh_run insert failed", "phase", "record-success", "error", err)
+		return
+	}
+
+	lg.Info("refresh complete",
+		"duration_ms", *row.DurationMs,
+		"protocols", stats.Protocols,
+		"adapter_files", stats.AdapterFiles,
+		"commits", 0,
+	)
+}
+
+// newRefreshRun builds a RefreshRun row with timestamps and duration filled in from started + time.Now().
+func newRefreshRun(started time.Time, stats dimensions.BuildStats, errMsg *string) *models.RefreshRun {
 	finished := time.Now()
 	durMs := int(finished.Sub(started).Milliseconds())
-	row := models.RefreshRun{
+	return &models.RefreshRun{
 		StartedAt:        started,
 		FinishedAt:       &finished,
 		DurationMs:       &durMs,
 		ProtocolsSeen:    stats.Protocols,
 		AdapterFilesSeen: stats.AdapterFiles,
 		CommitsSeen:      0, // commits ingestion lands in a later step
-		Error:            nil,
+		Error:            errMsg,
 	}
-	if err := db.Create(&row).Error; err != nil {
-		slog.Error("refresh_run insert failed", "phase", "record-success", "error", err)
-		return
-	}
-
-	lg.Info("refresh complete",
-		"duration_ms", durMs,
-		"protocols", stats.Protocols,
-		"adapter_files", stats.AdapterFiles,
-		"commits", 0,
-	)
 }
 
 // shouldSkip returns true when the most recent finished refresh_run is younger
@@ -154,19 +159,9 @@ func shouldSkip(db *gorm.DB, interval time.Duration) (bool, time.Time, error) {
 // the gate in shouldSkip still sees forward progress and the operator can
 // audit failures from the table.
 func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string, cause error) {
-	finished := time.Now()
-	durMs := int(finished.Sub(started).Milliseconds())
 	msg := fmt.Sprintf("%s: %v", phase, cause)
-	row := models.RefreshRun{
-		StartedAt:        started,
-		FinishedAt:       &finished,
-		DurationMs:       &durMs,
-		ProtocolsSeen:    0,
-		AdapterFilesSeen: 0,
-		CommitsSeen:      0, // commits ingestion lands in a later step
-		Error:            &msg,
-	}
-	if err := db.Create(&row).Error; err != nil {
+	row := newRefreshRun(started, dimensions.BuildStats{}, &msg)
+	if err := db.Create(row).Error; err != nil {
 		lg.Error("refresh_run failure insert failed",
 			"phase", phase,
 			"cause", cause,
@@ -174,5 +169,5 @@ func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string
 		)
 		return
 	}
-	lg.Error("refresh failed", "phase", phase, "error", cause, "duration_ms", durMs)
+	lg.Error("refresh failed", "phase", phase, "error", cause, "duration_ms", *row.DurationMs)
 }
