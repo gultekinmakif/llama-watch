@@ -10,16 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// listProtocols returns the protocols page ordered by id for deterministic pagination.
+// listProtocols returns the protocols page ordered by q.Sort then id for deterministic pagination.
 // Each Row's Cells is zero-filled across the pinned column set and then flipped to 1
 // for any dimension_kind present in adapter_files for that protocol.
 func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, error) {
 	tx := db.WithContext(ctx).Model(&models.Protocol{})
 	tx = applyMatrixFilters(tx, q)
+	tx = applyMatrixOrder(tx, q)
 
 	var protos []models.Protocol
 	if err := tx.
-		Order("id").
 		Limit(q.Limit).
 		Offset(q.Offset).
 		Find(&protos).Error; err != nil {
@@ -67,6 +67,24 @@ func countProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) (int, error
 		return 0, err
 	}
 	return int(n), nil
+}
+
+// applyMatrixOrder layers the requested sort plus an id tiebreaker onto tx.
+// NULL tvl and NULL category sort last regardless of direction so they cluster.
+// Coverage is computed from a correlated COUNT against adapter_files filtered to non-orphan rows.
+// Empty q.Sort (snapshot path) falls through the switch and yields the id-only ordering.
+func applyMatrixOrder(tx *gorm.DB, q MatrixQuery) *gorm.DB {
+	switch q.Sort {
+	case "name":
+		tx = tx.Order("name " + q.Order)
+	case "category":
+		tx = tx.Order("category " + q.Order + " NULLS LAST")
+	case "tvl":
+		tx = tx.Order("tvl " + q.Order + " NULLS LAST")
+	case "coverage":
+		tx = tx.Order("(SELECT COUNT(*) FROM adapter_files WHERE adapter_files.protocol_id = protocols.id AND adapter_files.orphan = false) " + q.Order)
+	}
+	return tx.Order("id")
 }
 
 // applyMatrixFilters layers the chains / categories / q WHERE clauses onto tx.
