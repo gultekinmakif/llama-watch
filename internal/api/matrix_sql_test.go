@@ -67,6 +67,43 @@ func seedAF(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path strin
 	}
 }
 
+func seedProtocolWithCategory(t *testing.T, tx *gorm.DB, slug, name, category string, chains pq.StringArray) models.Protocol {
+	t.Helper()
+	cat := category
+	p := models.Protocol{Slug: slug, Name: name, Chains: chains, Category: &cat}
+	if err := tx.Create(&p).Error; err != nil {
+		t.Fatalf("seed %q: %v", slug, err)
+	}
+	return p
+}
+
+func seedProtocolWithTVL(t *testing.T, tx *gorm.DB, slug, name string, tvl *float64, chains pq.StringArray) models.Protocol {
+	t.Helper()
+	p := models.Protocol{Slug: slug, Name: name, Chains: chains, TVL: tvl}
+	if err := tx.Create(&p).Error; err != nil {
+		t.Fatalf("seed %q: %v", slug, err)
+	}
+	return p
+}
+
+func slugSet(rows []Row) map[string]struct{} {
+	out := make(map[string]struct{}, len(rows))
+	for _, r := range rows {
+		out[r.Slug] = struct{}{}
+	}
+	return out
+}
+
+func slugList(rows []Row) []string {
+	out := make([]string, len(rows))
+	for i, r := range rows {
+		out[i] = r.Slug
+	}
+	return out
+}
+
+func ptrFloat(f float64) *float64 { return &f }
+
 func TestListProtocols(t *testing.T) {
 	t.Run("empty db", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
@@ -293,24 +330,6 @@ func TestListProtocols(t *testing.T) {
 	})
 }
 
-func seedProtocolWithCategory(t *testing.T, tx *gorm.DB, slug, name, category string, chains pq.StringArray) models.Protocol {
-	t.Helper()
-	cat := category
-	p := models.Protocol{Slug: slug, Name: name, Chains: chains, Category: &cat}
-	if err := tx.Create(&p).Error; err != nil {
-		t.Fatalf("seed %q: %v", slug, err)
-	}
-	return p
-}
-
-func slugSet(rows []Row) map[string]struct{} {
-	out := make(map[string]struct{}, len(rows))
-	for _, r := range rows {
-		out[r.Slug] = struct{}{}
-	}
-	return out
-}
-
 func TestListProtocolsFilters(t *testing.T) {
 	t.Run("chains filter single", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
@@ -505,25 +524,6 @@ func TestListProtocolsFilters(t *testing.T) {
 		})
 	})
 }
-
-func seedProtocolWithTVL(t *testing.T, tx *gorm.DB, slug, name string, tvl *float64, chains pq.StringArray) models.Protocol {
-	t.Helper()
-	p := models.Protocol{Slug: slug, Name: name, Chains: chains, TVL: tvl}
-	if err := tx.Create(&p).Error; err != nil {
-		t.Fatalf("seed %q: %v", slug, err)
-	}
-	return p
-}
-
-func slugList(rows []Row) []string {
-	out := make([]string, len(rows))
-	for i, r := range rows {
-		out[i] = r.Slug
-	}
-	return out
-}
-
-func ptrFloat(f float64) *float64 { return &f }
 
 func TestListProtocolsSort(t *testing.T) {
 	t.Run("sort name asc alphabetical", func(t *testing.T) {

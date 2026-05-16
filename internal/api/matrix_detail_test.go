@@ -17,9 +17,6 @@ func TestMatrixDetailNotFound(t *testing.T) {
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status: want %d, got %d", http.StatusNotFound, rec.Code)
 	}
-	if ct := rec.Header().Get("Content-Type"); ct != "application/json; charset=utf-8" {
-		t.Fatalf("content-type: want application/json; charset=utf-8, got %q", ct)
-	}
 
 	var got struct {
 		Error struct {

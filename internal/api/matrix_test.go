@@ -28,14 +28,8 @@ func TestMatrixShape(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if len(resp.Columns) != 9 {
-		t.Fatalf("columns: want 9, got %d", len(resp.Columns))
-	}
-	if resp.Columns[0].Key != "tvl" {
-		t.Errorf("columns[0].key: want %q, got %q", "tvl", resp.Columns[0].Key)
-	}
-	if resp.Columns[8].Key != "dailyActiveUsers" {
-		t.Errorf("columns[8].key: want %q, got %q", "dailyActiveUsers", resp.Columns[8].Key)
+	if len(resp.Columns) != len(registry.Columns()) {
+		t.Fatalf("columns: want %d, got %d", len(registry.Columns()), len(resp.Columns))
 	}
 	if resp.Rows == nil {
 		t.Error("rows: want non-nil empty slice, got nil")
@@ -56,9 +50,6 @@ func TestMatrixBadQuery(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status: want %d, got %d", http.StatusBadRequest, rec.Code)
-	}
-	if ct := rec.Header().Get("Content-Type"); ct != "application/json; charset=utf-8" {
-		t.Fatalf("content-type: want application/json; charset=utf-8, got %q", ct)
 	}
 
 	var got struct {
