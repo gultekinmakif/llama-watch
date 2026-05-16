@@ -19,6 +19,10 @@ func TestCanonical(t *testing.T) {
 		{"empty", "", ""},
 		{"already-canonical untouched", "uniswap-v2", "uniswap-v2"},
 		{"punctuation other than apostrophe survives", "0x_Protocol", "0x_protocol"},
+		{"unicode lowercases via Go case folding", "Café", "café"},
+		{"all-whitespace becomes all-dashes", "   ", "---"},
+		{"tab survives (only ASCII space is replaced)", "foo\tbar", "foo\tbar"},
+		{"newline survives (only ASCII space is replaced)", "foo\nbar", "foo\nbar"},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -50,6 +54,7 @@ func TestFromFilename(t *testing.T) {
 		{"empty", "", ""},
 		{"no extension lowercased", "WBTC", "wbtc"},
 		{"apostrophe preserved (diverges from Canonical)", "d'cent.ts", "d'cent"},
+		{"multi-dot extension only strips one suffix", "foo.test.ts", "foo.test"},
 	}
 	for _, tc := range cases {
 		tc := tc
