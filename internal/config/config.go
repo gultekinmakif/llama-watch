@@ -1,5 +1,5 @@
 // 0.1: Loads runtime config from environment variables and validates each field.
-// PORT, ENV, DATABASE_URL, LOG_LEVEL, SHUTDOWN_TIMEOUT. Fails fast on unset DATABASE_URL or invalid enum.
+// PORT, ENV, DATABASE_URL, LOG_LEVEL, SHUTDOWN_TIMEOUT. Fails fast on invalid enum or duration.
 package config
 
 import (
@@ -29,7 +29,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:        getEnv("PORT", "3000"),
 		Env:         getEnv("ENV", "dev"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/llama_watch?sslmode=disable"),
 	}
 
 	if _, err := strconv.Atoi(cfg.Port); err != nil {
@@ -38,10 +38,6 @@ func Load() (*Config, error) {
 
 	if cfg.Env != "dev" && cfg.Env != "prod" {
 		return nil, fmt.Errorf("invalid ENV %q: must be a 'dev' or 'prod'", cfg.Env)
-	}
-
-	if cfg.DatabaseURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL is required")
 	}
 
 	logEnv := getEnv("LOG_LEVEL", "debug")

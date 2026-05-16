@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
@@ -14,6 +15,8 @@ import (
 
 // Package handle. Set by New, read by Get.
 var db *gorm.DB
+
+const notInitMsg = "postgres: not initialized"
 
 // New opens the connection and stores the package handle. Call once at startup.
 func New(dsn string) error {
@@ -45,7 +48,7 @@ func New(dsn string) error {
 // Get returns the package handle. Panics if New has not run because that is a programming error.
 func Get() *gorm.DB {
 	if db == nil {
-		panic("postgres: not initialized")
+		panic(notInitMsg)
 	}
 	return db
 }
@@ -61,9 +64,19 @@ func Close() error {
 	return sqlDB.Close()
 }
 
-// dimensionSeed is the static set of dimension kinds the schema expects to
-// exist before any adapter_files rows are inserted. New kinds are added by
-// hand. Keep this list in lockstep with adapter_files.dimension_kind values.
+// Ping verifies the connection is alive.
+func Ping(ctx context.Context) error {
+	if db == nil {
+		return errors.New(notInitMsg)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.PingContext(ctx)
+}
+
+// Static dimension kinds. UPSERTed by Migrate on every boot.
 var dimensionSeed = []models.Dimension{
 	{Kind: "tvl", DisplayName: "TVL"},
 	{Kind: "dailyFees", DisplayName: "Daily Fees"},
@@ -76,9 +89,8 @@ var dimensionSeed = []models.Dimension{
 	{Kind: "dailyActiveUsers", DisplayName: "Daily Active Users"},
 }
 
-// Migrate applies the current schema via AutoMigrate, then UPSERTs the static
-// dimensions rows. Order matters: dimensions and protocols are parents for the
-// FKs in adapter_files; commit_refs FK-references adapter_files.
+// Migrate runs AutoMigrate then UPSERTs dimensionSeed.
+// Order matters for FKs in adapter_files; commit_refs FK-references adapter_files.
 func Migrate() error {
 	if err := db.AutoMigrate(
 		&models.Dimension{},
