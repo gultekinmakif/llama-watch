@@ -89,12 +89,12 @@ uninstall_crontab() {
 
 case "$(uname -s)" in
   Darwin)
-    if [ "$ACTION" = "uninstall" ]; then uninstall_launchd; else install_launchd; fi
+    if [ "$ACTION" = "uninstall" ]; then uninstall_launchd "$@"; else install_launchd "$@"; fi
     ;;
   Linux)
-    if [ "$ACTION" = "uninstall" ]; then uninstall_systemd; else install_systemd; fi
+    if [ "$ACTION" = "uninstall" ]; then uninstall_systemd "$@"; else install_systemd "$@"; fi
     ;;
   *)
-    if [ "$ACTION" = "uninstall" ]; then uninstall_crontab; else install_crontab; fi
+    if [ "$ACTION" = "uninstall" ]; then uninstall_crontab "$@"; else install_crontab "$@"; fi
     ;;
 esac
