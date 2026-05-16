@@ -74,31 +74,11 @@ func main() {
 	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
 
 	started := time.Now()
-
-	adapters, err := dimensions.Walk(*upstreamDir)
+	stats, phase, err := runPipeline(db, lg, *upstreamDir, *protocolsJSON)
 	if err != nil {
-		recordFailure(db, lg, started, "walk", err)
+		recordFailure(db, lg, started, phase, err)
 		return
 	}
-	lg.Info("walk done", "adapters", len(adapters))
-
-	raw, err := dimensions.LoadProtocols(*protocolsJSON)
-	if err != nil {
-		recordFailure(db, lg, started, "load", err)
-		return
-	}
-	lg.Info("load done", "data_files", len(raw))
-
-	stats, err := dimensions.Build(db, raw, adapters, lg)
-	if err != nil {
-		recordFailure(db, lg, started, "build", err)
-		return
-	}
-	lg.Info("build done",
-		"protocols", stats.Protocols,
-		"adapter_files", stats.AdapterFiles,
-		"skipped", stats.Skipped,
-	)
 
 	row := newRefreshRun(started, stats, nil)
 	if err := db.Create(row).Error; err != nil {
@@ -112,6 +92,33 @@ func main() {
 		"adapter_files", stats.AdapterFiles,
 		"commits", 0,
 	)
+}
+
+// runPipeline orchestrates walk + load + build.
+// On failure it returns the phase name alongside the error
+func runPipeline(db *gorm.DB, lg *slog.Logger, upstreamDir, protocolsJSON string) (dimensions.BuildStats, string, error) {
+	adapters, err := dimensions.Walk(upstreamDir)
+	if err != nil {
+		return dimensions.BuildStats{}, "walk", err
+	}
+	lg.Info("walk done", "adapters", len(adapters))
+
+	raw, err := dimensions.LoadProtocols(protocolsJSON)
+	if err != nil {
+		return dimensions.BuildStats{}, "load", err
+	}
+	lg.Info("load done", "data_files", len(raw))
+
+	stats, err := dimensions.Build(db, raw, adapters, lg)
+	if err != nil {
+		return dimensions.BuildStats{}, "build", err
+	}
+	lg.Info("build done",
+		"protocols", stats.Protocols,
+		"adapter_files", stats.AdapterFiles,
+		"skipped", stats.Skipped,
+	)
+	return stats, "", nil
 }
 
 // newRefreshRun builds a RefreshRun row with timestamps and duration filled in from started + time.Now().
