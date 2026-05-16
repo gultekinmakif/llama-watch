@@ -24,10 +24,11 @@ type ParseError struct {
 
 func (e *ParseError) Error() string { return e.Message }
 
-// badRequest wraps msg in a *ParseError with the canonical "bad_request" code.
-// All parser failures route through here so the code field cannot drift.
-func badRequest(msg string) error {
-	return &ParseError{Code: "bad_request", Message: msg}
+// parseFail returns the zero MatrixQuery plus a bad_request *ParseError wrapping msg.
+// All parser failures route through here so the code field and the zero-value
+// invariant on the error path cannot drift.
+func parseFail(msg string) (MatrixQuery, error) {
+	return MatrixQuery{}, &ParseError{Code: "bad_request", Message: msg}
 }
 
 const (
@@ -59,13 +60,13 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 	} else {
 		n, err := strconv.Atoi(limitRaw)
 		if err != nil {
-			return MatrixQuery{}, badRequest("invalid limit: must be an integer")
+			return parseFail("invalid limit: must be an integer")
 		}
 		if n < 1 {
-			return MatrixQuery{}, badRequest("invalid limit: must be at least 1")
+			return parseFail("invalid limit: must be at least 1")
 		}
 		if n > maxLimit {
-			return MatrixQuery{}, badRequest("invalid limit: must be at most 1000")
+			return parseFail("invalid limit: must be at most 1000")
 		}
 		out.Limit = n
 	}
@@ -76,10 +77,10 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 	} else {
 		n, err := strconv.Atoi(offsetRaw)
 		if err != nil {
-			return MatrixQuery{}, badRequest("invalid offset: must be an integer")
+			return parseFail("invalid offset: must be an integer")
 		}
 		if n < 0 {
-			return MatrixQuery{}, badRequest("invalid offset: must be at least 0")
+			return parseFail("invalid offset: must be at least 0")
 		}
 		out.Offset = n
 	}
@@ -100,7 +101,7 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 	} else if _, ok := defaultOrderBySort[sortRaw]; ok {
 		out.Sort = sortRaw
 	} else {
-		return MatrixQuery{}, badRequest("invalid sort: must be one of " + strings.Join(sortWhitelist, ", "))
+		return parseFail("invalid sort: must be one of " + strings.Join(sortWhitelist, ", "))
 	}
 
 	orderRaw := q.Get("order")
@@ -110,7 +111,7 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 	case "asc", "desc":
 		out.Order = orderRaw
 	default:
-		return MatrixQuery{}, badRequest("invalid order: must be asc or desc")
+		return parseFail("invalid order: must be asc or desc")
 	}
 
 	return out, nil
