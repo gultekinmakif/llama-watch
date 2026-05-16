@@ -4,11 +4,17 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type MatrixQuery struct {
-	Limit  int // 1..1000
-	Offset int // >= 0
+	Limit      int      // 1..1000
+	Offset     int      // >= 0
+	Chains     []string // lowercased, deduped, order-preserving; nil if absent
+	Categories []string // case preserved, deduped, order-preserving; nil if absent
+	Q          string   // trimmed; empty if absent
+	Sort       string   // one of: name, tvl, category, coverage; never empty post-parse
+	Order      string   // "asc" or "desc"; never empty post-parse
 }
 
 type ParseError struct {
@@ -23,7 +29,19 @@ const (
 	maxLimit     = 1000
 )
 
-// ParseMatrixQuery parses and validates ?limit and ?offset from r.URL.Query().
+// Whitelist of sort keys. Referenced by both the parser and the error message
+// so they cannot drift apart.
+var sortWhitelist = []string{"name", "tvl", "category", "coverage"}
+
+// Default order per sort key when ?order= is absent.
+var defaultOrderBySort = map[string]string{
+	"name":     "asc",
+	"tvl":      "desc",
+	"category": "asc",
+	"coverage": "desc",
+}
+
+// ParseMatrixQuery parses and validates the /api/matrix query string.
 // Returns a typed MatrixQuery on success, or a *ParseError on validation failure.
 func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 	q := r.URL.Query()
@@ -60,5 +78,62 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 		out.Offset = n
 	}
 
+	if raw, ok := q["chains"]; ok && len(raw) > 0 {
+		out.Chains = parseCSV(raw[0], true)
+	}
+
+	if raw, ok := q["categories"]; ok && len(raw) > 0 {
+		out.Categories = parseCSV(raw[0], false)
+	}
+
+	out.Q = strings.TrimSpace(q.Get("q"))
+
+	sortRaw := q.Get("sort")
+	if sortRaw == "" {
+		out.Sort = "tvl"
+	} else if _, ok := defaultOrderBySort[sortRaw]; ok {
+		out.Sort = sortRaw
+	} else {
+		return MatrixQuery{}, &ParseError{
+			Code:    "bad_request",
+			Message: "invalid sort: must be one of " + strings.Join(sortWhitelist, ", "),
+		}
+	}
+
+	orderRaw := q.Get("order")
+	switch orderRaw {
+	case "":
+		out.Order = defaultOrderBySort[out.Sort]
+	case "asc", "desc":
+		out.Order = orderRaw
+	default:
+		return MatrixQuery{}, &ParseError{Code: "bad_request", Message: "invalid order: must be asc or desc"}
+	}
+
 	return out, nil
+}
+
+// parseCSV splits a CSV value, drops empty entries, and dedupes preserving
+// first occurrence. When lower is true, each entry is lowercased before dedup.
+func parseCSV(raw string, lower bool) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, p := range parts {
+		if lower {
+			p = strings.ToLower(p)
+		}
+		if p == "" {
+			continue
+		}
+		if _, dup := seen[p]; dup {
+			continue
+		}
+		seen[p] = struct{}{}
+		out = append(out, p)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
