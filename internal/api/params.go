@@ -120,6 +120,7 @@ func parseCSV(raw string, lower bool) []string {
 	out := make([]string, 0, len(parts))
 	seen := make(map[string]struct{}, len(parts))
 	for _, p := range parts {
+		p = strings.TrimSpace(p)
 		if lower {
 			p = strings.ToLower(p)
 		}
