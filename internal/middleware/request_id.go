@@ -44,6 +44,7 @@ func init() {
 	if hostname == "" || err != nil {
 		hostname = "localhost"
 	}
+	hostname = strings.NewReplacer("+", "", "/", "").Replace(hostname)
 	var buf [12]byte
 	var b64 string
 	for len(b64) < 10 {
