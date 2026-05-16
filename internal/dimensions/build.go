@@ -6,6 +6,7 @@ package dimensions
 import (
 	"context"
 	"log/slog"
+	"sort"
 	"strings"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
@@ -86,8 +87,13 @@ func buildOne(
 		return err
 	}
 
-	for dimType, dimSlug := range rp.Dimensions {
-		if err := resolveDimension(tx, log, byRel, p.ID, dimType, dimSlug, stats); err != nil {
+	dimTypes := make([]string, 0, len(rp.Dimensions))
+	for k := range rp.Dimensions {
+		dimTypes = append(dimTypes, k)
+	}
+	sort.Strings(dimTypes)
+	for _, dimType := range dimTypes {
+		if err := resolveDimension(tx, log, byRel, p.ID, dimType, rp.Dimensions[dimType], stats); err != nil {
 			return err
 		}
 	}

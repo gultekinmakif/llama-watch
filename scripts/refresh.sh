@@ -20,6 +20,7 @@ mkdir -p "$UPSTREAM_DIR"
 for repo in $REPOS; do
   if [ -d "$UPSTREAM_DIR/$repo/.git" ]; then
     git -C "$UPSTREAM_DIR/$repo" fetch
+    # WARNING: reset --hard '@{u}' WILL ABSOLUTELY DESTROY any local commits in var/upstream/<repo>/ silently.
     git -C "$UPSTREAM_DIR/$repo" reset --hard '@{u}'
   else
     git clone --single-branch --depth 1 "https://github.com/DefiLlama/$repo.git" "$UPSTREAM_DIR/$repo"
