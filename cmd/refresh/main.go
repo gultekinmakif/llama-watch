@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/gultekinmakif/llama-watch/internal/config"
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
@@ -14,13 +15,13 @@ import (
 )
 
 func main() {
-	upstreamDir := "var/upstream"
-	protocolsJSON := "var/extracted/protocols.json"
+	upstreamDir := flag.String("upstream-dir", "var/upstream", "parent of the cloned upstream repos")
+	protocolsJSON := flag.String("protocols-json", "var/extracted/protocols.json", "path to the bun extractor output")
 	flag.Parse()
 
 	cfg, err := config.Load()
 
-	if err := postgres.New(*cfg.DatabaseURL); err != nil {
+	if err := postgres.New(cfg.DatabaseURL); err != nil {
 		return
 	}
 	defer postgres.Close()
@@ -31,12 +32,14 @@ func main() {
 
 	db := postgres.Get()
 
-	adapters, err := dimensions.Walk(upstreamDir)
+	started := time.Now()
+
+	adapters, err := dimensions.Walk(*upstreamDir)
 	if err != nil {
 		return
 	}
 
-	raw, err := dimensions.LoadProtocols(protocolsJSON)
+	raw, err := dimensions.LoadProtocols(*protocolsJSON)
 	if err != nil {
 		return
 	}
@@ -51,7 +54,12 @@ func main() {
 		return
 	}
 
+	finished := time.Now()
+	durMs := int(finished.Sub(started).Milliseconds())
 	row := models.RefreshRun{
+		StartedAt:        started,
+		FinishedAt:       &finished,
+		DurationMs:       &durMs,
 		ProtocolsSeen:    stats.Protocols,
 		AdapterFilesSeen: stats.AdapterFiles,
 		CommitsSeen:      0,
