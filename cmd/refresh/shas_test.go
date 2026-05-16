@@ -29,6 +29,30 @@ func TestShasUnchanged(t *testing.T) {
 			last:    map[string]string{"a": "1", "c": "2"},
 			want:    false,
 		},
+		{
+			name:    "last empty",
+			current: map[string]string{"a": "1"},
+			last:    map[string]string{},
+			want:    false,
+		},
+		{
+			name:    "last nil",
+			current: map[string]string{"a": "1"},
+			last:    nil,
+			want:    false,
+		},
+		{
+			name:    "current empty",
+			current: map[string]string{},
+			last:    map[string]string{"a": "1"},
+			want:    false,
+		},
+		{
+			name:    "both nil",
+			current: nil,
+			last:    nil,
+			want:    false,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
