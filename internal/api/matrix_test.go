@@ -46,6 +46,36 @@ func TestMatrixShape(t *testing.T) {
 	}
 }
 
+func TestMatrixBadQuery(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/matrix?limit=2000", nil)
+
+	Matrix(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status: want %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json; charset=utf-8" {
+		t.Fatalf("content-type: want application/json; charset=utf-8, got %q", ct)
+	}
+
+	var got struct {
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if got.Error.Code != "bad_request" {
+		t.Errorf("code: want %q, got %q", "bad_request", got.Error.Code)
+	}
+	if got.Error.Message == "" {
+		t.Error("message: want non-empty, got empty")
+	}
+}
+
 func TestMatrixColumnsStableAcrossCalls(t *testing.T) {
 	call := func() []Column {
 		rec := httptest.NewRecorder()
