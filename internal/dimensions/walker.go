@@ -114,7 +114,7 @@ func collect(
 		if !isAdapterExt(name) {
 			return nil
 		}
-		return appendAdapter(&out, upstreamDir, path, typeFn(path), name)
+		return appendAdapter(&out, upstreamDir, path, typeFn(path))
 	})
 	if err != nil {
 		return nil, err
@@ -122,28 +122,19 @@ func collect(
 	return out, nil
 }
 
-func appendAdapter(out *[]Adapter, upstreamDir, absPath, typeName, name string) error {
+func appendAdapter(out *[]Adapter, upstreamDir, absPath, typeName string) error {
 	rel, err := filepath.Rel(upstreamDir, absPath)
 	if err != nil {
 		return err
 	}
+	relSlash := filepath.ToSlash(rel)
 	*out = append(*out, Adapter{
 		Type:    typeName,
-		RelPath: filepath.ToSlash(rel),
+		RelPath: relSlash,
 		AbsPath: absPath,
-		Slug:    resolveSlug(absPath, name),
+		Slug:    pathSlug(relSlash),
 	})
 	return nil
-}
-
-// resolveSlug: index.{ts,js} resolves to the parent directory's basename;
-// anything else uses the file basename itself.
-func resolveSlug(absPath, name string) string {
-	stem := strings.TrimSuffix(strings.TrimSuffix(name, ".ts"), ".js")
-	if strings.EqualFold(stem, "index") {
-		return FromFilename(filepath.Base(filepath.Dir(absPath)))
-	}
-	return FromFilename(name)
 }
 
 // isAdapterExt accepts .ts and .js but rejects .d.ts (declaration files).

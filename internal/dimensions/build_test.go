@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestModuleStem(t *testing.T) {
+func TestPathSlug(t *testing.T) {
 	cases := []struct {
 		in, want string
 	}{
@@ -17,12 +17,14 @@ func TestModuleStem(t *testing.T) {
 		{"", ""},
 		{"a/b/index.js", "b"},
 		{"trailing/", "trailing"},
+		{"Uniswap_V2/index.js", "uniswap-v2"},
+		{"Foo Bar.ts", "foo-bar"},
 	}
 	for _, c := range cases {
 		t.Run(c.in, func(t *testing.T) {
-			got := moduleStem(c.in)
+			got := pathSlug(c.in)
 			if got != c.want {
-				t.Fatalf("moduleStem(%q) = %q, want %q", c.in, got, c.want)
+				t.Fatalf("pathSlug(%q) = %q, want %q", c.in, got, c.want)
 			}
 		})
 	}

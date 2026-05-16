@@ -1,7 +1,10 @@
 // dimensions package: joins upstream adapter clones with the extracted protocols JSON.
 package dimensions
 
-import "strings"
+import (
+	"path"
+	"strings"
+)
 
 // Canonical mirrors defillama-server/defi/src/utils/sluggify.ts:3 (sluggifyString)
 func Canonical(name string) string {
@@ -9,6 +12,21 @@ func Canonical(name string) string {
 	s = strings.ReplaceAll(s, " ", "-")
 	s = strings.ReplaceAll(s, "'", "")
 	return s
+}
+
+// pathSlug extracts the canonical slug from a slash-form path. If the
+func pathSlug(p string) string {
+	p = strings.TrimRight(p, "/")
+	if p == "" {
+		return ""
+	}
+	base := path.Base(p)
+	if strings.TrimSuffix(strings.TrimSuffix(base, ".ts"), ".js") == "index" {
+		if parent := path.Dir(p); parent != "." && parent != "/" {
+			return FromFilename(path.Base(parent))
+		}
+	}
+	return FromFilename(base)
 }
 
 // FromFilename is the default fallback.

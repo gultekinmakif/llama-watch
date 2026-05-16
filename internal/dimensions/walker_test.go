@@ -332,7 +332,7 @@ func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	}
 }
 
-// Locks that filepath.WalkDir does not follow symlinks, so a self-referencing dir cannot loop.
+// Checks if filepath.WalkDir follows symlinks, so a self-referencing dir cannot loop.
 func TestWalk_SymlinkLoopDoesNotRecurse(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("symlink creation requires admin or developer mode on Windows")

@@ -5,7 +5,6 @@ package dimensions
 
 import (
 	"log/slog"
-	"path"
 	"strings"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
@@ -155,7 +154,7 @@ func resolveTVL(
 		DimensionID:   nil,
 		Repo:          "defillama-adapters",
 		Path:          "projects/" + module,
-		Slug:          moduleStem(module),
+		Slug:          pathSlug(module),
 		DimensionKind: "tvl",
 		Orphan:        false,
 	}
@@ -284,22 +283,3 @@ func normalizeChains(chains []string) pq.StringArray {
 	return out
 }
 
-// moduleStem extracts the canonical stem from a module reference like
-// "uniswap-v2/index.js" or "wbtc.js". It is intentionally lighter than
-// FromFilename: no separator normalization, just basename + extension strip.
-func moduleStem(module string) string {
-	s := strings.TrimRight(module, "/")
-	if s == "" {
-		return ""
-	}
-	base := path.Base(s)
-	base = strings.TrimSuffix(base, ".js")
-	base = strings.TrimSuffix(base, ".ts")
-	if base == "index" {
-		parent := path.Dir(s)
-		if parent != "." && parent != "/" {
-			return path.Base(parent)
-		}
-	}
-	return base
-}
