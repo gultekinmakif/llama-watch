@@ -15,6 +15,7 @@ func writeHeaders(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 }
+
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	writeHeaders(w, status)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
