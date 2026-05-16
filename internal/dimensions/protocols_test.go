@@ -92,7 +92,7 @@ func TestLoadProtocols(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := LoadProtocols(tc.path)
+			got, err := LoadProtocols(t.Context(), tc.path)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("want error, got nil")

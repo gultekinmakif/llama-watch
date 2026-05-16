@@ -30,7 +30,7 @@ func indexByRel(cs []Adapter) map[string]Adapter {
 
 func TestWalk_MissingUpstreamDirs(t *testing.T) {
 	root := t.TempDir()
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk on empty dir: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestWalk_MissingUpstreamDirs(t *testing.T) {
 func TestWalk_PartialMissing(t *testing.T) {
 	root := t.TempDir()
 	testutil.WriteFile(t, root, "dimension-adapters/fees/wbtc.ts", "")
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestWalk_TVLShapes(t *testing.T) {
 	// projects/<slug>/index.ts
 	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/aave-v2/index.ts", "")
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestWalk_DimensionShapes(t *testing.T) {
 	testutil.WriteFile(t, root, "dimension-adapters/options/lyra.ts", "")
 	testutil.WriteFile(t, root, "dimension-adapters/open-interest/gmx/index.ts", "")
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -154,7 +154,7 @@ func TestWalk_MultiVersionSiblings(t *testing.T) {
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/"+s+"/index.js", "")
 	}
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestWalk_Skips(t *testing.T) {
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/.github/workflows/ci.yml", "")
 		testutil.WriteFile(t, root, "dimension-adapters/.git/HEAD", "")
 		testutil.WriteFile(t, root, "dimension-adapters/fees/.hidden/sneaky.ts", "")
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -194,7 +194,7 @@ func TestWalk_Skips(t *testing.T) {
 		root := t.TempDir()
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo/node_modules/lib/a.ts", "")
 		testutil.WriteFile(t, root, "dimension-adapters/fees/node_modules/dep/index.ts", "")
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -207,7 +207,7 @@ func TestWalk_Skips(t *testing.T) {
 		root := t.TempDir()
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/types.d.ts", "")
 		testutil.WriteFile(t, root, "dimension-adapters/fees/types.d.ts", "")
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -221,7 +221,7 @@ func TestWalk_Skips(t *testing.T) {
 		for _, excluded := range []string{"helper", "treasury", "entities", "config", "stacks", "test"} {
 			testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/"+excluded+"/util.ts", "")
 		}
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -234,7 +234,7 @@ func TestWalk_Skips(t *testing.T) {
 		root := t.TempDir()
 		testutil.WriteFile(t, root, "dimension-adapters/fees/README.md", "")
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/foo/package.json", "")
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -256,7 +256,7 @@ func TestWalk_Skips(t *testing.T) {
 		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/helper/util.ts", "")
 		testutil.WriteFile(t, root, "dimension-adapters/fees/README.md", "")
 
-		got, err := Walk(root)
+		got, err := Walk(t.Context(), root)
 		if err != nil {
 			t.Fatalf("Walk: %v", err)
 		}
@@ -287,7 +287,7 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 	testutil.WriteFile(t, root, "dimension-adapters/fees/Uniswap_V2.ts", "")
 	testutil.WriteFile(t, root, "dimension-adapters/dexs/Foo_Bar/index.ts", "")
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -323,7 +323,7 @@ func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	testutil.Mkdir(t, root, "dimension-adapters/fees")
 	testutil.Mkdir(t, root, "dimension-adapters/dexs")
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
@@ -350,7 +350,7 @@ func TestWalk_SymlinkLoopDoesNotRecurse(t *testing.T) {
 	// One real file so the walker has something to find.
 	testutil.WriteFile(t, root, "dimension-adapters/fees/wbtc.ts", "")
 
-	got, err := Walk(root)
+	got, err := Walk(t.Context(), root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}

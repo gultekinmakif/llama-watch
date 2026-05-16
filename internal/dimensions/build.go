@@ -4,6 +4,7 @@
 package dimensions
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 
@@ -29,15 +30,18 @@ type BuildStats struct {
 // raw is the LoadProtocols output keyed by source data file ("data1", ..., "data6").
 // adapters is the Walk output of every adapter file on disk.
 // log may be nil; the default slog handler is used in that case.
-func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *slog.Logger) (BuildStats, error) {
+// ctx is bound to the gorm session so cancellation propagates into every query
+// and is also re-checked at the top of each per-protocol iteration.
+func Build(ctx context.Context, db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *slog.Logger) (BuildStats, error) {
 	if log == nil {
 		log = slog.Default()
 	}
 
 	byRel := indexAdapters(adapters)
+	cdb := db.WithContext(ctx)
 
 	var dims map[string]uint64
-	if err := db.Transaction(func(tx *gorm.DB) error {
+	if err := cdb.Transaction(func(tx *gorm.DB) error {
 		var err error
 		dims, err = loadDimensionIDs(tx)
 		return err
@@ -46,10 +50,13 @@ func Build(db *gorm.DB, raw map[string][]RawProtocol, adapters []Adapter, log *s
 	}
 
 	var stats BuildStats
-	err := db.Transaction(func(tx *gorm.DB) error {
+	err := cdb.Transaction(func(tx *gorm.DB) error {
 		for src, list := range raw {
 			dataFile := src + ".ts"
 			for _, rp := range list {
+				if cerr := ctx.Err(); cerr != nil {
+					return cerr
+				}
 				if err := buildOne(tx, log, byRel, dims, rp, dataFile, &stats); err != nil {
 					return err
 				}
@@ -282,4 +289,3 @@ func normalizeChains(chains []string) pq.StringArray {
 	}
 	return out
 }
-

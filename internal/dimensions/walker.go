@@ -1,6 +1,7 @@
 package dimensions
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 	"os"
@@ -29,18 +30,19 @@ var excludedChilds = map[string]struct{}{
 
 // Walk enumerates adapter file candidates under upstreamDir.
 // upstreamDir is the parent of the two repo clones (var/upstream/).
-func Walk(upstreamDir string) ([]Adapter, error) {
+// ctx is checked between filesystem entries.
+func Walk(ctx context.Context, upstreamDir string) ([]Adapter, error) {
 	out := make([]Adapter, 0, 1024)
 
 	tvlRoot := filepath.Join(upstreamDir, "DefiLlama-Adapters", "projects")
-	tvl, err := collect(upstreamDir, tvlRoot, tvlTypeFn, tvlSkipChild)
+	tvl, err := collect(ctx, upstreamDir, tvlRoot, tvlTypeFn, tvlSkipChild)
 	if err != nil {
 		return nil, err
 	}
 	out = append(out, tvl...)
 
 	dimsRoot := filepath.Join(upstreamDir, "dimension-adapters")
-	dims, err := collect(upstreamDir, dimsRoot, dimsTypeFn(dimsRoot), nil)
+	dims, err := collect(ctx, upstreamDir, dimsRoot, dimsTypeFn(dimsRoot), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +75,7 @@ func dimsTypeFn(root string) func(absPath string) string {
 // collect walks a single adapter subtree rooted at root and appends one
 // Adapter per qualifying file.
 func collect(
+	ctx context.Context,
 	upstreamDir, root string,
 	typeFn func(absPath string) string,
 	skipChild func(dirName string, depth int) bool,
@@ -86,6 +89,9 @@ func collect(
 
 	var out []Adapter
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if cerr := ctx.Err(); cerr != nil {
+			return cerr
+		}
 		if err != nil {
 			return err
 		}

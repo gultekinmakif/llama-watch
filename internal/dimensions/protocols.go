@@ -3,6 +3,7 @@
 package dimensions
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 )
@@ -17,7 +18,10 @@ type RawProtocol struct {
 }
 
 // LoadProtocols decodes the extractor output. The map key is the source data file (e.g. "data1").
-func LoadProtocols(jsonPath string) (map[string][]RawProtocol, error) {
+func LoadProtocols(ctx context.Context, jsonPath string) (map[string][]RawProtocol, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	f, err := os.Open(jsonPath)
 	if err != nil {
 		return nil, err

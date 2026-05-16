@@ -2,11 +2,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"log/slog"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gultekinmakif/llama-watch/internal/config"
@@ -41,6 +44,9 @@ func main() {
 		"protocols_json", *protocolsJSON,
 	)
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	if err := postgres.New(cfg.DatabaseURL); err != nil {
 		slog.Error("database connection error", "error", err)
 		return
@@ -74,7 +80,7 @@ func main() {
 	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
 
 	started := time.Now()
-	stats, phase, err := runPipeline(db, lg, *upstreamDir, *protocolsJSON)
+	stats, phase, err := runPipeline(ctx, db, lg, *upstreamDir, *protocolsJSON)
 	if err != nil {
 		recordFailure(db, lg, started, phase, err)
 		return
@@ -90,26 +96,27 @@ func main() {
 		"duration_ms", *row.DurationMs,
 		"protocols", stats.Protocols,
 		"adapter_files", stats.AdapterFiles,
+		"adapter_files_skipped", stats.Skipped,
 		"commits", 0,
 	)
 }
 
 // runPipeline orchestrates walk + load + build.
 // On failure it returns the phase name alongside the error
-func runPipeline(db *gorm.DB, lg *slog.Logger, upstreamDir, protocolsJSON string) (dimensions.BuildStats, string, error) {
-	adapters, err := dimensions.Walk(upstreamDir)
+func runPipeline(ctx context.Context, db *gorm.DB, lg *slog.Logger, upstreamDir, protocolsJSON string) (dimensions.BuildStats, string, error) {
+	adapters, err := dimensions.Walk(ctx, upstreamDir)
 	if err != nil {
 		return dimensions.BuildStats{}, "walk", err
 	}
 	lg.Info("walk done", "adapters", len(adapters))
 
-	raw, err := dimensions.LoadProtocols(protocolsJSON)
+	raw, err := dimensions.LoadProtocols(ctx, protocolsJSON)
 	if err != nil {
 		return dimensions.BuildStats{}, "load", err
 	}
 	lg.Info("load done", "data_files", len(raw))
 
-	stats, err := dimensions.Build(db, raw, adapters, lg)
+	stats, err := dimensions.Build(ctx, db, raw, adapters, lg)
 	if err != nil {
 		return dimensions.BuildStats{}, "build", err
 	}
@@ -126,13 +133,14 @@ func newRefreshRun(started time.Time, stats dimensions.BuildStats, errMsg *strin
 	finished := time.Now()
 	durMs := int(finished.Sub(started).Milliseconds())
 	return &models.RefreshRun{
-		StartedAt:        started,
-		FinishedAt:       &finished,
-		DurationMs:       &durMs,
-		ProtocolsSeen:    stats.Protocols,
-		AdapterFilesSeen: stats.AdapterFiles,
-		CommitsSeen:      0, // commits ingestion lands in a later step
-		Error:            errMsg,
+		StartedAt:           started,
+		FinishedAt:          &finished,
+		DurationMs:          &durMs,
+		ProtocolsSeen:       stats.Protocols,
+		AdapterFilesSeen:    stats.AdapterFiles,
+		AdapterFilesSkipped: stats.Skipped,
+		CommitsSeen:         0, // commits ingestion lands in a later step
+		Error:               errMsg,
 	}
 }
 
