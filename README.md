@@ -6,8 +6,6 @@ A Go cron parses [DefiLlama/DefiLlama-Adapters](https://github.com/DefiLlama/Def
 
 ## Configuration
 
-Server (`bin/server`) reads env vars at boot. Refresh script (`scripts/refresh.sh`) reads `.env` if present, else falls back to the defaults below.
-
 | Var | Used by | Default | Notes |
 |---|---|---|---|
 | `DATABASE_URL` | server, refresh | `postgres://postgres:postgres@localhost:5432/llama_watch?sslmode=disable` | Override for non-default DSN. |
@@ -24,41 +22,41 @@ Server (`bin/server`) reads env vars at boot. Refresh script (`scripts/refresh.s
 
 ## Quick start
 
+### 1. Postgres
+
 ```sh
-# 1. Postgres (any path)
 docker run -d --name llama-watch-db -p 5432:5432 \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=llama_watch \
   postgres:17
 ```
 
-### List all the commands:
+### 2. Server
+
+Auto-migrates on boot. `make dev` swaps in air-powered hot reload.
+
 ```sh
-
-make help 
-
+make run
 ```
 
-### Server (auto-migrates on boot)
-```sh
-make run                   
-```
-### or for hot reload via air:
-```sh
-make dev
-```
+### 3. Refresh
 
-### Refresh (clones the three upstream repos, runs bun + bin/refresh)
+Clones the three upstream repos and runs the bun extractor + `bin/refresh` once.
+
 ```sh
 make refresh
 ```
 
-### Tests
+### 4. Tests
+
 ```sh
-make test                              # unit tests only; api/* tests self-skip without TEST_DATABASE_URL
+make test
+# Integration tests require Postgres on TEST_DATABASE_URL:
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/llama_watch_test?sslmode=disable make test
 ```
 
-The api package's tests open the singleton via `postgres.New`, run `Migrate`, and isolate each test inside a transaction with `Rollback` at the end.
+The api package opens the singleton via `postgres.New`, runs `Migrate`, and rolls back each test's transaction at the end.
+
+> Run `make help` for the full command list.
 
 ## Cron Job
 
