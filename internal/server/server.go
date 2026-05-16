@@ -1,4 +1,5 @@
-// HTTP server bootstrap. Mounts routes, applies middleware, handles graceful shutdown.
+// 2.2: HTTP server bootstrap. Mounts routes, applies middleware, handles graceful shutdown.
+// Middleware chain at request time: 2.3 recoverer then 2.4 request_id then 2.5 logger then 2.6 handler.
 package server
 
 import (

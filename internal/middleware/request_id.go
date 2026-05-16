@@ -1,3 +1,4 @@
+// 2.4: Assigns or preserves X-Request-ID. Sets it on the request context for downstream layers.
 package middleware
 
 import (

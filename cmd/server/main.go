@@ -1,4 +1,5 @@
-// HTTP server entry point. Wires config, db, logger, then serves internal/server.
+// 2.1: HTTP server entry point. Wires config, db, logger, then serves internal/server.
+// Long-running. Reads what stage 1 wrote.
 package main
 
 import (

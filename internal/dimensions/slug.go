@@ -1,3 +1,4 @@
+// 1.6: Slug canonicalization helpers used throughout stage 1.
 // dimensions package: joins upstream adapter clones with the extracted protocols JSON.
 package dimensions
 

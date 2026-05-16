@@ -1,4 +1,5 @@
-// Postgres database
+// 0.3: Postgres handle, AutoMigrate, and the static dimensions seed.
+// Shared by cmd/refresh (writes) and cmd/server (reads). Migrate runs at every boot.
 package postgres
 
 import (

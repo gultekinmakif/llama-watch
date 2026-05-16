@@ -1,6 +1,6 @@
-// Pass 0 of the slug-join algorithm.
-// Reads the extracted protocols JSON plus the walker output, and writes
-// protocols and adapter_files rows inside one transaction.
+// 1.4: Pass 0 of the slug-join algorithm.
+// Third pipeline phase. Joins the extracted protocols JSON with the walker output
+// and writes protocols and adapter_files rows inside one transaction.
 package dimensions
 
 import (

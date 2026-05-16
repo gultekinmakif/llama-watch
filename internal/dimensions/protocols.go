@@ -1,5 +1,5 @@
-// LoadProtocols reads the JSON file produced by tools/extract-protocols.ts
-// keyed by source data file (data1, data2, ..., data6).
+// 1.3: Decodes the JSON file produced by tools/extract-protocols.ts.
+// Second pipeline phase. Returns the map keyed by source data file (data1..data6).
 package dimensions
 
 import (

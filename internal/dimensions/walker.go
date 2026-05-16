@@ -1,4 +1,5 @@
-// Walks the two upstream clones and emits one Adapter per candidate file.
+// 1.2: Walks the two upstream clones and emits one Adapter per candidate file.
+// First pipeline phase. Reads only filesystem; produces an in-memory list for the joiner.
 package dimensions
 
 import (

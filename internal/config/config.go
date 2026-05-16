@@ -1,4 +1,5 @@
-// Loads runtime config from environment variables and validates each field.
+// 0.1: Loads runtime config from environment variables and validates each field.
+// PORT, ENV, DATABASE_URL, LOG_LEVEL, SHUTDOWN_TIMEOUT. Fails fast on unset DATABASE_URL or invalid enum.
 package config
 
 import (

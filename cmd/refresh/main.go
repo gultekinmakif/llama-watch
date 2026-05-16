@@ -1,4 +1,5 @@
-// One-shot orchestrator. Invoked by scripts/refresh.sh.
+// 1.1: One-shot orchestrator. Invoked by scripts/refresh.sh.
+// Runs once per cron tick: gate by recent refresh_run, then walk + load + build, then record outcome.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// 2.3: Outermost middleware. Catches panics, returns 500, logs stack + request_id.
 package middleware
 
 import (

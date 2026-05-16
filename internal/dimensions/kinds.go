@@ -1,4 +1,4 @@
-// kinds.go: detect sub-metric keys in a dimension-adapter source via word-boundary regex.
+// 1.5: Sub-step of 1.4. Detect sub-metric keys in a dimension-adapter source via word-boundary regex.
 // TODO: v1 tolerates false positives from comments and strings; the matrix is presence/absence.
 package dimensions
 
