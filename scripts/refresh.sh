@@ -40,7 +40,7 @@ bin/refresh \
 
 # 6. Build the frontend and atomic-swap web/out/. Skip when web/ is unscaffolded.
 if [ -f web/package.json ]; then
-  ( cd web && pnpm build )
+  ( cd web && bun run build )
   # Phase 2 may emit directly to web/out/; revisit this swap when the real build path lands.
   rm -rf web/out.old
   [ -d web/out ] && mv web/out web/out.old
