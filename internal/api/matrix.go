@@ -92,8 +92,6 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cells population lands in a follow-up step; rows already carry a non-nil
-	// empty Cells map per row from listProtocols.
 	resp := MatrixResponse{
 		Columns: ColumnList(),
 		Rows:    rows,

@@ -68,8 +68,8 @@ func fetchCells(ctx context.Context, db *gorm.DB, protoIDs []uint64) (map[uint64
 		return map[uint64]map[string]int{}, nil
 	}
 	type pair struct {
-		ProtocolID    uint64
-		DimensionKind string
+		ProtocolID    uint64 `gorm:"column:protocol_id"`
+		DimensionKind string `gorm:"column:dimension_kind"`
 	}
 	var pairs []pair
 	if err := db.WithContext(ctx).
