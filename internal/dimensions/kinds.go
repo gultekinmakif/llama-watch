@@ -5,27 +5,14 @@ package dimensions
 import (
 	"os"
 	"regexp"
-)
 
-// metricsLookup maps a dimension-adapter directory to candidate sub-metric kinds per file
-var metricsLookup = map[string][]string{
-	"fees":                   {"dailyFees", "dailyRevenue"},
-	"options":                {"dailyNotionalVolume", "dailyPremiumVolume"},
-	"aggregator-options":     {"dailyNotionalVolume", "dailyPremiumVolume"},
-	"dexs":                   {"dailyVolume"},
-	"aggregators":            {"dailyVolume"},
-	"aggregator-derivatives": {"dailyVolume"},
-	"derivatives":            {"dailyVolume"},
-	"bridge-aggregators":     {"dailyBridgeVolume"},
-	"open-interest":          {"openInterestAtEnd"},
-	"active-users":           {"dailyActiveUsers"},
-	"users":                  {"dailyActiveUsers"},
-}
+	"github.com/gultekinmakif/llama-watch/internal/registry"
+)
 
 // detectionRx is the word-boundary regex per kind, compiled.
 var detectionRx = func() map[string]*regexp.Regexp {
 	seen := map[string]*regexp.Regexp{}
-	for _, kinds := range metricsLookup {
+	for _, kinds := range registry.AllMetricsByDimension() {
 		for _, k := range kinds {
 			if _, ok := seen[k]; ok {
 				continue
@@ -38,8 +25,8 @@ var detectionRx = func() map[string]*regexp.Regexp {
 
 // DetectKinds returns the sub-metric kinds absPath exports. Unknown dimType returns nil.
 func DetectKinds(absPath, dimType string) ([]string, error) {
-	cands, ok := metricsLookup[dimType]
-	if !ok {
+	cands := registry.MetricsFor(dimType)
+	if cands == nil {
 		return nil, nil
 	}
 	contents, err := os.ReadFile(absPath)
