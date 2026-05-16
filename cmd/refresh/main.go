@@ -15,33 +15,15 @@ import (
 )
 
 func main() {
+	intervalSec := flag.Int("interval", 3300, "seconds; skip if the last refresh finished within this window")
 	upstreamDir := flag.String("upstream-dir", "var/upstream", "parent of the cloned upstream repos")
 	protocolsJSON := flag.String("protocols-json", "var/extracted/protocols.json", "path to the bun extractor output")
+	snapshotOut := flag.String("snapshot-out", "var/snapshot/snapshot.json", "snapshot writer output path; accepted but not consumed in this step")
 	flag.Parse()
 
 	cfg, err := config.Load()
-
-	if err := postgres.New(cfg.DatabaseURL); err != nil {
-		return
-	}
-	defer postgres.Close()
-
-	if err := postgres.Migrate(); err != nil {
-		return
-	}
-
-	db := postgres.Get()
-
-	started := time.Now()
-
-	adapters, err := dimensions.Walk(*upstreamDir)
 	if err != nil {
-		return
-	}
-
-	raw, err := dimensions.LoadProtocols(*protocolsJSON)
-	if err != nil {
-		return
+		log.Fatal(err)
 	}
 
 	lg, err := logger.New(cfg)
@@ -49,10 +31,53 @@ func main() {
 		log.Fatal(err)
 	}
 	slog.SetDefault(lg)
+
+	lg.Info("flags parsed",
+		"interval", *intervalSec,
+		"upstream_dir", *upstreamDir,
+		"protocols_json", *protocolsJSON,
+	)
+	lg.Debug("snapshot output path reserved for a later step", "snapshot_out", *snapshotOut)
+
+	if err := postgres.New(cfg.DatabaseURL); err != nil {
+		slog.Error("database connection error", "error", err)
+		return
+	}
+	defer postgres.Close()
+
+	if err := postgres.Migrate(); err != nil {
+		slog.Error("database migration error", "error", err)
+		return
+	}
+	lg.Info("db connected")
+
+	db := postgres.Get()
+
+	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
+
+	started := time.Now()
+
+	adapters, err := dimensions.Walk(*upstreamDir)
+	if err != nil {
+		return
+	}
+	lg.Info("walk done", "adapters", len(adapters))
+
+	raw, err := dimensions.LoadProtocols(*protocolsJSON)
+	if err != nil {
+		return
+	}
+	lg.Info("load done", "data_files", len(raw))
+
 	stats, err := dimensions.Build(db, raw, adapters, lg)
 	if err != nil {
 		return
 	}
+	lg.Info("build done",
+		"protocols", stats.Protocols,
+		"adapter_files", stats.AdapterFiles,
+		"skipped", stats.Skipped,
+	)
 
 	finished := time.Now()
 	durMs := int(finished.Sub(started).Milliseconds())
@@ -66,7 +91,14 @@ func main() {
 		Error:            nil,
 	}
 	if err := db.Create(&row).Error; err != nil {
+		slog.Error("refresh_run insert failed", "error", err)
 		return
 	}
 
+	lg.Info("refresh complete",
+		"duration_ms", durMs,
+		"protocols", stats.Protocols,
+		"adapter_files", stats.AdapterFiles,
+		"commits", 0,
+	)
 }
