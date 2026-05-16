@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+
+	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 )
 
 type Column struct {
@@ -52,7 +54,7 @@ func ColumnList() []Column {
 
 // Matrix serves GET /api/matrix.
 func Matrix(w http.ResponseWriter, r *http.Request) {
-	_, err := ParseMatrixQuery(r)
+	q, err := ParseMatrixQuery(r)
 	if err != nil {
 		status := http.StatusInternalServerError
 		code := "internal"
@@ -68,12 +70,34 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": message}})
 		return
 	}
-	// Cells and rows population lands in a follow-up step; for now return the
-	// pinned columns with an empty rows slice once the query has validated.
+
+	db := postgres.Get()
+	ctx := r.Context()
+
+	total, err := countProtocols(ctx, db)
+	if err != nil {
+		slog.Error("matrix count failed", "error", err)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
+		return
+	}
+
+	rows, err := listProtocols(ctx, db, q.Limit, q.Offset)
+	if err != nil {
+		slog.Error("matrix list failed", "error", err)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
+		return
+	}
+
+	// Cells population lands in a follow-up step; rows already carry a non-nil
+	// empty Cells map per row from listProtocols.
 	resp := MatrixResponse{
 		Columns: ColumnList(),
-		Rows:    []Row{},
-		Total:   0,
+		Rows:    rows,
+		Total:   total,
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
