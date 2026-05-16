@@ -3,6 +3,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 )
@@ -51,6 +52,24 @@ func ColumnList() []Column {
 
 // Matrix serves GET /api/matrix.
 func Matrix(w http.ResponseWriter, r *http.Request) {
+	_, err := ParseMatrixQuery(r)
+	if err != nil {
+		status := http.StatusInternalServerError
+		code := "internal"
+		message := "internal error"
+		var perr *ParseError
+		if errors.As(err, &perr) {
+			status = http.StatusBadRequest
+			code = perr.Code
+			message = perr.Message
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": message}})
+		return
+	}
+	// Cells and rows population lands in a follow-up step; for now return the
+	// pinned columns with an empty rows slice once the query has validated.
 	resp := MatrixResponse{
 		Columns: ColumnList(),
 		Rows:    []Row{},
