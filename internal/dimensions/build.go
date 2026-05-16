@@ -40,15 +40,6 @@ func Build(ctx context.Context, db *gorm.DB, raw map[string][]RawProtocol, adapt
 	byRel := indexAdapters(adapters)
 	cdb := db.WithContext(ctx)
 
-	var dims map[string]uint64
-	if err := cdb.Transaction(func(tx *gorm.DB) error {
-		var err error
-		dims, err = loadDimensionIDs(tx)
-		return err
-	}); err != nil {
-		return BuildStats{}, err
-	}
-
 	var stats BuildStats
 	err := cdb.Transaction(func(tx *gorm.DB) error {
 		for src, list := range raw {
@@ -57,7 +48,7 @@ func Build(ctx context.Context, db *gorm.DB, raw map[string][]RawProtocol, adapt
 				if cerr := ctx.Err(); cerr != nil {
 					return cerr
 				}
-				if err := buildOne(tx, log, byRel, dims, rp, dataFile, &stats); err != nil {
+				if err := buildOne(tx, log, byRel, rp, dataFile, &stats); err != nil {
 					return err
 				}
 			}
@@ -85,7 +76,6 @@ func buildOne(
 	tx *gorm.DB,
 	log *slog.Logger,
 	byRel map[string]Adapter,
-	dims map[string]uint64,
 	rp RawProtocol,
 	dataFile string,
 	stats *BuildStats,
@@ -101,7 +91,7 @@ func buildOne(
 	}
 
 	for dimType, dimSlug := range rp.Dimensions {
-		if err := resolveDimension(tx, log, byRel, dims, p.ID, dimType, dimSlug, stats); err != nil {
+		if err := resolveDimension(tx, log, byRel, p.ID, dimType, dimSlug, stats); err != nil {
 			return err
 		}
 	}
@@ -158,7 +148,6 @@ func resolveTVL(
 	pid := protocolID
 	row := models.AdapterFile{
 		ProtocolID:    &pid,
-		DimensionID:   nil,
 		Repo:          "defillama-adapters",
 		Path:          "projects/" + module,
 		Slug:          pathSlug(module),
@@ -170,21 +159,6 @@ func resolveTVL(
 	}
 	stats.AdapterFiles++
 	return nil
-}
-
-// loadDimensionIDs reads the dimensions table into kind -> id so adapter_files
-// rows can be populated without a per-row query. The dimensions seed is written
-// by postgres.Migrate before Build ever runs.
-func loadDimensionIDs(tx *gorm.DB) (map[string]uint64, error) {
-	var rows []models.Dimension
-	if err := tx.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	out := make(map[string]uint64, len(rows))
-	for _, r := range rows {
-		out[r.Kind] = r.ID
-	}
-	return out, nil
 }
 
 // dimensionCandidates returns the relative paths the walker would emit for
@@ -213,7 +187,6 @@ func resolveDimension(
 	tx *gorm.DB,
 	log *slog.Logger,
 	byRel map[string]Adapter,
-	dims map[string]uint64,
 	protocolID uint64,
 	dimType, dimSlug string,
 	stats *BuildStats,
@@ -235,18 +208,9 @@ func resolveDimension(
 
 	relPath := strings.TrimPrefix(resolved.RelPath, dimensionAdapterPrefix)
 	for _, kind := range kinds {
-		did, ok := dims[kind]
-		if !ok {
-			// Dimension seed is missing this kind. Surface it and skip the row
-			// rather than violate the FK.
-			log.Warn("dimension kind not seeded", "kind", kind)
-			continue
-		}
 		pid := protocolID
-		dimID := did
 		row := models.AdapterFile{
 			ProtocolID:    &pid,
-			DimensionID:   &dimID,
 			Repo:          "dimension-adapters",
 			Path:          relPath,
 			Slug:          resolved.Slug,
@@ -262,8 +226,7 @@ func resolveDimension(
 }
 
 // upsertAdapterFile uses ON CONFLICT against the (repo, path, dimension_kind)
-// unique index so re-runs are idempotent and the protocol_id / dimension_id
-// associations stay current.
+// unique index so re-runs are idempotent and the protocol_id association stays current.
 func upsertAdapterFile(tx *gorm.DB, row *models.AdapterFile) error {
 	return tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{
@@ -273,7 +236,6 @@ func upsertAdapterFile(tx *gorm.DB, row *models.AdapterFile) error {
 		},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"protocol_id",
-			"dimension_id",
 			"slug",
 			"orphan",
 		}),

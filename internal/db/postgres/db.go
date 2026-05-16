@@ -1,4 +1,4 @@
-// 0.3: Postgres handle, AutoMigrate, and the static dimensions seed.
+// 0.3: Postgres handle and AutoMigrate.
 // Shared by cmd/refresh (writes) and cmd/server (reads). Migrate runs at every boot.
 package postgres
 
@@ -10,7 +10,6 @@ import (
 	"github.com/gultekinmakif/llama-watch/internal/models"
 	gormpg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Package handle. Set by New, read by Get.
@@ -76,34 +75,13 @@ func Ping(ctx context.Context) error {
 	return sqlDB.PingContext(ctx)
 }
 
-// Static dimension kinds. UPSERTed by Migrate on every boot.
-var dimensionSeed = []models.Dimension{
-	{Kind: "tvl", DisplayName: "TVL"},
-	{Kind: "dailyFees", DisplayName: "Daily Fees"},
-	{Kind: "dailyRevenue", DisplayName: "Daily Revenue"},
-	{Kind: "dailyVolume", DisplayName: "Daily Volume"},
-	{Kind: "dailyNotionalVolume", DisplayName: "Daily Notional Volume"},
-	{Kind: "dailyPremiumVolume", DisplayName: "Daily Premium Volume"},
-	{Kind: "openInterestAtEnd", DisplayName: "Open Interest"},
-	{Kind: "dailyBridgeVolume", DisplayName: "Daily Bridge Volume"},
-	{Kind: "dailyActiveUsers", DisplayName: "Daily Active Users"},
-}
-
-// Migrate runs AutoMigrate then UPSERTs dimensionSeed.
-// Order matters for FKs in adapter_files; commit_refs FK-references adapter_files.
+// Migrate runs AutoMigrate for every model.
+// Order matters for FKs: commit_refs FK-references adapter_files.
 func Migrate() error {
-	if err := db.AutoMigrate(
-		&models.Dimension{},
+	return db.AutoMigrate(
 		&models.Protocol{},
 		&models.AdapterFile{},
 		&models.CommitRef{},
 		&models.RefreshRun{},
-	); err != nil {
-		return err
-	}
-
-	return db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "kind"}},
-		DoUpdates: clause.AssignmentColumns([]string{"display_name"}),
-	}).Create(&dimensionSeed).Error
+	)
 }
