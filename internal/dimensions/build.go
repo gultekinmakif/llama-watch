@@ -138,7 +138,7 @@ func resolveTVL(
 	stats *BuildStats,
 ) error {
 	rel := "DefiLlama-Adapters/projects/" + module
-	a, ok := byRel[rel]
+	_, ok := byRel[rel]
 	if !ok {
 		log.Warn("tvl adapter missing on disk", "module", module)
 		stats.Skipped++
@@ -158,7 +158,6 @@ func resolveTVL(
 		return err
 	}
 	stats.AdapterFiles++
-	_ = a
 	return nil
 }
 
