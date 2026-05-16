@@ -12,13 +12,17 @@ cd "$(dirname "$0")/.."
 : "${PROTOCOLS_JSON:=./var/extracted/protocols.json}"
 : "${SNAPSHOT_OUT:=./var/snapshot/snapshot.json}"
 
-# 2. For each repo in REPOS, git pull (clone if missing) into $UPSTREAM_DIR/.
+# 2. For each repo in REPOS: shallow clone the default branch on first run,
+#    full fetch (no --depth) thereafter so every commit since first clone lands
+#    locally. Default branch varies per repo (main for DefiLlama-Adapters,
+#    master for dimension-adapters).
 mkdir -p "$UPSTREAM_DIR"
 for repo in $REPOS; do
   if [ -d "$UPSTREAM_DIR/$repo/.git" ]; then
-    git -C "$UPSTREAM_DIR/$repo" pull --ff-only
+    git -C "$UPSTREAM_DIR/$repo" fetch
+    git -C "$UPSTREAM_DIR/$repo" reset --hard '@{u}'
   else
-    git clone "https://github.com/DefiLlama/$repo.git" "$UPSTREAM_DIR/$repo"
+    git clone --single-branch --depth 1 "https://github.com/DefiLlama/$repo.git" "$UPSTREAM_DIR/$repo"
   fi
 done
 
