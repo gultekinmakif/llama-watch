@@ -176,6 +176,15 @@ func loadDimensionIDs(tx *gorm.DB) (map[string]uint64, error) {
 	return out, nil
 }
 
+// dimensionCandidates returns the relative paths the walker would emit for
+// a given dimension type and slug, in resolution order.
+//
+// > The first existing path in the walker output wins!
+func dimensionCandidates(dimType, dimSlug string) []string {
+	base := "dimension-adapters/" + dimType + "/" + dimSlug
+	return []string{base + ".ts", base + "/index.ts"}
+}
+
 // resolveDimension locates a dimension-adapter file for a (type, slug) pair,
 // detects which sub-metric kinds it emits, and inserts one row per kind.
 func resolveDimension(
@@ -187,10 +196,7 @@ func resolveDimension(
 	dimType, dimSlug string,
 	stats *BuildStats,
 ) error {
-	candidates := []string{
-		"dimension-adapters/" + dimType + "/" + dimSlug + ".ts",
-		"dimension-adapters/" + dimType + "/" + dimSlug + "/index.ts",
-	}
+	candidates := dimensionCandidates(dimType, dimSlug)
 	var resolved Adapter
 	found := false
 	for _, c := range candidates {
