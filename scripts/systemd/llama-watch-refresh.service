@@ -1,0 +1,11 @@
+[Unit]
+Description=llama-watch refresh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/ABSOLUTE/PATH/TO/llama-watch
+ExecStart=/ABSOLUTE/PATH/TO/llama-watch/scripts/refresh.sh
+StandardOutput=append:/ABSOLUTE/PATH/TO/llama-watch/var/log/refresh.out
+StandardError=append:/ABSOLUTE/PATH/TO/llama-watch/var/log/refresh.err
