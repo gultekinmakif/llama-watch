@@ -1,7 +1,10 @@
 package dimensions
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"testing"
 
@@ -326,5 +329,36 @@ func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Fatalf("want 0, got %d (%v)", len(got), relset(got))
+	}
+}
+
+// A symlink loop under one of the upstream roots must not cause Walk to hang
+// or recurse forever. filepath.WalkDir does not follow symlinks for directory
+// traversal, so the loop is visited as a single non-directory entry, then
+// skipped because it does not have a .ts/.js suffix.
+func TestWalk_SymlinkLoopDoesNotRecurse(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink creation requires admin or developer mode on Windows")
+	}
+	root := t.TempDir()
+	fees := filepath.Join(root, "dimension-adapters", "fees")
+	if err := os.MkdirAll(fees, 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", fees, err)
+	}
+	// Symlink that points to its own parent dir. If Walk followed it the
+	// recursion would be unbounded.
+	if err := os.Symlink(fees, filepath.Join(fees, "loop")); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+	// One real file so the walker has something to find.
+	testutil.WriteFile(t, root, "dimension-adapters/fees/wbtc.ts", "")
+
+	got, err := Walk(root)
+	if err != nil {
+		t.Fatalf("Walk: %v", err)
+	}
+	wantRels := []string{"dimension-adapters/fees/wbtc.ts"}
+	if g := relset(got); !reflect.DeepEqual(g, wantRels) {
+		t.Fatalf("want %v, got %v", wantRels, g)
 	}
 }
