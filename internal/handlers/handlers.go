@@ -1,4 +1,4 @@
-// 2.6: HTTP handlers for the API surface. Root + health for now; matrix/protocol land in later steps.
+// HTTP handlers outside the /api surface. Only the health probe lives here.
 package handlers
 
 import (
@@ -20,10 +20,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		slog.Error("json encode failed", "error", err)
 	}
-}
-
-func Root(w http.ResponseWriter, r *http.Request) {
-	writeHeaders(w, http.StatusOK)
 }
 
 func Health(w http.ResponseWriter, r *http.Request) {
