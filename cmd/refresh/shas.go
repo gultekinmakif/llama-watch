@@ -39,12 +39,21 @@ func readRepoSHA(repoDir string) string {
 	if st, err := os.Stat(filepath.Join(repoDir, ".git")); err != nil || !st.IsDir() {
 		return ""
 	}
-	raw, err := exec.Command("git", "-C", repoDir, "rev-parse", "HEAD").Output()
+	sha, err := gitRevParse(repoDir)
 	if err != nil {
 		slog.Debug("rev-parse failed; omitting repo from SHA gate", "repo", filepath.Base(repoDir), "error", err)
 		return ""
 	}
-	return strings.TrimRight(string(raw), "\n")
+	return sha
+}
+
+// gitRevParse shells out to `git -C repoDir rev-parse HEAD` and returns the trimmed SHA.
+func gitRevParse(repoDir string) (string, error) {
+	raw, err := exec.Command("git", "-C", repoDir, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(string(raw), "\n"), nil
 }
 
 // shasUnchanged returns true when current is non-empty and equals last entry-for-entry.
