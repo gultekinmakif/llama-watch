@@ -11,7 +11,6 @@ import (
 
 	"github.com/gultekinmakif/llama-watch/internal/api"
 	"github.com/gultekinmakif/llama-watch/internal/config"
-	"github.com/gultekinmakif/llama-watch/internal/handlers"
 	"github.com/gultekinmakif/llama-watch/internal/middleware"
 )
 
@@ -22,7 +21,7 @@ type Server struct {
 
 func New(cfg *config.Config) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", handlers.Health)
+	mux.HandleFunc("GET /health", api.Health)
 	mux.HandleFunc("GET /api/matrix", api.Matrix)
 	mux.HandleFunc("GET /api/matrix/{slug}", api.MatrixDetail)
 	// Static export from `web/out/`. Returns 404 from the FS when the path is
