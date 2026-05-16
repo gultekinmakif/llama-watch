@@ -44,11 +44,11 @@ func MatrixDetail(w http.ResponseWriter, r *http.Request) {
 	detail, err := fetchMatrixDetail(ctx, db, slug)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": map[string]string{"code": "not_found", "message": "protocol not found"}})
+			writeErr(w, http.StatusNotFound, "not_found", "protocol not found")
 			return
 		}
 		slog.Error("matrix detail fetch failed", "slug", slug, "error", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
 

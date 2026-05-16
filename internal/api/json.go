@@ -22,3 +22,8 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 		slog.Error("json encode failed", "status", status, "error", err)
 	}
 }
+
+// writeErr writes the {error:{code,message}} envelope shared by /api handlers.
+func writeErr(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
+}

@@ -64,7 +64,7 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 			code = perr.Code
 			message = perr.Message
 		}
-		writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
+		writeErr(w, status, code, message)
 		return
 	}
 
@@ -74,14 +74,14 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 	total, err := countProtocols(ctx, db)
 	if err != nil {
 		slog.Error("matrix count failed", "error", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
 
 	rows, err := listProtocols(ctx, db, q.Limit, q.Offset)
 	if err != nil {
 		slog.Error("matrix list failed", "error", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
 
