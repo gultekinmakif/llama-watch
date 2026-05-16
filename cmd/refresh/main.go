@@ -84,6 +84,20 @@ func main() {
 	}
 	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
 
+	currentSHAs, err := readUpstreamSHAs(*upstreamDir)
+	if err != nil {
+		lg.Warn("upstream sha read failed; proceeding with pipeline", "error", err)
+	}
+	if len(currentSHAs) > 0 {
+		lastSHAs, err := lastUpstreamSHAs(db)
+		if err != nil {
+			lg.Warn("last sha lookup failed; proceeding with pipeline", "error", err)
+		} else if shasUnchanged(currentSHAs, lastSHAs) {
+			lg.Info("skip: upstream shas unchanged", "repos", len(currentSHAs))
+			return
+		}
+	}
+
 	started := time.Now()
 	stats, phase, err := runPipeline(ctx, db, lg, *upstreamDir, *protocolsJSON, *snapshotOut)
 	if err != nil {
@@ -92,6 +106,7 @@ func main() {
 	}
 
 	row := newRefreshRun(started, stats, nil)
+	row.UpstreamSHAs = encodeSHAs(currentSHAs)
 	if err := db.Create(row).Error; err != nil {
 		slog.Error("refresh_run insert failed", "phase", "record-success", "error", err)
 		return
