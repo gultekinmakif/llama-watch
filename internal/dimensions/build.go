@@ -14,6 +14,11 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	tvlAdapterPrefix       = "DefiLlama-Adapters/projects/"
+	dimensionAdapterPrefix = "dimension-adapters/"
+)
+
 type BuildStats struct {
 	Protocols    int
 	AdapterFiles int
@@ -137,7 +142,7 @@ func resolveTVL(
 	module string,
 	stats *BuildStats,
 ) error {
-	rel := "DefiLlama-Adapters/projects/" + module
+	rel := tvlAdapterPrefix + module
 	_, ok := byRel[rel]
 	if !ok {
 		log.Warn("tvl adapter missing on disk", "module", module)
@@ -181,8 +186,19 @@ func loadDimensionIDs(tx *gorm.DB) (map[string]uint64, error) {
 //
 // > The first existing path in the walker output wins!
 func dimensionCandidates(dimType, dimSlug string) []string {
-	base := "dimension-adapters/" + dimType + "/" + dimSlug
+	base := dimensionAdapterPrefix + dimType + "/" + dimSlug
 	return []string{base + ".ts", base + "/index.ts"}
+}
+
+// findDimensionAdapter returns the first Adapter whose RelPath matches one
+// of the candidate paths for (dimType, dimSlug), or nil.
+func findDimensionAdapter(byRel map[string]Adapter, dimType, dimSlug string) *Adapter {
+	for _, candidate := range dimensionCandidates(dimType, dimSlug) {
+		if a, ok := byRel[candidate]; ok {
+			return &a
+		}
+	}
+	return nil
 }
 
 // resolveDimension locates a dimension-adapter file for a (type, slug) pair,
@@ -196,17 +212,8 @@ func resolveDimension(
 	dimType, dimSlug string,
 	stats *BuildStats,
 ) error {
-	candidates := dimensionCandidates(dimType, dimSlug)
-	var resolved Adapter
-	found := false
-	for _, c := range candidates {
-		if a, ok := byRel[c]; ok {
-			resolved = a
-			found = true
-			break
-		}
-	}
-	if !found {
+	resolved := findDimensionAdapter(byRel, dimType, dimSlug)
+	if resolved == nil {
 		log.Warn("dimension adapter missing on disk", "type", dimType, "slug", dimSlug)
 		stats.Skipped++
 		return nil
@@ -220,7 +227,7 @@ func resolveDimension(
 		return nil
 	}
 
-	relPath := strings.TrimPrefix(resolved.RelPath, "dimension-adapters/")
+	relPath := strings.TrimPrefix(resolved.RelPath, dimensionAdapterPrefix)
 	for _, kind := range kinds {
 		did, ok := dims[kind]
 		if !ok {

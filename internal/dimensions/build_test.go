@@ -86,6 +86,81 @@ func TestDimensionCandidates(t *testing.T) {
 	}
 }
 
+func TestFindDimensionAdapter(t *testing.T) {
+	tsHit := Adapter{Type: "fees", RelPath: "dimension-adapters/fees/aave-v2.ts", AbsPath: "/x/aave.ts", Slug: "aave-v2"}
+	indexHit := Adapter{Type: "fees", RelPath: "dimension-adapters/fees/aave-v2/index.ts", AbsPath: "/x/aave/index.ts", Slug: "aave-v2"}
+
+	cases := []struct {
+		name    string
+		byRel   map[string]Adapter
+		dimType string
+		dimSlug string
+		want    *Adapter
+	}{
+		{
+			name: "ts shape hit",
+			byRel: map[string]Adapter{
+				"dimension-adapters/fees/aave-v2.ts": tsHit,
+			},
+			dimType: "fees",
+			dimSlug: "aave-v2",
+			want:    &tsHit,
+		},
+		{
+			name: "index shape hit when ts absent",
+			byRel: map[string]Adapter{
+				"dimension-adapters/fees/aave-v2/index.ts": indexHit,
+			},
+			dimType: "fees",
+			dimSlug: "aave-v2",
+			want:    &indexHit,
+		},
+		{
+			name: "both shapes present prefers ts",
+			byRel: map[string]Adapter{
+				"dimension-adapters/fees/aave-v2.ts":       tsHit,
+				"dimension-adapters/fees/aave-v2/index.ts": indexHit,
+			},
+			dimType: "fees",
+			dimSlug: "aave-v2",
+			want:    &tsHit,
+		},
+		{
+			name: "neither present returns nil",
+			byRel: map[string]Adapter{
+				"dimension-adapters/fees/other.ts": {Slug: "other"},
+			},
+			dimType: "fees",
+			dimSlug: "aave-v2",
+			want:    nil,
+		},
+		{
+			name:    "empty byRel returns nil",
+			byRel:   map[string]Adapter{},
+			dimType: "fees",
+			dimSlug: "aave-v2",
+			want:    nil,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := findDimensionAdapter(tc.byRel, tc.dimType, tc.dimSlug)
+			if tc.want == nil {
+				if got != nil {
+					t.Fatalf("findDimensionAdapter = %+v, want nil", *got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("findDimensionAdapter = nil, want %+v", *tc.want)
+			}
+			if !reflect.DeepEqual(*got, *tc.want) {
+				t.Fatalf("findDimensionAdapter = %+v, want %+v", *got, *tc.want)
+			}
+		})
+	}
+}
+
 func TestIndexAdapters(t *testing.T) {
 	in := []Adapter{
 		{Type: "tvl", RelPath: "DefiLlama-Adapters/projects/a/index.js", AbsPath: "/x/a", Slug: "a"},

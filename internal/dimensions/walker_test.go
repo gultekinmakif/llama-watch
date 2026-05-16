@@ -332,10 +332,7 @@ func TestWalk_EmptyDirsNoCandidates(t *testing.T) {
 	}
 }
 
-// A symlink loop under one of the upstream roots must not cause Walk to hang
-// or recurse forever. filepath.WalkDir does not follow symlinks for directory
-// traversal, so the loop is visited as a single non-directory entry, then
-// skipped because it does not have a .ts/.js suffix.
+// Locks that filepath.WalkDir does not follow symlinks, so a self-referencing dir cannot loop.
 func TestWalk_SymlinkLoopDoesNotRecurse(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("symlink creation requires admin or developer mode on Windows")
