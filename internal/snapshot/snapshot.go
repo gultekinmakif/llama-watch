@@ -14,7 +14,7 @@ func Snapshot(ctx context.Context, path string, v any) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o644); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
 
@@ -25,6 +25,7 @@ func Snapshot(ctx context.Context, path string, v any) error {
 	}
 
 	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {
 		_ = f.Close()
 		_ = os.Remove(tmp)
