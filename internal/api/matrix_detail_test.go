@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func TestProtocolNotFound(t *testing.T) {
+func TestMatrixDetailNotFound(t *testing.T) {
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/protocols/nope", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/matrix/nope", nil)
 	req.SetPathValue("slug", "nope")
 
-	Protocol(rec, req)
+	MatrixDetail(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status: want %d, got %d", http.StatusNotFound, rec.Code)
@@ -37,4 +37,3 @@ func TestProtocolNotFound(t *testing.T) {
 		t.Error("message: want non-empty, got empty")
 	}
 }
-

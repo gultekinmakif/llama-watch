@@ -1,4 +1,4 @@
-// GET /api/protocols/{slug} handler. Returns identity, chains, and per-dimension coverage.
+// GET /api/matrix/{slug} handler. Returns identity, chains, and per-dimension coverage.
 package api
 
 import (
@@ -35,19 +35,19 @@ type ProtocolDetail struct {
 	Dimensions  []ProtocolDimension `json:"dimensions"`
 }
 
-// Protocol serves GET /api/protocols/{slug}.
-func Protocol(w http.ResponseWriter, r *http.Request) {
+// MatrixDetail serves GET /api/matrix/{slug}.
+func MatrixDetail(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	db := postgres.Get()
 	ctx := r.Context()
 
-	detail, err := fetchProtocolDetail(ctx, db, slug)
+	detail, err := fetchMatrixDetail(ctx, db, slug)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": map[string]string{"code": "not_found", "message": "protocol not found"}})
 			return
 		}
-		slog.Error("protocol fetch failed", "slug", slug, "error", err)
+		slog.Error("matrix detail fetch failed", "slug", slug, "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": map[string]string{"code": "internal", "message": "internal error"}})
 		return
 	}

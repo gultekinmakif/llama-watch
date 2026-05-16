@@ -1,4 +1,4 @@
-// SQL query layer for /api/protocols/{slug}: fetch protocol identity plus per-dimension coverage.
+// SQL query layer for /api/matrix/{slug}: fetch protocol identity plus per-dimension coverage.
 package api
 
 import (
@@ -8,11 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// fetchProtocolDetail loads the protocol by slug, gathers its adapter_files coverage,
-// and assembles the response DTO. Returns gorm.ErrRecordNotFound if the slug is unknown.
-// Methodology and last_commit are intentionally stubbed: the refresh pipeline does not
-// surface those yet. When they land, only this function changes; the response shape is stable.
-func fetchProtocolDetail(ctx context.Context, db *gorm.DB, slug string) (*ProtocolDetail, error) {
+// fetchMatrixDetail assembles a ProtocolDetail. Returns gorm.ErrRecordNotFound on unknown slug.
+// Methodology and last_commit are stubbed until the refresh pipeline surfaces them.
+func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*ProtocolDetail, error) {
 	var p models.Protocol
 	if err := db.WithContext(ctx).Where("slug = ?", slug).Take(&p).Error; err != nil {
 		return nil, err

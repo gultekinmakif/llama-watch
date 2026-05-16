@@ -8,12 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestFetchProtocolDetail(t *testing.T) {
+func TestFetchMatrixDetail(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
 
-			detail, err := fetchProtocolDetail(ctx, tx, "missing")
+			detail, err := fetchMatrixDetail(ctx, tx, "missing")
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				t.Fatalf("err: want gorm.ErrRecordNotFound, got %v", err)
 			}
@@ -28,9 +28,9 @@ func TestFetchProtocolDetail(t *testing.T) {
 			ctx := t.Context()
 			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum", "polygon"})
 
-			detail, err := fetchProtocolDetail(ctx, tx, "aave-v2")
+			detail, err := fetchMatrixDetail(ctx, tx, "aave-v2")
 			if err != nil {
-				t.Fatalf("fetchProtocolDetail: %v", err)
+				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
 			if detail.Slug != "aave-v2" {
 				t.Errorf("Slug: want %q, got %q", "aave-v2", detail.Slug)
@@ -79,9 +79,9 @@ func TestFetchProtocolDetail(t *testing.T) {
 			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
 
-			detail, err := fetchProtocolDetail(ctx, tx, "aave-v2")
+			detail, err := fetchMatrixDetail(ctx, tx, "aave-v2")
 			if err != nil {
-				t.Fatalf("fetchProtocolDetail: %v", err)
+				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
 			if len(detail.Dimensions) != len(columns) {
 				t.Fatalf("Dimensions: want %d entries, got %d", len(columns), len(detail.Dimensions))
@@ -123,9 +123,9 @@ func TestFetchProtocolDetail(t *testing.T) {
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/uniswap-v3.ts")
 			seedAdapterFile(t, tx, p.ID, "dailyVolume", "dimension-adapters", "dexs/uniswap-v3.ts")
 
-			detail, err := fetchProtocolDetail(ctx, tx, "uniswap-v3")
+			detail, err := fetchMatrixDetail(ctx, tx, "uniswap-v3")
 			if err != nil {
-				t.Fatalf("fetchProtocolDetail: %v", err)
+				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
 			present := map[string]bool{"tvl": true, "dailyFees": true, "dailyVolume": true}
 			for _, d := range detail.Dimensions {
@@ -158,9 +158,9 @@ func TestFetchProtocolDetail(t *testing.T) {
 			p := seedProtocol(t, tx, "mystery", "Mystery", pq.StringArray{"ethereum"})
 			seedOrphanAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/mystery/index.js")
 
-			detail, err := fetchProtocolDetail(ctx, tx, "mystery")
+			detail, err := fetchMatrixDetail(ctx, tx, "mystery")
 			if err != nil {
-				t.Fatalf("fetchProtocolDetail: %v", err)
+				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
 			for _, d := range detail.Dimensions {
 				if d.Kind == "tvl" {
