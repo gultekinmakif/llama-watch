@@ -9,6 +9,7 @@ import (
 )
 
 // Snapshot encodes v as indented JSON to path via tmp+rename so readers never see a half-written file.
+// Cancellation is best-effort: ctx is checked at entry but encode and rename are not interruptible mid-flight.
 func Snapshot(ctx context.Context, path string, v any) error {
 	if err := ctx.Err(); err != nil {
 		return err

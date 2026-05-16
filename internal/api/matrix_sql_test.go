@@ -42,21 +42,15 @@ func seedProtocol(t *testing.T, tx *gorm.DB, slug, name string, chains pq.String
 
 func seedAdapterFile(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path string) {
 	t.Helper()
-	pid := protocolID
-	af := models.AdapterFile{
-		ProtocolID:    &pid,
-		Repo:          repo,
-		Path:          path,
-		Slug:          path,
-		DimensionKind: kind,
-		Orphan:        false,
-	}
-	if err := tx.Create(&af).Error; err != nil {
-		t.Fatalf("seed adapter file %s/%s: %v", repo, path, err)
-	}
+	seedAF(t, tx, protocolID, kind, repo, path, false)
 }
 
 func seedOrphanAdapterFile(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path string) {
+	t.Helper()
+	seedAF(t, tx, protocolID, kind, repo, path, true)
+}
+
+func seedAF(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path string, orphan bool) {
 	t.Helper()
 	pid := protocolID
 	af := models.AdapterFile{
@@ -65,10 +59,10 @@ func seedOrphanAdapterFile(t *testing.T, tx *gorm.DB, protocolID uint64, kind, r
 		Path:          path,
 		Slug:          path,
 		DimensionKind: kind,
-		Orphan:        true,
+		Orphan:        orphan,
 	}
 	if err := tx.Create(&af).Error; err != nil {
-		t.Fatalf("seed orphan adapter file %s/%s: %v", repo, path, err)
+		t.Fatalf("seed adapter file %s/%s orphan=%v: %v", repo, path, orphan, err)
 	}
 }
 
