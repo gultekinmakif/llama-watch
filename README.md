@@ -8,16 +8,17 @@ A Go cron parses [DefiLlama/DefiLlama-Adapters](https://github.com/DefiLlama/Def
 
 | Var | Used by | Default | Notes |
 |---|---|---|---|
+| `INTERVAL` | refresh | `3300` | Skip the run if `now - last_finished < INTERVAL` seconds. |
+| `REPOS` | refresh | `DefiLlama-Adapters dimension-adapters defillama-server` | Whitespace-separated; cloned from `$UPSTREAM_REMOTE/<name>.git`. |
+| `UPSTREAM_REMOTE` | refresh | `https://github.com/DefiLlama` | Owner URL prefix; override to point at a fork. |
 | `DATABASE_URL` | server, refresh | `postgres://postgres:postgres@localhost:5432/llama_watch?sslmode=disable` | Override for non-default DSN. |
 | `PORT` | server | `3000` | |
-| `ENV` | server | `dev` | `dev` → tint pretty logs, `prod` → JSON. |
-| `LOG_LEVEL` | server | `debug` | `debug` / `info` / `warn` / `error`. |
-| `SHUTDOWN_TIMEOUT` | server | `10s` | Graceful drain on SIGTERM. |
-| `INTERVAL` | refresh | `3300` | Skip the run if `now - last_finished < INTERVAL` seconds. |
 | `UPSTREAM_DIR` | refresh | `./var/upstream` | Where the three repo clones live. |
+| `SHUTDOWN_TIMEOUT` | server | `10s` | Graceful drain on SIGTERM. |
 | `PROTOCOLS_JSON` | refresh | `./var/extracted/protocols.json` | Bun extractor output the Go binary reads. |
 | `SNAPSHOT_OUT` | refresh | `./var/snapshot/snapshot.json` | Atomic rename target. |
-| `REPOS` | refresh | `DefiLlama-Adapters dimension-adapters defillama-server` | Whitespace-separated; cloned from `https://github.com/DefiLlama/<name>.git`. |
+| `LOG_LEVEL` | server | `debug` | `debug` / `info` / `warn` / `error`. |
+| `ENV` | server | `dev` | `dev` -> tint pretty logs, `prod`-> JSON. |
 | `TEST_DATABASE_URL` | tests | *(optional)* | When set, `internal/api` tests run against this Postgres; when unset, the api test package skips cleanly. |
 
 ## Quick start
@@ -32,7 +33,7 @@ docker run -d --name llama-watch-db -p 5432:5432 \
 
 ### 2. Server
 
-Auto-migrates on boot. `make dev` swaps in air-powered hot reload.
+> Use `make dev` for hot reload with air.
 
 ```sh
 make run

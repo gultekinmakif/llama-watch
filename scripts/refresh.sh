@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 [ -f .env ] && source .env
 
 : "${REPOS:=DefiLlama-Adapters dimension-adapters defillama-server}"
+: "${UPSTREAM_REMOTE:=https://github.com/DefiLlama}"
 : "${INTERVAL:=3300}"
 : "${UPSTREAM_DIR:=./var/upstream}"
 : "${PROTOCOLS_JSON:=./var/extracted/protocols.json}"
@@ -23,7 +24,7 @@ for repo in $REPOS; do
     # WARNING: reset --hard '@{u}' WILL ABSOLUTELY DESTROY any local commits in var/upstream/<repo>/ silently.
     git -C "$UPSTREAM_DIR/$repo" reset --hard '@{u}'
   else
-    git clone --single-branch --depth 1 "https://github.com/DefiLlama/$repo.git" "$UPSTREAM_DIR/$repo"
+    git clone --single-branch --depth 1 "$UPSTREAM_REMOTE/$repo.git" "$UPSTREAM_DIR/$repo"
   fi
 done
 
