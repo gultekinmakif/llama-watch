@@ -26,22 +26,25 @@ func readUpstreamSHAs(upstreamDir string) (map[string]string, error) {
 		if !e.IsDir() {
 			continue
 		}
-		repoDir := filepath.Join(upstreamDir, e.Name())
-		if st, err := os.Stat(filepath.Join(repoDir, ".git")); err != nil || !st.IsDir() {
-			continue
+		if sha := readRepoSHA(filepath.Join(upstreamDir, e.Name())); sha != "" {
+			out[e.Name()] = sha
 		}
-		raw, err := exec.Command("git", "-C", repoDir, "rev-parse", "HEAD").Output()
-		if err != nil {
-			slog.Debug("rev-parse failed; omitting repo from SHA gate", "repo", e.Name(), "error", err)
-			continue
-		}
-		sha := strings.TrimRight(string(raw), "\n")
-		if sha == "" {
-			continue
-		}
-		out[e.Name()] = sha
 	}
 	return out, nil
+}
+
+// readRepoSHA returns the HEAD SHA of the git repo at repoDir, or "" if the repo
+// has no .git/ or rev-parse fails.
+func readRepoSHA(repoDir string) string {
+	if st, err := os.Stat(filepath.Join(repoDir, ".git")); err != nil || !st.IsDir() {
+		return ""
+	}
+	raw, err := exec.Command("git", "-C", repoDir, "rev-parse", "HEAD").Output()
+	if err != nil {
+		slog.Debug("rev-parse failed; omitting repo from SHA gate", "repo", filepath.Base(repoDir), "error", err)
+		return ""
+	}
+	return strings.TrimRight(string(raw), "\n")
 }
 
 // shasUnchanged returns true when current is non-empty and equals last entry-for-entry.
