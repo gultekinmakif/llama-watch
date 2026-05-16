@@ -86,7 +86,8 @@ func main() {
 
 	currentSHAs, err := readUpstreamSHAs(*upstreamDir)
 	if err != nil {
-		lg.Warn("upstream sha read failed; proceeding with pipeline", "error", err)
+		slog.Error("upstream sha read failed", "upstream_dir", *upstreamDir, "error", err)
+		os.Exit(1)
 	}
 	if len(currentSHAs) > 0 {
 		lastSHAs, err := lastUpstreamSHAs(db)
