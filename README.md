@@ -102,6 +102,12 @@ See `specs/ENDPOINTS.md` for full response shapes. `methodology` and `last_commi
 - **Scheduler.** launchd plist (macOS), systemd `.service` + `.timer` (Linux), or a crontab line.
   - Templates in `scripts/launchd/` and `scripts/systemd/`.
 
+## Development
+
+CI runs `go build`, `go vet`, `go test`, `golangci-lint`, and `shellcheck --severity=warning scripts/*.sh` on every PR. Run the same locally before pushing; install `shellcheck` via `brew install shellcheck` (or your package manager) if you don't have it.
+
+Conventional Commits for subjects (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`, `perf:`, `ci:`). One logical change per commit; the subject alone should tell the story.
+
 ## License
 
 See [LICENSE](LICENSE).
