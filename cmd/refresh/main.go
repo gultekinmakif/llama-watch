@@ -2,7 +2,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"log/slog"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/gultekinmakif/llama-watch/internal/dimensions"
 	"github.com/gultekinmakif/llama-watch/internal/logger"
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -43,7 +46,11 @@ func main() {
 		slog.Error("database connection error", "error", err)
 		return
 	}
-	defer postgres.Close()
+	defer func() {
+		if err := postgres.Close(); err != nil {
+			slog.Error("postgres close failed", "error", err)
+		}
+	}()
 
 	if err := postgres.Migrate(); err != nil {
 		slog.Error("database migration error", "error", err)
@@ -53,24 +60,39 @@ func main() {
 
 	db := postgres.Get()
 
+	skip, last, err := shouldSkip(db, time.Duration(*intervalSec)*time.Second)
+	if err != nil {
+		slog.Error("interval check failed", "error", err)
+		return
+	}
+	if skip {
+		lg.Info("skip: last run too recent",
+			"finished_at", last.Format(time.RFC3339),
+			"interval_seconds", *intervalSec,
+		)
+		return
+	}
 	lg.Info("interval check", "ok", true, "interval_seconds", *intervalSec)
 
 	started := time.Now()
 
 	adapters, err := dimensions.Walk(*upstreamDir)
 	if err != nil {
+		recordFailure(db, lg, started, "walk", err)
 		return
 	}
 	lg.Info("walk done", "adapters", len(adapters))
 
 	raw, err := dimensions.LoadProtocols(*protocolsJSON)
 	if err != nil {
+		recordFailure(db, lg, started, "load", err)
 		return
 	}
 	lg.Info("load done", "data_files", len(raw))
 
 	stats, err := dimensions.Build(db, raw, adapters, lg)
 	if err != nil {
+		recordFailure(db, lg, started, "build", err)
 		return
 	}
 	lg.Info("build done",
@@ -101,4 +123,57 @@ func main() {
 		"adapter_files", stats.AdapterFiles,
 		"commits", 0,
 	)
+}
+
+// shouldSkip returns true when the most recent finished refresh_run is younger
+// than interval. A zero interval disables the gate.
+func shouldSkip(db *gorm.DB, interval time.Duration) (bool, time.Time, error) {
+	if interval <= 0 {
+		return false, time.Time{}, nil
+	}
+	var last models.RefreshRun
+	err := db.Where("finished_at IS NOT NULL").
+		Order("finished_at DESC").
+		Limit(1).
+		Take(&last).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, time.Time{}, nil
+		}
+		return false, time.Time{}, err
+	}
+	if last.FinishedAt == nil {
+		return false, time.Time{}, nil
+	}
+	if time.Since(*last.FinishedAt) < interval {
+		return true, *last.FinishedAt, nil
+	}
+	return false, time.Time{}, nil
+}
+
+// recordFailure writes a partial refresh_run row for an aborted pipeline so
+// the gate in shouldSkip still sees forward progress and the operator can
+// audit failures from the table.
+func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string, cause error) {
+	finished := time.Now()
+	durMs := int(finished.Sub(started).Milliseconds())
+	msg := fmt.Sprintf("%s: %v", phase, cause)
+	row := models.RefreshRun{
+		StartedAt:        started,
+		FinishedAt:       &finished,
+		DurationMs:       &durMs,
+		ProtocolsSeen:    0,
+		AdapterFilesSeen: 0,
+		CommitsSeen:      0,
+		Error:            &msg,
+	}
+	if err := db.Create(&row).Error; err != nil {
+		lg.Error("refresh_run failure insert failed",
+			"phase", phase,
+			"cause", cause,
+			"insert_error", err,
+		)
+		return
+	}
+	lg.Error("refresh failed", "phase", phase, "error", cause, "duration_ms", durMs)
 }
