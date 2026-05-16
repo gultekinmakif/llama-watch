@@ -63,32 +63,18 @@ func countProtocols(ctx context.Context, db *gorm.DB) (int, error) {
 
 // fetchCells returns protocol_id -> {dimension_kind: 1} for the given protocol IDs.
 // Only present kinds are included; the caller zero-fills the closed columns set.
-// Orphan rows are excluded so they do not inflate presence flags.
 func fetchCells(ctx context.Context, db *gorm.DB, protoIDs []uint64) (map[uint64]map[string]int, error) {
-	if len(protoIDs) == 0 {
-		return map[uint64]map[string]int{}, nil
-	}
-	type pair struct {
-		ProtocolID    uint64 `gorm:"column:protocol_id"`
-		DimensionKind string `gorm:"column:dimension_kind"`
-	}
-	var pairs []pair
-	if err := db.WithContext(ctx).
-		Table("adapter_files").
-		Select("protocol_id, dimension_kind").
-		Where("protocol_id IN ?", protoIDs).
-		Where("orphan = ?", false).
-		Find(&pairs).Error; err != nil {
+	byID, err := fetchAdapterRows(ctx, db, protoIDs)
+	if err != nil {
 		return nil, err
 	}
-	out := make(map[uint64]map[string]int, len(protoIDs))
-	for _, p := range pairs {
-		m, ok := out[p.ProtocolID]
-		if !ok {
-			m = make(map[string]int)
-			out[p.ProtocolID] = m
+	out := make(map[uint64]map[string]int, len(byID))
+	for pid, rows := range byID {
+		m := make(map[string]int, len(rows))
+		for _, r := range rows {
+			m[r.DimensionKind] = 1
 		}
-		m[p.DimensionKind] = 1
+		out[pid] = m
 	}
 	return out, nil
 }

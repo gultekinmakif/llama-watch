@@ -17,22 +17,13 @@ func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*Protocol
 		return nil, err
 	}
 
-	type afRow struct {
-		DimensionKind string `gorm:"column:dimension_kind"`
-		Repo          string `gorm:"column:repo"`
-		Path          string `gorm:"column:path"`
-	}
-	var afs []afRow
-	if err := db.WithContext(ctx).
-		Table("adapter_files").
-		Select("dimension_kind, repo, path").
-		Where("protocol_id = ?", p.ID).
-		Where("orphan = ?", false).
-		Find(&afs).Error; err != nil {
+	byID, err := fetchAdapterRows(ctx, db, []uint64{p.ID})
+	if err != nil {
 		return nil, err
 	}
+	afs := byID[p.ID]
 
-	byKind := make(map[string]afRow, len(afs))
+	byKind := make(map[string]adapterRow, len(afs))
 	for _, a := range afs {
 		byKind[a.DimensionKind] = a
 	}
