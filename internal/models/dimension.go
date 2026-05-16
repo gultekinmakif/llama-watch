@@ -1,3 +1,4 @@
+// dimensions: static lookup table of the sub-metric kinds the matrix tracks.
 package models
 
 type Dimension struct {

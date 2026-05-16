@@ -1,3 +1,4 @@
+// Walks the two upstream clones and emits one Adapter per candidate file.
 package dimensions
 
 import (

@@ -1,3 +1,4 @@
+// HTTP handlers for the API surface. Root + health for now; matrix/protocol land in later steps.
 package handlers
 
 import (

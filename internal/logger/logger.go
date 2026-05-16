@@ -1,3 +1,4 @@
+// slog handler factory. dev=tint colored, prod=JSON.
 package logger
 
 import (

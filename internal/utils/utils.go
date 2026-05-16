@@ -1,3 +1,4 @@
+// Generic helpers shared across packages.
 package utils
 
 // Source - https://stackoverflow.com/a/72498530

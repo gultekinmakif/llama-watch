@@ -1,3 +1,4 @@
+// protocols: one row per canonical protocol slug seen in any data{N}.ts file.
 package models
 
 import (

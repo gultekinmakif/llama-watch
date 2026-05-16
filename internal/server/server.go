@@ -1,3 +1,4 @@
+// HTTP server bootstrap. Mounts routes, applies middleware, handles graceful shutdown.
 package server
 
 import (

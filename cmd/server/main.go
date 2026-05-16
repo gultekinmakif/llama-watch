@@ -1,3 +1,4 @@
+// HTTP server entry point. Wires config, db, logger, then serves internal/server.
 package main
 
 import (

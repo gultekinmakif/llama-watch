@@ -1,3 +1,4 @@
+// adapter_files: one row per (repo, path, dimension_kind) on disk.
 package models
 
 import "time"

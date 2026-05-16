@@ -1,3 +1,4 @@
+// Per-request access log. Captures status via a wrapped ResponseWriter.
 package middleware
 
 import (

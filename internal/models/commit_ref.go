@@ -1,3 +1,4 @@
+// commit_refs: one row per upstream commit that touched an adapter_files row.
 package models
 
 import "time"

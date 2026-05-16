@@ -1,3 +1,4 @@
+// refresh_runs: one row per cmd/refresh invocation. Drives the skip-if-recent gate.
 package models
 
 import "time"

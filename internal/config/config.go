@@ -1,3 +1,4 @@
+// Loads runtime config from environment variables and validates each field.
 package config
 
 import (
