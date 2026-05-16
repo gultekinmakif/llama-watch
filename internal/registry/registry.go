@@ -37,3 +37,19 @@ func AllMetricsByDimension() map[string][]string {
 	}
 	return out
 }
+
+// excludedAdapterChildren: subfolders under DefiLlama-Adapters/projects/ that are not adapters.
+var excludedAdapterChildren = map[string]struct{}{
+	"helper":   {},
+	"treasury": {},
+	"entities": {},
+	"config":   {},
+	"stacks":   {},
+	"test":     {},
+}
+
+// IsExcludedAdapterChild reports whether name is a DefiLlama-Adapters/projects/ child to skip.
+func IsExcludedAdapterChild(name string) bool {
+	_, skip := excludedAdapterChildren[name]
+	return skip
+}

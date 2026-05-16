@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 )
 
 // Adapter represents one adapter file, emitted by the walker.
@@ -17,17 +19,6 @@ type Adapter struct {
 	RelPath string // relative to upstreamDir, e.g. "DefiLlama-Adapters/projects/uniswap-v2/index.js"
 	AbsPath string // full path on disk
 	Slug    string // FromFilename to be used as a default fallback
-}
-
-// excludedChilds: some folders under DefiLlama-Adapters/projects/ are not adapters:
-// helper / treasury / entities / config / stacks / test
-var excludedChilds = map[string]struct{}{
-	"helper":   {},
-	"treasury": {},
-	"entities": {},
-	"config":   {},
-	"stacks":   {},
-	"test":     {},
 }
 
 // Walk enumerates adapter file candidates under upstreamDir.
@@ -61,8 +52,7 @@ func tvlSkipChild(name string, depth int) bool {
 	if depth != 1 {
 		return false
 	}
-	_, skip := excludedChilds[name]
-	return skip
+	return registry.IsExcludedAdapterChild(name)
 }
 
 // dimsTypeFn returns a typeFn that derives the dimension type from the first
