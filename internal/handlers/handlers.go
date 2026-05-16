@@ -14,6 +14,7 @@ import (
 type healthResponse struct {
 	Status string `json:"status"`
 	DB     string `json:"db"`
+	DBMs   int64  `json:"db_ms"`
 }
 
 func writeHeaders(w http.ResponseWriter, status int) {
@@ -28,17 +29,21 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	}
 }
 
-// Health returns 200 with status:ok when the DB ping succeeds within 2 seconds,
-// otherwise 503 with status:down. The DB error itself is logged, not exposed.
+// Health returns 200 with status:ok when the DB ping succeeds within 2 seconds.
+// otherwise 503 with status:down.
+// db_ms reports the ping latency either way (timeout duration on failure).
 func Health(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
-	resp := healthResponse{Status: "ok", DB: "ok"}
-	code := http.StatusOK
+	start := time.Now()
+	err := postgres.Ping(ctx)
+	elapsed := time.Since(start).Milliseconds()
 
-	if err := postgres.Ping(ctx); err != nil {
-		slog.Warn("health: db ping failed", "error", err)
+	resp := healthResponse{Status: "ok", DB: "ok", DBMs: elapsed}
+	code := http.StatusOK
+	if err != nil {
+		slog.Warn("health: db ping failed", "error", err, "elapsed_ms", elapsed)
 		resp.Status = "down"
 		resp.DB = "down"
 		code = http.StatusServiceUnavailable
