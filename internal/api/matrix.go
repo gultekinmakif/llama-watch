@@ -9,6 +9,47 @@ import (
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 )
 
+// Matrix serves GET /api/matrix.
+func Matrix(w http.ResponseWriter, r *http.Request) {
+	q, err := ParseMatrixQuery(r)
+	if err != nil {
+		status := http.StatusInternalServerError
+		code := "internal"
+		message := "internal error"
+		var perr *ParseError
+		if errors.As(err, &perr) {
+			status = http.StatusBadRequest
+			code = perr.Code
+			message = perr.Message
+		}
+		writeErr(w, status, code, message)
+		return
+	}
+
+	db := postgres.Get()
+	ctx := r.Context()
+
+	total, err := countProtocols(ctx, db)
+	if err != nil {
+		slog.Error("matrix count failed", "error", err)
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+
+	rows, err := listProtocols(ctx, db, q.Limit, q.Offset)
+	if err != nil {
+		slog.Error("matrix list failed", "error", err)
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, MatrixResponse{
+		Columns: ColumnList(),
+		Rows:    rows,
+		Total:   total,
+	})
+}
+
 type Column struct {
 	Key   string `json:"key"`
 	Label string `json:"label"`
@@ -49,45 +90,4 @@ func ColumnList() []Column {
 	out := make([]Column, len(columns))
 	copy(out, columns)
 	return out
-}
-
-// Matrix serves GET /api/matrix.
-func Matrix(w http.ResponseWriter, r *http.Request) {
-	q, err := ParseMatrixQuery(r)
-	if err != nil {
-		status := http.StatusInternalServerError
-		code := "internal"
-		message := "internal error"
-		var perr *ParseError
-		if errors.As(err, &perr) {
-			status = http.StatusBadRequest
-			code = perr.Code
-			message = perr.Message
-		}
-		writeErr(w, status, code, message)
-		return
-	}
-
-	db := postgres.Get()
-	ctx := r.Context()
-
-	total, err := countProtocols(ctx, db)
-	if err != nil {
-		slog.Error("matrix count failed", "error", err)
-		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
-		return
-	}
-
-	rows, err := listProtocols(ctx, db, q.Limit, q.Offset)
-	if err != nil {
-		slog.Error("matrix list failed", "error", err)
-		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, MatrixResponse{
-		Columns: ColumnList(),
-		Rows:    rows,
-		Total:   total,
-	})
 }
