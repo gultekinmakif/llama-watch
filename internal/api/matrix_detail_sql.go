@@ -38,9 +38,6 @@ func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*Protocol
 		}
 		path := a.Path
 		repo := a.Repo
-		// When commit_refs lands, build LastCommit here. github_url construction:
-		// https://github.com/DefiLlama/<RepoName>/blob/<sha>/<path>
-		// RepoName mapping: defillama-adapters -> DefiLlama-Adapters, dimension-adapters -> dimension-adapters.
 		dims = append(dims, ProtocolDimension{
 			Kind:       c.Key,
 			Present:    true,

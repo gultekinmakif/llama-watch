@@ -72,7 +72,7 @@ func TestListProtocols(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
 
-			n, err := countProtocols(ctx, tx)
+			n, err := countProtocols(ctx, tx, MatrixQuery{})
 			if err != nil {
 				t.Fatalf("countProtocols: %v", err)
 			}
@@ -80,7 +80,7 @@ func TestListProtocols(t *testing.T) {
 				t.Fatalf("count: want 0, got %d", n)
 			}
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -101,7 +101,7 @@ func TestListProtocols(t *testing.T) {
 			seedProtocol(t, tx, "compound-v2", "Compound V2", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "uniswap-v2", "Uniswap V2", pq.StringArray{"ethereum", "polygon"})
 
-			n, err := countProtocols(ctx, tx)
+			n, err := countProtocols(ctx, tx, MatrixQuery{})
 			if err != nil {
 				t.Fatalf("countProtocols: %v", err)
 			}
@@ -109,7 +109,7 @@ func TestListProtocols(t *testing.T) {
 				t.Fatalf("count: want 3, got %d", n)
 			}
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -141,7 +141,7 @@ func TestListProtocols(t *testing.T) {
 				seedProtocol(t, tx, s, s, pq.StringArray{"ethereum"})
 			}
 
-			rows, err := listProtocols(ctx, tx, 2, 2)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 2, Offset: 2})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -164,7 +164,7 @@ func TestListProtocols(t *testing.T) {
 			seedProtocol(t, tx, "b", "B", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "c", "C", pq.StringArray{"ethereum"})
 
-			rows, err := listProtocols(ctx, tx, 10, 99)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 10, Offset: 99})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -175,7 +175,7 @@ func TestListProtocols(t *testing.T) {
 				t.Fatalf("rows: want empty, got len %d", len(rows))
 			}
 
-			n, err := countProtocols(ctx, tx)
+			n, err := countProtocols(ctx, tx, MatrixQuery{})
 			if err != nil {
 				t.Fatalf("countProtocols: %v", err)
 			}
@@ -190,7 +190,7 @@ func TestListProtocols(t *testing.T) {
 			ctx := t.Context()
 			seedProtocol(t, tx, "multi-chain", "Multi Chain", pq.StringArray{"ethereum", "polygon"})
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -220,7 +220,7 @@ func TestListProtocols(t *testing.T) {
 			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -253,7 +253,7 @@ func TestListProtocols(t *testing.T) {
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/uniswap-v3.ts")
 			seedAdapterFile(t, tx, p.ID, "dailyVolume", "dimension-adapters", "dexs/uniswap-v3.ts")
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -279,7 +279,7 @@ func TestListProtocols(t *testing.T) {
 			p := seedProtocol(t, tx, "mystery", "Mystery", pq.StringArray{"ethereum"})
 			seedOrphanAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/mystery/index.js")
 
-			rows, err := listProtocols(ctx, tx, 200, 0)
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200})
 			if err != nil {
 				t.Fatalf("listProtocols: %v", err)
 			}
@@ -288,6 +288,219 @@ func TestListProtocols(t *testing.T) {
 			}
 			if rows[0].Cells["tvl"] != 0 {
 				t.Errorf("rows[0].Cells[%q]: want 0 (orphan excluded), got %d", "tvl", rows[0].Cells["tvl"])
+			}
+		})
+	})
+}
+
+func seedProtocolWithCategory(t *testing.T, tx *gorm.DB, slug, name, category string, chains pq.StringArray) models.Protocol {
+	t.Helper()
+	cat := category
+	p := models.Protocol{Slug: slug, Name: name, Chains: chains, Category: &cat}
+	if err := tx.Create(&p).Error; err != nil {
+		t.Fatalf("seed %q: %v", slug, err)
+	}
+	return p
+}
+
+func slugSet(rows []Row) map[string]struct{} {
+	out := make(map[string]struct{}, len(rows))
+	for _, r := range rows {
+		out[r.Slug] = struct{}{}
+	}
+	return out
+}
+
+func TestListProtocolsFilters(t *testing.T) {
+	t.Run("chains filter single", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocol(t, tx, "eth-only", "Eth Only", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "poly-only", "Poly Only", pq.StringArray{"polygon"})
+			seedProtocol(t, tx, "multi", "Multi", pq.StringArray{"ethereum", "base"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Chains: []string{"ethereum"}})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 2 {
+				t.Fatalf("rows: want 2, got %d (%v)", len(got), got)
+			}
+			if _, ok := got["eth-only"]; !ok {
+				t.Errorf("want eth-only in result")
+			}
+			if _, ok := got["multi"]; !ok {
+				t.Errorf("want multi in result")
+			}
+			if _, ok := got["poly-only"]; ok {
+				t.Errorf("poly-only should be filtered out")
+			}
+		})
+	})
+
+	t.Run("chains filter overlap OR within list", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocol(t, tx, "eth-only", "Eth Only", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "poly-only", "Poly Only", pq.StringArray{"polygon"})
+			seedProtocol(t, tx, "base-only", "Base Only", pq.StringArray{"base"})
+			seedProtocol(t, tx, "arb-only", "Arb Only", pq.StringArray{"arbitrum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Chains: []string{"polygon", "base"}})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 2 {
+				t.Fatalf("rows: want 2, got %d (%v)", len(got), got)
+			}
+			if _, ok := got["poly-only"]; !ok {
+				t.Errorf("want poly-only in result")
+			}
+			if _, ok := got["base-only"]; !ok {
+				t.Errorf("want base-only in result")
+			}
+		})
+	})
+
+	t.Run("categories filter", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocolWithCategory(t, tx, "uni", "Uniswap", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "aave", "Aave", "Lending", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "sushi", "Sushi", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "no-cat", "No Cat", pq.StringArray{"ethereum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Categories: []string{"Dexes"}})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 2 {
+				t.Fatalf("rows: want 2 (Dexes only), got %d (%v)", len(got), got)
+			}
+			if _, ok := got["uni"]; !ok {
+				t.Errorf("want uni in result")
+			}
+			if _, ok := got["sushi"]; !ok {
+				t.Errorf("want sushi in result")
+			}
+			// NULL category protocols are excluded when categories filter is set; matches spec.
+			if _, ok := got["no-cat"]; ok {
+				t.Errorf("no-cat (NULL category) should be excluded")
+			}
+		})
+	})
+
+	t.Run("q filter slug substring", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocol(t, tx, "uniswap-v2", "Uniswap V2", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Q: "uniswap"})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 2 {
+				t.Fatalf("rows: want 2, got %d (%v)", len(got), got)
+			}
+			if _, ok := got["aave-v2"]; ok {
+				t.Errorf("aave-v2 should be filtered out")
+			}
+		})
+	})
+
+	t.Run("q filter name substring case-insensitive", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocol(t, tx, "alpha", "Alpha Finance", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "beta", "Beta Lending", pq.StringArray{"ethereum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Q: "FINANCE"})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 1 {
+				t.Fatalf("rows: want 1, got %d (%v)", len(got), got)
+			}
+			if _, ok := got["alpha"]; !ok {
+				t.Errorf("want alpha in result")
+			}
+		})
+	})
+
+	t.Run("q filter no matches", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
+			seedProtocol(t, tx, "compound", "Compound", pq.StringArray{"ethereum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{Limit: 200, Q: "nonexistent"})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			if rows == nil {
+				t.Fatal("rows: want non-nil empty slice, got nil")
+			}
+			if len(rows) != 0 {
+				t.Fatalf("rows: want 0, got %d", len(rows))
+			}
+		})
+	})
+
+	t.Run("combined filters narrow AND", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocolWithCategory(t, tx, "uniswap-v2", "Uniswap V2", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "uniswap-v3", "Uniswap V3", "Dexes", pq.StringArray{"polygon"})
+			seedProtocolWithCategory(t, tx, "sushi", "Sushi", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "aave-v2", "Aave V2", "Lending", pq.StringArray{"ethereum"})
+
+			rows, err := listProtocols(ctx, tx, MatrixQuery{
+				Limit:      200,
+				Chains:     []string{"ethereum"},
+				Categories: []string{"Dexes"},
+				Q:          "uniswap",
+			})
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			got := slugSet(rows)
+			if len(got) != 1 {
+				t.Fatalf("rows: want 1 (uniswap-v2 only), got %d (%v)", len(got), got)
+			}
+			if _, ok := got["uniswap-v2"]; !ok {
+				t.Errorf("want uniswap-v2 in result")
+			}
+		})
+	})
+
+	t.Run("count matches list under filter", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			seedProtocolWithCategory(t, tx, "uni", "Uniswap", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "sushi", "Sushi", "Dexes", pq.StringArray{"ethereum"})
+			seedProtocolWithCategory(t, tx, "aave", "Aave", "Lending", pq.StringArray{"ethereum"})
+
+			q := MatrixQuery{Limit: 200, Categories: []string{"Dexes"}}
+			n, err := countProtocols(ctx, tx, q)
+			if err != nil {
+				t.Fatalf("countProtocols: %v", err)
+			}
+			rows, err := listProtocols(ctx, tx, q)
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			if n != len(rows) {
+				t.Fatalf("count %d != len(rows) %d under filter", n, len(rows))
+			}
+			if n != 2 {
+				t.Fatalf("count: want 2, got %d", n)
 			}
 		})
 	})

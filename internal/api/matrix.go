@@ -30,14 +30,14 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 	db := postgres.Get()
 	ctx := r.Context()
 
-	total, err := countProtocols(ctx, db)
+	total, err := countProtocols(ctx, db, q)
 	if err != nil {
 		slog.Error("matrix count failed", "error", err)
 		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
 
-	rows, err := listProtocols(ctx, db, q.Limit, q.Offset)
+	rows, err := listProtocols(ctx, db, q)
 	if err != nil {
 		slog.Error("matrix list failed", "error", err)
 		writeErr(w, http.StatusInternalServerError, "internal", "internal error")

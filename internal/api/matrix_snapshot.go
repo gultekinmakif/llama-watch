@@ -11,12 +11,12 @@ import (
 // BuildMatrixSnapshot returns the full, unpaginated MatrixResponse so the refresh
 // pipeline can write it to disk in the exact shape GET /api/matrix serves.
 func BuildMatrixSnapshot(ctx context.Context, db *gorm.DB) (MatrixResponse, error) {
-	total, err := countProtocols(ctx, db)
+	total, err := countProtocols(ctx, db, MatrixQuery{})
 	if err != nil {
 		return MatrixResponse{}, err
 	}
 
-	rows, err := listProtocols(ctx, db, total, 0)
+	rows, err := listProtocols(ctx, db, MatrixQuery{Limit: total})
 	if err != nil {
 		return MatrixResponse{}, err
 	}

@@ -1,4 +1,4 @@
-// SQL query layer for /api/matrix: list protocols with limit/offset and a total count.
+// SQL query layer for /api/matrix.
 package api
 
 import (
@@ -6,18 +6,22 @@ import (
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
 	"github.com/gultekinmakif/llama-watch/internal/registry"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 // listProtocols returns the protocols page ordered by id for deterministic pagination.
 // Each Row's Cells is zero-filled across the pinned column set and then flipped to 1
 // for any dimension_kind present in adapter_files for that protocol.
-func listProtocols(ctx context.Context, db *gorm.DB, limit, offset int) ([]Row, error) {
+func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, error) {
+	tx := db.WithContext(ctx).Model(&models.Protocol{})
+	tx = applyMatrixFilters(tx, q)
+
 	var protos []models.Protocol
-	if err := db.WithContext(ctx).
+	if err := tx.
 		Order("id").
-		Limit(limit).
-		Offset(offset).
+		Limit(q.Limit).
+		Offset(q.Offset).
 		Find(&protos).Error; err != nil {
 		return nil, err
 	}
@@ -52,13 +56,34 @@ func listProtocols(ctx context.Context, db *gorm.DB, limit, offset int) ([]Row, 
 	return rows, nil
 }
 
-// countProtocols returns the total number of protocols rows.
-func countProtocols(ctx context.Context, db *gorm.DB) (int, error) {
+// countProtocols returns the total number of protocols rows after filtering.
+// Uses the same filter chain as listProtocols so total tracks the visible set.
+func countProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) (int, error) {
+	tx := db.WithContext(ctx).Model(&models.Protocol{})
+	tx = applyMatrixFilters(tx, q)
+
 	var n int64
-	if err := db.WithContext(ctx).Model(&models.Protocol{}).Count(&n).Error; err != nil {
+	if err := tx.Count(&n).Error; err != nil {
 		return 0, err
 	}
 	return int(n), nil
+}
+
+// applyMatrixFilters layers the chains / categories / q WHERE clauses onto tx.
+// Empty slices and empty strings short-circuit each branch so a zero-value
+// MatrixQuery is equivalent to "no filtering" for the snapshot path.
+func applyMatrixFilters(tx *gorm.DB, q MatrixQuery) *gorm.DB {
+	if len(q.Chains) > 0 {
+		tx = tx.Where("chains && ?", pq.StringArray(q.Chains))
+	}
+	if len(q.Categories) > 0 {
+		tx = tx.Where("category IN ?", q.Categories)
+	}
+	if q.Q != "" {
+		pattern := "%" + q.Q + "%"
+		tx = tx.Where("slug ILIKE ? OR name ILIKE ?", pattern, pattern)
+	}
+	return tx
 }
 
 // fetchCells returns protocol_id -> {dimension_kind: 1} for the given protocol IDs.
