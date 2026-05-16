@@ -25,6 +25,7 @@ func New(cfg *config.Config) *Server {
 	mux.HandleFunc("GET /", handlers.Root)
 	mux.HandleFunc("GET /health", handlers.Health)
 	mux.HandleFunc("GET /api/matrix", api.Matrix)
+	mux.HandleFunc("GET /api/protocols/{slug}", api.Protocol)
 
 	return &Server{
 		config: cfg,
