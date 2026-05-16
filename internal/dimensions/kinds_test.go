@@ -80,7 +80,6 @@ func TestDetectKinds(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := DetectKinds(tc.path, tc.dimType)
 			if err != nil {

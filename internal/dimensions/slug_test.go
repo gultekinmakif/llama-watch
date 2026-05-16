@@ -25,7 +25,6 @@ func TestCanonical(t *testing.T) {
 		{"newline survives (only ASCII space is replaced)", "foo\nbar", "foo\nbar"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			got := Canonical(tc.in)
 			if got != tc.want {
@@ -57,7 +56,6 @@ func TestFromFilename(t *testing.T) {
 		{"multi-dot extension only strips one suffix", "foo.test.ts", "foo.test"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			got := FromFilename(tc.in)
 			if got != tc.want {

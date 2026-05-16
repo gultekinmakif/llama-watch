@@ -81,7 +81,6 @@ func TestWalk_TVLShapes(t *testing.T) {
 		{"DefiLlama-Adapters/projects/aave-v2/index.ts", "aave-v2"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.rel, func(t *testing.T) {
 			c, ok := byRel[tc.rel]
 			if !ok {
@@ -129,7 +128,6 @@ func TestWalk_DimensionShapes(t *testing.T) {
 		{"dimension-adapters/open-interest/gmx/index.ts", "open-interest", "gmx"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.rel, func(t *testing.T) {
 			c, ok := byRel[tc.rel]
 			if !ok {
@@ -148,25 +146,28 @@ func TestWalk_DimensionShapes(t *testing.T) {
 func TestWalk_MultiVersionSiblings(t *testing.T) {
 	// Multi-version protocol siblings are separate rows and must not collapse. Uniswap V2, V3, V4 each get their own slug.
 	root := t.TempDir()
-	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v2/index.js", "")
-	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v3/index.js", "")
-	testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/uniswap-v4/index.js", "")
+	siblings := []string{"uniswap-v2", "uniswap-v3", "uniswap-v4"}
+	for _, s := range siblings {
+		testutil.WriteFile(t, root, "DefiLlama-Adapters/projects/"+s+"/index.js", "")
+	}
 
 	got, err := Walk(root)
 	if err != nil {
 		t.Fatalf("Walk: %v", err)
 	}
 	if len(got) != 3 {
-		t.Fatalf("want 3, got %d", len(got))
+		t.Fatalf("want 3 candidates, got %d (%v)", len(got), relset(got))
 	}
 	seen := map[string]bool{}
 	for _, c := range got {
 		seen[c.Slug] = true
 	}
-	for _, want := range []string{"uniswap-v2", "uniswap-v3", "uniswap-v4"} {
-		if !seen[want] {
-			t.Fatalf("missing %s; got %v", want, seen)
-		}
+	for _, want := range siblings {
+		t.Run(want, func(t *testing.T) {
+			if !seen[want] {
+				t.Fatalf("missing slug %s; saw %v", want, seen)
+			}
+		})
 	}
 }
 
@@ -292,19 +293,24 @@ func TestWalk_FilenameNormalization(t *testing.T) {
 	}
 	byRel := indexByRel(got)
 
-	want := map[string]string{
-		"DefiLlama-Adapters/projects/Uniswap_V2/index.js": "uniswap-v2",
-		"dimension-adapters/fees/Uniswap_V2.ts":           "uniswap-v2",
-		"dimension-adapters/dexs/Foo_Bar/index.ts":        "foo-bar",
+	cases := []struct {
+		rel  string
+		slug string
+	}{
+		{"DefiLlama-Adapters/projects/Uniswap_V2/index.js", "uniswap-v2"},
+		{"dimension-adapters/fees/Uniswap_V2.ts", "uniswap-v2"},
+		{"dimension-adapters/dexs/Foo_Bar/index.ts", "foo-bar"},
 	}
-	for rel, slug := range want {
-		c, ok := byRel[rel]
-		if !ok {
-			t.Fatalf("missing %s", rel)
-		}
-		if c.Slug != slug {
-			t.Fatalf("%s: slug = %q, want %q", rel, c.Slug, slug)
-		}
+	for _, tc := range cases {
+		t.Run(tc.rel, func(t *testing.T) {
+			c, ok := byRel[tc.rel]
+			if !ok {
+				t.Fatalf("missing %s", tc.rel)
+			}
+			if c.Slug != tc.slug {
+				t.Fatalf("slug = %q, want %q", c.Slug, tc.slug)
+			}
+		})
 	}
 }
 
