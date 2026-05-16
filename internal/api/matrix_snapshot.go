@@ -4,6 +4,7 @@ package api
 import (
 	"context"
 
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +22,7 @@ func BuildMatrixSnapshot(ctx context.Context, db *gorm.DB) (MatrixResponse, erro
 	}
 
 	return MatrixResponse{
-		Columns: ColumnList(),
+		Columns: registry.Columns(),
 		Rows:    rows,
 		Total:   total,
 	}, nil

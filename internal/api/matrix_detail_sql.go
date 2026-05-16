@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"gorm.io/gorm"
 )
 
@@ -36,8 +37,9 @@ func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*Protocol
 		byKind[a.DimensionKind] = a
 	}
 
-	dims := make([]ProtocolDimension, 0, len(columns))
-	for _, c := range columns {
+	cols := registry.Columns()
+	dims := make([]ProtocolDimension, 0, len(cols))
+	for _, c := range cols {
 		a, ok := byKind[c.Key]
 		if !ok {
 			dims = append(dims, ProtocolDimension{Kind: c.Key, Present: false})

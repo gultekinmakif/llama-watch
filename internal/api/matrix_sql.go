@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"gorm.io/gorm"
 )
 
@@ -93,10 +94,11 @@ func fetchCells(ctx context.Context, db *gorm.DB, protoIDs []uint64) (map[uint64
 }
 
 // initCells returns a fresh cells map with every pinned column key set to 0.
-// Use the package-level columns directly so the result tracks the closed set.
+// Sources the closed set from the registry so the result tracks one source of truth.
 func initCells() map[string]int {
-	cells := make(map[string]int, len(columns))
-	for _, c := range columns {
+	cols := registry.Columns()
+	cells := make(map[string]int, len(cols))
+	for _, c := range cols {
 		cells[c.Key] = 0
 	}
 	return cells

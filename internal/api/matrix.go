@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 )
 
 // Matrix serves GET /api/matrix.
@@ -44,15 +45,10 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, MatrixResponse{
-		Columns: ColumnList(),
+		Columns: registry.Columns(),
 		Rows:    rows,
 		Total:   total,
 	})
-}
-
-type Column struct {
-	Key   string `json:"key"`
-	Label string `json:"label"`
 }
 
 type Row struct {
@@ -65,29 +61,7 @@ type Row struct {
 }
 
 type MatrixResponse struct {
-	Columns []Column `json:"columns"`
-	Rows    []Row    `json:"rows"`
-	Total   int      `json:"total"`
-}
-
-// Closed, fixed column set. Order is load-bearing. Unexported so callers cannot
-// mutate the backing array; use ColumnList for a safe copy.
-var columns = []Column{
-	{Key: "tvl", Label: "TVL"},
-	{Key: "dailyFees", Label: "Daily Fees"},
-	{Key: "dailyRevenue", Label: "Daily Revenue"},
-	{Key: "dailyVolume", Label: "Daily Volume"},
-	{Key: "dailyNotionalVolume", Label: "Notional Volume"},
-	{Key: "dailyPremiumVolume", Label: "Premium Volume"},
-	{Key: "openInterestAtEnd", Label: "Open Interest"},
-	{Key: "dailyBridgeVolume", Label: "Bridge Volume"},
-	{Key: "dailyActiveUsers", Label: "Active Users"},
-}
-
-// ColumnList returns a copy of the pinned column set so external callers can read
-// the matrix shape without risking mutation of the package-level slice.
-func ColumnList() []Column {
-	out := make([]Column, len(columns))
-	copy(out, columns)
-	return out
+	Columns []registry.Column `json:"columns"`
+	Rows    []Row             `json:"rows"`
+	Total   int               `json:"total"`
 }

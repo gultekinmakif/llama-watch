@@ -3,6 +3,7 @@ package api
 import (
 	"testing"
 
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -10,12 +11,13 @@ import (
 func TestBuildMatrixSnapshot(t *testing.T) {
 	t.Run("empty db", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
+			cols := registry.Columns()
 			resp, err := BuildMatrixSnapshot(t.Context(), tx)
 			if err != nil {
 				t.Fatalf("BuildMatrixSnapshot: %v", err)
 			}
-			if len(resp.Columns) != len(columns) {
-				t.Errorf("columns: want %d, got %d", len(columns), len(resp.Columns))
+			if len(resp.Columns) != len(cols) {
+				t.Errorf("columns: want %d, got %d", len(cols), len(resp.Columns))
 			}
 			if resp.Rows == nil {
 				t.Error("rows: want non-nil empty slice, got nil")
@@ -31,6 +33,7 @@ func TestBuildMatrixSnapshot(t *testing.T) {
 
 	t.Run("returns full row set with presence flags", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
+			cols := registry.Columns()
 			p1 := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "compound-v2", "Compound V2", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum", "polygon"})
@@ -46,10 +49,10 @@ func TestBuildMatrixSnapshot(t *testing.T) {
 			if len(resp.Rows) != 3 {
 				t.Fatalf("rows: want 3 (full row set, no pagination), got %d", len(resp.Rows))
 			}
-			if len(resp.Columns) != len(columns) {
-				t.Errorf("columns: want %d, got %d", len(columns), len(resp.Columns))
+			if len(resp.Columns) != len(cols) {
+				t.Errorf("columns: want %d, got %d", len(cols), len(resp.Columns))
 			}
-			for i, c := range columns {
+			for i, c := range cols {
 				if resp.Columns[i].Key != c.Key {
 					t.Errorf("columns[%d].Key: want %q, got %q", i, c.Key, resp.Columns[i].Key)
 				}

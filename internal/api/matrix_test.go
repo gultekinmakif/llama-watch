@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 )
 
 func TestMatrixShape(t *testing.T) {
@@ -77,7 +79,7 @@ func TestMatrixBadQuery(t *testing.T) {
 }
 
 func TestMatrixColumnsStableAcrossCalls(t *testing.T) {
-	call := func() []Column {
+	call := func() []registry.Column {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/api/matrix", nil)
 		Matrix(rec, req)

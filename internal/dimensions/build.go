@@ -9,14 +9,10 @@ import (
 	"strings"
 
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-)
-
-const (
-	tvlAdapterPrefix       = "DefiLlama-Adapters/projects/"
-	dimensionAdapterPrefix = "dimension-adapters/"
 )
 
 type BuildStats struct {
@@ -138,7 +134,7 @@ func resolveTVL(
 	module string,
 	stats *BuildStats,
 ) error {
-	rel := tvlAdapterPrefix + module
+	rel := registry.TVLAdapterPath + module
 	_, ok := byRel[rel]
 	if !ok {
 		log.Warn("tvl adapter missing on disk", "module", module)
@@ -166,7 +162,7 @@ func resolveTVL(
 //
 // > The first existing path in the walker output wins!
 func dimensionCandidates(dimType, dimSlug string) []string {
-	base := dimensionAdapterPrefix + dimType + "/" + dimSlug
+	base := registry.DMSAdapterPath + dimType + "/" + dimSlug
 	return []string{base + ".ts", base + "/index.ts"}
 }
 
@@ -206,7 +202,7 @@ func resolveDimension(
 		return nil
 	}
 
-	relPath := strings.TrimPrefix(resolved.RelPath, dimensionAdapterPrefix)
+	relPath := strings.TrimPrefix(resolved.RelPath, registry.DMSAdapterPath)
 	for _, kind := range kinds {
 		pid := protocolID
 		row := models.AdapterFile{

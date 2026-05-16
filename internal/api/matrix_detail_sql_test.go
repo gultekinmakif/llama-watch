@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -26,6 +27,7 @@ func TestFetchMatrixDetail(t *testing.T) {
 	t.Run("identity fields only", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
+			cols := registry.Columns()
 			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum", "polygon"})
 
 			detail, err := fetchMatrixDetail(ctx, tx, "aave-v2")
@@ -50,12 +52,12 @@ func TestFetchMatrixDetail(t *testing.T) {
 			if len(detail.Methodology) != 0 {
 				t.Errorf("Methodology: want empty, got %v", detail.Methodology)
 			}
-			if len(detail.Dimensions) != len(columns) {
-				t.Fatalf("Dimensions: want %d entries, got %d", len(columns), len(detail.Dimensions))
+			if len(detail.Dimensions) != len(cols) {
+				t.Fatalf("Dimensions: want %d entries, got %d", len(cols), len(detail.Dimensions))
 			}
 			for i, d := range detail.Dimensions {
-				if d.Kind != columns[i].Key {
-					t.Errorf("Dimensions[%d].Kind: want %q, got %q", i, columns[i].Key, d.Kind)
+				if d.Kind != cols[i].Key {
+					t.Errorf("Dimensions[%d].Kind: want %q, got %q", i, cols[i].Key, d.Kind)
 				}
 				if d.Present {
 					t.Errorf("Dimensions[%d].Present: want false, got true", i)
@@ -76,6 +78,7 @@ func TestFetchMatrixDetail(t *testing.T) {
 	t.Run("one dimension present", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
+			cols := registry.Columns()
 			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
 
@@ -83,8 +86,8 @@ func TestFetchMatrixDetail(t *testing.T) {
 			if err != nil {
 				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
-			if len(detail.Dimensions) != len(columns) {
-				t.Fatalf("Dimensions: want %d entries, got %d", len(columns), len(detail.Dimensions))
+			if len(detail.Dimensions) != len(cols) {
+				t.Fatalf("Dimensions: want %d entries, got %d", len(cols), len(detail.Dimensions))
 			}
 			for _, d := range detail.Dimensions {
 				if d.Kind == "dailyFees" {

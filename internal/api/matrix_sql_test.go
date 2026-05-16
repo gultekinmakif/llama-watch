@@ -6,6 +6,7 @@ import (
 
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 	"github.com/gultekinmakif/llama-watch/internal/models"
+	"github.com/gultekinmakif/llama-watch/internal/registry"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -95,6 +96,7 @@ func TestListProtocols(t *testing.T) {
 	t.Run("single page", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
+			cols := registry.Columns()
 			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "compound-v2", "Compound V2", pq.StringArray{"ethereum"})
 			seedProtocol(t, tx, "uniswap-v2", "Uniswap V2", pq.StringArray{"ethereum", "polygon"})
@@ -120,8 +122,8 @@ func TestListProtocols(t *testing.T) {
 			if rows[0].Name != "Aave V2" {
 				t.Errorf("rows[0].Name: want %q, got %q", "Aave V2", rows[0].Name)
 			}
-			if len(rows[0].Cells) != len(columns) {
-				t.Errorf("rows[0].Cells: want %d keys (all pinned columns), got %d", len(columns), len(rows[0].Cells))
+			if len(rows[0].Cells) != len(cols) {
+				t.Errorf("rows[0].Cells: want %d keys (all pinned columns), got %d", len(cols), len(rows[0].Cells))
 			}
 			for k, v := range rows[0].Cells {
 				if v != 0 {
@@ -214,6 +216,7 @@ func TestListProtocols(t *testing.T) {
 	t.Run("single cell present", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
+			cols := registry.Columns()
 			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
 
@@ -224,13 +227,13 @@ func TestListProtocols(t *testing.T) {
 			if len(rows) != 1 {
 				t.Fatalf("rows: want 1, got %d", len(rows))
 			}
-			if len(rows[0].Cells) != len(columns) {
-				t.Fatalf("rows[0].Cells: want %d keys, got %d", len(columns), len(rows[0].Cells))
+			if len(rows[0].Cells) != len(cols) {
+				t.Fatalf("rows[0].Cells: want %d keys, got %d", len(cols), len(rows[0].Cells))
 			}
 			if rows[0].Cells["dailyFees"] != 1 {
 				t.Errorf("rows[0].Cells[%q]: want 1, got %d", "dailyFees", rows[0].Cells["dailyFees"])
 			}
-			for _, c := range columns {
+			for _, c := range cols {
 				if c.Key == "dailyFees" {
 					continue
 				}
@@ -244,6 +247,7 @@ func TestListProtocols(t *testing.T) {
 	t.Run("multiple cells present", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
+			cols := registry.Columns()
 			p := seedProtocol(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum"})
 			seedAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/uniswap-v3/index.js")
 			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/uniswap-v3.ts")
@@ -257,7 +261,7 @@ func TestListProtocols(t *testing.T) {
 				t.Fatalf("rows: want 1, got %d", len(rows))
 			}
 			present := map[string]bool{"tvl": true, "dailyFees": true, "dailyVolume": true}
-			for _, c := range columns {
+			for _, c := range cols {
 				want := 0
 				if present[c.Key] {
 					want = 1
