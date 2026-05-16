@@ -21,7 +21,7 @@ func main() {
 	intervalSec := flag.Int("interval", 3300, "seconds; skip if the last refresh finished within this window")
 	upstreamDir := flag.String("upstream-dir", "var/upstream", "parent of the cloned upstream repos")
 	protocolsJSON := flag.String("protocols-json", "var/extracted/protocols.json", "path to the bun extractor output")
-	snapshotOut := flag.String("snapshot-out", "var/snapshot/snapshot.json", "snapshot writer output path; accepted but not consumed in this step")
+	flag.String("snapshot-out", "var/snapshot/snapshot.json", "snapshot writer output path; wired in a later step")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -40,7 +40,6 @@ func main() {
 		"upstream_dir", *upstreamDir,
 		"protocols_json", *protocolsJSON,
 	)
-	lg.Debug("snapshot output path reserved for a later step", "snapshot_out", *snapshotOut)
 
 	if err := postgres.New(cfg.DatabaseURL); err != nil {
 		slog.Error("database connection error", "error", err)
@@ -109,11 +108,11 @@ func main() {
 		DurationMs:       &durMs,
 		ProtocolsSeen:    stats.Protocols,
 		AdapterFilesSeen: stats.AdapterFiles,
-		CommitsSeen:      0,
+		CommitsSeen:      0, // commits ingestion lands in a later step
 		Error:            nil,
 	}
 	if err := db.Create(&row).Error; err != nil {
-		slog.Error("refresh_run insert failed", "error", err)
+		slog.Error("refresh_run insert failed", "phase", "record-success", "error", err)
 		return
 	}
 
@@ -164,7 +163,7 @@ func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string
 		DurationMs:       &durMs,
 		ProtocolsSeen:    0,
 		AdapterFilesSeen: 0,
-		CommitsSeen:      0,
+		CommitsSeen:      0, // commits ingestion lands in a later step
 		Error:            &msg,
 	}
 	if err := db.Create(&row).Error; err != nil {
