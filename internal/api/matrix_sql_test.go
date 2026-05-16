@@ -31,11 +31,44 @@ func withTx(t *testing.T, fn func(tx *gorm.DB)) {
 	fn(tx)
 }
 
-func seedProtocol(t *testing.T, tx *gorm.DB, slug, name string, chains pq.StringArray) {
+func seedProtocol(t *testing.T, tx *gorm.DB, slug, name string, chains pq.StringArray) models.Protocol {
 	t.Helper()
 	p := models.Protocol{Slug: slug, Name: name, Chains: chains}
 	if err := tx.Create(&p).Error; err != nil {
 		t.Fatalf("seed %q: %v", slug, err)
+	}
+	return p
+}
+
+func seedAdapterFile(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path string) {
+	t.Helper()
+	pid := protocolID
+	af := models.AdapterFile{
+		ProtocolID:    &pid,
+		Repo:          repo,
+		Path:          path,
+		Slug:          path,
+		DimensionKind: kind,
+		Orphan:        false,
+	}
+	if err := tx.Create(&af).Error; err != nil {
+		t.Fatalf("seed adapter file %s/%s: %v", repo, path, err)
+	}
+}
+
+func seedOrphanAdapterFile(t *testing.T, tx *gorm.DB, protocolID uint64, kind, repo, path string) {
+	t.Helper()
+	pid := protocolID
+	af := models.AdapterFile{
+		ProtocolID:    &pid,
+		Repo:          repo,
+		Path:          path,
+		Slug:          path,
+		DimensionKind: kind,
+		Orphan:        true,
+	}
+	if err := tx.Create(&af).Error; err != nil {
+		t.Fatalf("seed orphan adapter file %s/%s: %v", repo, path, err)
 	}
 }
 
@@ -93,11 +126,13 @@ func TestListProtocols(t *testing.T) {
 			if rows[0].Name != "Aave V2" {
 				t.Errorf("rows[0].Name: want %q, got %q", "Aave V2", rows[0].Name)
 			}
-			if rows[0].Cells == nil {
-				t.Error("rows[0].Cells: want non-nil empty map, got nil")
+			if len(rows[0].Cells) != len(columns) {
+				t.Errorf("rows[0].Cells: want %d keys (all pinned columns), got %d", len(columns), len(rows[0].Cells))
 			}
-			if len(rows[0].Cells) != 0 {
-				t.Errorf("rows[0].Cells: want empty, got len %d", len(rows[0].Cells))
+			for k, v := range rows[0].Cells {
+				if v != 0 {
+					t.Errorf("rows[0].Cells[%q]: want 0 (no adapter_files seeded), got %d", k, v)
+				}
 			}
 		})
 	})
@@ -178,6 +213,83 @@ func TestListProtocols(t *testing.T) {
 				if got[i] != want[i] {
 					t.Errorf("rows[0].Chains[%d]: want %q, got %q", i, want[i], got[i])
 				}
+			}
+		})
+	})
+
+	t.Run("single cell present", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
+			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
+
+			rows, err := listProtocols(ctx, tx, 200, 0)
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			if len(rows) != 1 {
+				t.Fatalf("rows: want 1, got %d", len(rows))
+			}
+			if len(rows[0].Cells) != len(columns) {
+				t.Fatalf("rows[0].Cells: want %d keys, got %d", len(columns), len(rows[0].Cells))
+			}
+			if rows[0].Cells["dailyFees"] != 1 {
+				t.Errorf("rows[0].Cells[%q]: want 1, got %d", "dailyFees", rows[0].Cells["dailyFees"])
+			}
+			for _, c := range columns {
+				if c.Key == "dailyFees" {
+					continue
+				}
+				if rows[0].Cells[c.Key] != 0 {
+					t.Errorf("rows[0].Cells[%q]: want 0, got %d", c.Key, rows[0].Cells[c.Key])
+				}
+			}
+		})
+	})
+
+	t.Run("multiple cells present", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			p := seedProtocol(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum"})
+			seedAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/uniswap-v3/index.js")
+			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/uniswap-v3.ts")
+			seedAdapterFile(t, tx, p.ID, "dailyVolume", "dimension-adapters", "dexs/uniswap-v3.ts")
+
+			rows, err := listProtocols(ctx, tx, 200, 0)
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			if len(rows) != 1 {
+				t.Fatalf("rows: want 1, got %d", len(rows))
+			}
+			present := map[string]bool{"tvl": true, "dailyFees": true, "dailyVolume": true}
+			for _, c := range columns {
+				want := 0
+				if present[c.Key] {
+					want = 1
+				}
+				if rows[0].Cells[c.Key] != want {
+					t.Errorf("rows[0].Cells[%q]: want %d, got %d", c.Key, want, rows[0].Cells[c.Key])
+				}
+			}
+		})
+	})
+
+	t.Run("orphan adapter file excluded", func(t *testing.T) {
+		withTx(t, func(tx *gorm.DB) {
+			ctx := t.Context()
+			p := seedProtocol(t, tx, "mystery", "Mystery", pq.StringArray{"ethereum"})
+			seedOrphanAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/mystery/index.js")
+
+			rows, err := listProtocols(ctx, tx, 200, 0)
+			if err != nil {
+				t.Fatalf("listProtocols: %v", err)
+			}
+			if len(rows) != 1 {
+				t.Fatalf("rows: want 1, got %d", len(rows))
+			}
+			if rows[0].Cells["tvl"] != 0 {
+				t.Errorf("rows[0].Cells[%q]: want 0 (orphan excluded), got %d", "tvl", rows[0].Cells["tvl"])
 			}
 		})
 	})
