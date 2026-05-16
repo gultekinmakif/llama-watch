@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -83,8 +84,8 @@ func main() {
 	started := time.Now()
 	stats, phase, err := runPipeline(ctx, db, lg, *upstreamDir, *protocolsJSON)
 	if err != nil {
-		recordFailure(db, lg, started, phase, err)
-		return
+		_ = recordFailure(db, lg, started, phase, err)
+		os.Exit(1)
 	}
 
 	row := newRefreshRun(started, stats, nil)
@@ -173,8 +174,9 @@ func shouldSkip(db *gorm.DB, interval time.Duration) (bool, time.Time, error) {
 
 // recordFailure writes a partial refresh_run row for an aborted pipeline so
 // the gate in shouldSkip still sees forward progress and the operator can
-// audit failures from the table.
-func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string, cause error) {
+// audit failures from the table. Returns the insert error so the caller can
+// exit non-zero whether the pipeline OR the bookkeeping row failed.
+func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string, cause error) error {
 	msg := fmt.Sprintf("%s: %v", phase, cause)
 	row := newRefreshRun(started, dimensions.BuildStats{}, &msg)
 	if err := db.Create(row).Error; err != nil {
@@ -183,7 +185,8 @@ func recordFailure(db *gorm.DB, lg *slog.Logger, started time.Time, phase string
 			"cause", cause,
 			"insert_error", err,
 		)
-		return
+		return err
 	}
 	lg.Error("refresh failed", "phase", phase, "error", cause, "duration_ms", *row.DurationMs)
+	return nil
 }

@@ -24,7 +24,10 @@ tmp/
 .DS_Store
 
 # Tooling
+.vscode/*
 .claude/
+*.md
+!Readme.md
 
 # Environment
 .env
