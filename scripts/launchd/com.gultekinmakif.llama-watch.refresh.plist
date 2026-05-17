@@ -9,7 +9,7 @@
     <string>-lc</string>
     <string>cd /ABSOLUTE/PATH/TO/llama-watch && ./scripts/refresh.sh</string>
   </array>
-  <key>StartInterval</key>    <integer>3600</integer>
+  <key>StartInterval</key>    <integer>86400</integer>
   <key>RunAtLoad</key>        <true/>
   <key>StandardOutPath</key>  <string>/ABSOLUTE/PATH/TO/llama-watch/var/log/refresh.out</string>
   <key>StandardErrorPath</key><string>/ABSOLUTE/PATH/TO/llama-watch/var/log/refresh.err</string>
