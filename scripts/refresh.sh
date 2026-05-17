@@ -62,13 +62,9 @@ if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models 
 fi
 bin/sync-db
 
-# 5. Build the frontend and atomic-swap web/out/. Skip when web/ is unscaffolded.
+# 5. Build the frontend; Next writes the static export directly to web/out/. Skip when web/ is unscaffolded.
 if [ -f web/package.json ]; then
   ( cd web && bun run build )
-  # Phase 2 may emit directly to web/out/; revisit this swap when the real build path lands.
-  rm -rf web/out.old
-  [ -d web/out ] && mv web/out web/out.old
-  mv web/out.new web/out
 else
   echo "web/package.json missing; skipping frontend build"
 fi

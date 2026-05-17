@@ -82,17 +82,24 @@ function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
-// Emits one cell per (dimType, metric)
+// Emits one cell per (dimType, metric). A protocol can register under multiple dimTypes that overlap
+// on the same metric (e.g. dexs + aggregators both carry dailyVolume); first-seen wins so the matrix
+// PK stays unique.
 function cellsForDimensions(
   slug: string,
   dimensions: Record<string, string>,
   dimensionModules: DimensionModules,
 ): Cell[] {
+  const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) return [];
     const codePath = entry.codePath ?? "";
-    return metricsForDimType(dimType).map((metric) => ({ slug, metric, codePath }));
+    return metricsForDimType(dimType).flatMap((metric) => {
+      if (seen.has(metric)) return [];
+      seen.add(metric);
+      return [{ slug, metric, codePath }];
+    });
   });
 }
 
