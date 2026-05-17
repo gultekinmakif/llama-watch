@@ -66,7 +66,7 @@ The api package opens the singleton via `postgres.New`, runs `Migrate`, and roll
 - `git pull`s the three upstream repos into `var/upstream/` (clones on first run).
 - Runs the bun extractor: `tools/extract-protocols.ts` → `var/extracted/protocols.json`.
 - Runs `bin/refresh`, rebuilds if its sources changed. The `--interval` flag (default 3300s) skips when the previous run finished too recently.
-- If `web/package.json` exists, runs `pnpm build` and atomic-swaps `web/out/`. Skipped silently otherwise.
+- If `web/package.json` exists, runs `bun run build` and atomic-swaps `web/out/`. Skipped silently otherwise.
 
 ### Install the scheduler
 
