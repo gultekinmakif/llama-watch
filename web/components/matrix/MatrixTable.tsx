@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
   flexRender,
@@ -26,6 +26,8 @@ interface MatrixTableProps {
 
 const columnHelper = createColumnHelper<Row>()
 
+const DEFAULT_HIDDEN: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
+
 function coverageOf(row: Row): number {
   return Object.values(row.cells).filter((v) => v === 1).length
 }
@@ -39,12 +41,9 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    category: false,
-    chains: false,
-    coverage: false,
-  })
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const sorting = useMemo<SortingState>(
     () => readInitialSorting(searchParams.get('sort'), searchParams.get('order')),
@@ -89,18 +88,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return [...identity, ...dimension]
   }, [columns])
 
-  const table = useReactTable({
-    data: rows,
-    columns: tableColumns,
-    state: { sorting, columnVisibility },
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
-
-  const tableRows = table.getRowModel().rows
-  const columnCount = table.getVisibleLeafColumns().length
-
   const toggleableOptions = useMemo<ColumnOption[]>(
     () => [
       { id: 'category', label: 'category' },
@@ -116,6 +103,31 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [toggleableOptions],
   )
 
+  const columnVisibility = useMemo<VisibilityState>(() => {
+    const colsParam = searchParams.get('cols')
+    if (colsParam == null) {
+      const result: VisibilityState = {}
+      for (const id of allIds) result[id] = !DEFAULT_HIDDEN.has(id)
+      return result
+    }
+    const visible = new Set(colsParam.split(',').filter(Boolean))
+    visible.add('name')
+    const result: VisibilityState = {}
+    for (const id of allIds) result[id] = visible.has(id)
+    return result
+  }, [searchParams, allIds])
+
+  const table = useReactTable({
+    data: rows,
+    columns: tableColumns,
+    state: { sorting, columnVisibility },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
+  const tableRows = table.getRowModel().rows
+  const columnCount = table.getVisibleLeafColumns().length
+
   const visibleIds = useMemo(
     () => allIds.filter((id) => columnVisibility[id] !== false),
     [allIds, columnVisibility],
@@ -123,12 +135,21 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   const handleVisibleChange = useCallback(
     (nextIds: string[]) => {
-      const set = new Set(nextIds)
-      const next: VisibilityState = {}
-      for (const id of allIds) next[id] = set.has(id)
-      setColumnVisibility(next)
+      const visible = new Set(nextIds)
+      visible.add('name')
+      const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
+      const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
+      const next = new URLSearchParams(searchParams.toString())
+      // Drop the param when the selection matches the default policy so default deep links stay clean.
+      if (csv === defaultCsv) {
+        next.delete('cols')
+      } else {
+        next.set('cols', csv)
+      }
+      const qs = next.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [allIds],
+    [allIds, pathname, router, searchParams],
   )
 
   return (
