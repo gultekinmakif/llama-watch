@@ -9,49 +9,50 @@ import (
 	"gorm.io/gorm"
 )
 
+const githubURLPrefix = "https://github.com/DefiLlama/dimension-adapters/blob/master/"
+
 // fetchMatrixDetail assembles a ProtocolDetail. Returns gorm.ErrRecordNotFound on unknown slug.
-// last_commit is stubbed until the refresh pipeline surfaces per-file commit metadata.
 func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*ProtocolDetail, error) {
-	var p models.Protocol
-	if err := db.WithContext(ctx).Where("slug = ?", slug).Take(&p).Error; err != nil {
+	var ident models.ProtocolIdentity
+	if err := db.WithContext(ctx).Where("slug = ?", slug).Take(&ident).Error; err != nil {
 		return nil, err
 	}
 
-	byID, err := fetchAdapterRows(ctx, db, []uint64{p.ID})
-	if err != nil {
+	var mrows []models.Matrix
+	if err := db.WithContext(ctx).Where("slug = ?", slug).Find(&mrows).Error; err != nil {
 		return nil, err
 	}
-	afs := byID[p.ID]
 
-	byKind := make(map[string]adapterRow, len(afs))
-	for _, a := range afs {
-		byKind[a.DimensionKind] = a
+	byMetric := make(map[string]models.Matrix, len(mrows))
+	for _, m := range mrows {
+		byMetric[m.Metric] = m
 	}
 
 	cols := registry.Columns()
 	dims := make([]ProtocolDimension, 0, len(cols))
 	for _, c := range cols {
-		a, ok := byKind[c.Key]
+		m, ok := byMetric[c.Key]
 		if !ok {
 			dims = append(dims, ProtocolDimension{Kind: c.Key, Present: false})
 			continue
 		}
-		path := a.Path
-		repo := a.Repo
+		var url *string
+		if m.CodePath != "" {
+			u := githubURLPrefix + m.CodePath
+			url = &u
+		}
 		dims = append(dims, ProtocolDimension{
-			Kind:       c.Key,
-			Present:    true,
-			FilePath:   &path,
-			Repo:       &repo,
-			LastCommit: nil,
+			Kind:      c.Key,
+			Present:   true,
+			GitHubURL: url,
 		})
 	}
 
 	return &ProtocolDetail{
-		Slug:       p.Slug,
-		Name:       p.Name,
-		Category:   p.Category,
-		Chains:     []string(p.Chains),
+		Slug:       ident.Slug,
+		Name:       ident.Name,
+		Category:   ident.Category,
+		Chains:     []string(ident.Chains),
 		Dimensions: dims,
 	}, nil
 }

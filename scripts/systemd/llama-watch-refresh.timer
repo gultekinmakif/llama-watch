@@ -1,9 +1,9 @@
 [Unit]
-Description=llama-watch refresh hourly
+Description=llama-watch refresh daily
 
 [Timer]
 OnBootSec=2min
-OnUnitActiveSec=1h
+OnUnitActiveSec=1d
 Persistent=true
 
 [Install]

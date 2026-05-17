@@ -28,47 +28,47 @@ func TestParseMatrixQuery_HappyPaths(t *testing.T) {
 		{
 			name: "empty defaults",
 			url:  "/api/matrix",
-			want: MatrixQuery{Limit: 200, Offset: 0, Sort: "tvl", Order: "desc"},
+			want: MatrixQuery{Limit: 200, Offset: 0, Sort: "coverage", Order: "desc"},
 		},
 		{
 			name: "limit and offset honored",
 			url:  "/api/matrix?limit=500&offset=200",
-			want: MatrixQuery{Limit: 500, Offset: 200, Sort: "tvl", Order: "desc"},
+			want: MatrixQuery{Limit: 500, Offset: 200, Sort: "coverage", Order: "desc"},
 		},
 		{
 			name: "limit boundary 1000 inclusive",
 			url:  "/api/matrix?limit=1000",
-			want: MatrixQuery{Limit: 1000, Sort: "tvl", Order: "desc"},
+			want: MatrixQuery{Limit: 1000, Sort: "coverage", Order: "desc"},
 		},
 		{
 			name: "limit boundary 1 inclusive",
 			url:  "/api/matrix?limit=1",
-			want: MatrixQuery{Limit: 1, Sort: "tvl", Order: "desc"},
+			want: MatrixQuery{Limit: 1, Sort: "coverage", Order: "desc"},
 		},
 		{
 			name: "chains lowercased and deduped",
 			url:  "/api/matrix?chains=ETH,Base,eth,,arbitrum",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc", Chains: []string{"eth", "base", "arbitrum"}},
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc", Chains: []string{"eth", "base", "arbitrum"}},
 		},
 		{
 			name: "chains absent yields nil",
 			url:  "/api/matrix",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc"},
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc"},
 		},
 		{
 			name: "categories case preserved and deduped",
 			url:  "/api/matrix?categories=Dexes,Lending,,Dexes",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc", Categories: []string{"Dexes", "Lending"}},
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc", Categories: []string{"Dexes", "Lending"}},
 		},
 		{
 			name: "q trims whitespace",
 			url:  "/api/matrix?q=%20%20uniswap%20%20",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc", Q: "uniswap"},
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc", Q: "uniswap"},
 		},
 		{
 			name: "q whitespace only collapses to empty",
 			url:  "/api/matrix?q=%20%20",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc", Q: ""},
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc", Q: ""},
 		},
 		{
 			name: "sort name defaults to asc",
@@ -86,9 +86,9 @@ func TestParseMatrixQuery_HappyPaths(t *testing.T) {
 			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc"},
 		},
 		{
-			name: "explicit asc overrides default-desc on tvl",
-			url:  "/api/matrix?sort=tvl&order=asc",
-			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "asc"},
+			name: "explicit asc overrides default-desc on coverage",
+			url:  "/api/matrix?sort=coverage&order=asc",
+			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "asc"},
 		},
 		{
 			name: "explicit desc overrides default-asc on name",
@@ -141,7 +141,7 @@ func TestParseMatrixQuery_BadPaths(t *testing.T) {
 		{
 			name:        "sort unknown key rejected with whitelist",
 			url:         "/api/matrix?sort=bogus",
-			msgContains: "name, tvl, category, coverage",
+			msgContains: "name, category, coverage",
 		},
 		{
 			name:        "order unknown value rejected",

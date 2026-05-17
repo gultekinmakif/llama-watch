@@ -1,5 +1,5 @@
 // 0.2: slog handler factory. dev=tint colored, prod=JSON.
-// Both cmd/refresh and cmd/server call this once at boot and SetDefault the result.
+// Each binary calls this once at boot and SetDefaults the result.
 package logger
 
 import (

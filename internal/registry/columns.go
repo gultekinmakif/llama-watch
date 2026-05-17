@@ -6,8 +6,8 @@ type Column struct {
 	Label string `json:"label"`
 }
 
-// Closed, fixed column set. Order is load-bearing. Unexported so callers cannot
-// mutate the backing array; use Columns for a safe copy.
+// Closed, fixed column set; order is load-bearing. Use Columns() for a safe copy.
+// Keys mirror defillama-server getDimensionsConfig KEYS_TO_STORE flattened across dimTypes, plus tvl.
 var columns = []Column{
 	{Key: "tvl", Label: "TVL"},
 	{Key: "dailyFees", Label: "Daily Fees"},
@@ -18,6 +18,18 @@ var columns = []Column{
 	{Key: "openInterestAtEnd", Label: "Open Interest"},
 	{Key: "dailyBridgeVolume", Label: "Bridge Volume"},
 	{Key: "dailyActiveUsers", Label: "Active Users"},
+	{Key: "dailyUserFees", Label: "User Fees"},
+	{Key: "dailyHoldersRevenue", Label: "Holders Revenue"},
+	{Key: "dailyProtocolRevenue", Label: "Protocol Revenue"},
+	{Key: "dailySupplySideRevenue", Label: "Supply-Side Revenue"},
+	{Key: "dailyCreatorRevenue", Label: "Creator Revenue"},
+	{Key: "dailyBribesRevenue", Label: "Bribes Revenue"},
+	{Key: "dailyTokenTaxes", Label: "Token Taxes"},
+	{Key: "longOpenInterestAtEnd", Label: "Long Open Interest"},
+	{Key: "shortOpenInterestAtEnd", Label: "Short Open Interest"},
+	{Key: "dailyTransactionsCount", Label: "Transactions"},
+	{Key: "dailyGasUsed", Label: "Gas Used"},
+	{Key: "dailyNewUsers", Label: "New Users"},
 }
 
 // Columns returns a copy of the pinned column set so external callers can read

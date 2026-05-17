@@ -8,14 +8,13 @@ import (
 )
 
 const dimensionCoverageSQL = `
-SELECT dimension_kind AS kind, COUNT(DISTINCT protocol_id) AS coverage
-FROM adapter_files
-WHERE orphan = false
-GROUP BY dimension_kind
+SELECT metric AS kind, COUNT(*) AS coverage
+FROM matrix
+GROUP BY metric
 `
 
-// dimensionCoverage returns COUNT(DISTINCT protocol_id) per dimension_kind, excluding orphans.
-// Result is keyed by dimension_kind; kinds with no matching rows are absent (caller treats absence as zero).
+// dimensionCoverage returns COUNT(*) per metric from the matrix table.
+// Result is keyed by metric; metrics with no rows are absent (caller treats absence as zero).
 func dimensionCoverage(ctx context.Context, db *gorm.DB) (map[string]int, error) {
 	var rows []struct {
 		Kind     string

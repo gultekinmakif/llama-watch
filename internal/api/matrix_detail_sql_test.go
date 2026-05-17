@@ -28,7 +28,7 @@ func TestFetchMatrixDetail(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
 			cols := registry.Columns()
-			seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum", "polygon"})
+			seedIdentity(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum", "polygon"})
 
 			detail, err := fetchMatrixDetail(ctx, tx, "aave-v2")
 			if err != nil {
@@ -56,25 +56,19 @@ func TestFetchMatrixDetail(t *testing.T) {
 				if d.Present {
 					t.Errorf("Dimensions[%d].Present: want false, got true", i)
 				}
-				if d.FilePath != nil {
-					t.Errorf("Dimensions[%d].FilePath: want nil, got %v", i, *d.FilePath)
-				}
-				if d.Repo != nil {
-					t.Errorf("Dimensions[%d].Repo: want nil, got %v", i, *d.Repo)
-				}
-				if d.LastCommit != nil {
-					t.Errorf("Dimensions[%d].LastCommit: want nil, got %+v", i, *d.LastCommit)
+				if d.GitHubURL != nil {
+					t.Errorf("Dimensions[%d].GitHubURL: want nil, got %v", i, *d.GitHubURL)
 				}
 			}
 		})
 	})
 
-	t.Run("one dimension present", func(t *testing.T) {
+	t.Run("one dimension present with github url", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
 			cols := registry.Columns()
-			p := seedProtocol(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
-			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/aave-v2.ts")
+			seedIdentity(t, tx, "aave-v2", "Aave V2", pq.StringArray{"ethereum"})
+			seedMatrixRow(t, tx, "aave-v2", "dailyFees", "fees/aave-v2.ts")
 
 			detail, err := fetchMatrixDetail(ctx, tx, "aave-v2")
 			if err != nil {
@@ -83,30 +77,22 @@ func TestFetchMatrixDetail(t *testing.T) {
 			if len(detail.Dimensions) != len(cols) {
 				t.Fatalf("Dimensions: want %d entries, got %d", len(cols), len(detail.Dimensions))
 			}
+			wantURL := "https://github.com/DefiLlama/dimension-adapters/blob/master/fees/aave-v2.ts"
 			for _, d := range detail.Dimensions {
 				if d.Kind == "dailyFees" {
 					if !d.Present {
 						t.Errorf("dailyFees.Present: want true, got false")
 					}
-					if d.FilePath == nil || *d.FilePath != "fees/aave-v2.ts" {
-						t.Errorf("dailyFees.FilePath: want %q, got %v", "fees/aave-v2.ts", d.FilePath)
-					}
-					if d.Repo == nil || *d.Repo != "dimension-adapters" {
-						t.Errorf("dailyFees.Repo: want %q, got %v", "dimension-adapters", d.Repo)
-					}
-					if d.LastCommit != nil {
-						t.Errorf("dailyFees.LastCommit: want nil, got %+v", *d.LastCommit)
+					if d.GitHubURL == nil || *d.GitHubURL != wantURL {
+						t.Errorf("dailyFees.GitHubURL: want %q, got %v", wantURL, d.GitHubURL)
 					}
 					continue
 				}
 				if d.Present {
 					t.Errorf("%s.Present: want false, got true", d.Kind)
 				}
-				if d.FilePath != nil {
-					t.Errorf("%s.FilePath: want nil, got %v", d.Kind, *d.FilePath)
-				}
-				if d.Repo != nil {
-					t.Errorf("%s.Repo: want nil, got %v", d.Kind, *d.Repo)
+				if d.GitHubURL != nil {
+					t.Errorf("%s.GitHubURL: want nil, got %v", d.Kind, *d.GitHubURL)
 				}
 			}
 		})
@@ -115,10 +101,10 @@ func TestFetchMatrixDetail(t *testing.T) {
 	t.Run("multiple dimensions present", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
-			p := seedProtocol(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum"})
-			seedAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/uniswap-v3/index.js")
-			seedAdapterFile(t, tx, p.ID, "dailyFees", "dimension-adapters", "fees/uniswap-v3.ts")
-			seedAdapterFile(t, tx, p.ID, "dailyVolume", "dimension-adapters", "dexs/uniswap-v3.ts")
+			seedIdentity(t, tx, "uniswap-v3", "Uniswap V3", pq.StringArray{"ethereum"})
+			seedMatrixRow(t, tx, "uniswap-v3", "tvl", "projects/uniswap-v3/index.js")
+			seedMatrixRow(t, tx, "uniswap-v3", "dailyFees", "fees/uniswap-v3.ts")
+			seedMatrixRow(t, tx, "uniswap-v3", "dailyVolume", "dexs/uniswap-v3.ts")
 
 			detail, err := fetchMatrixDetail(ctx, tx, "uniswap-v3")
 			if err != nil {
@@ -131,42 +117,37 @@ func TestFetchMatrixDetail(t *testing.T) {
 					t.Errorf("%s.Present: want %v, got %v", d.Kind, want, d.Present)
 				}
 				if want {
-					if d.FilePath == nil {
-						t.Errorf("%s.FilePath: want non-nil, got nil", d.Kind)
-					}
-					if d.Repo == nil {
-						t.Errorf("%s.Repo: want non-nil, got nil", d.Kind)
+					if d.GitHubURL == nil {
+						t.Errorf("%s.GitHubURL: want non-nil, got nil", d.Kind)
 					}
 				} else {
-					if d.FilePath != nil {
-						t.Errorf("%s.FilePath: want nil, got %v", d.Kind, *d.FilePath)
-					}
-					if d.Repo != nil {
-						t.Errorf("%s.Repo: want nil, got %v", d.Kind, *d.Repo)
+					if d.GitHubURL != nil {
+						t.Errorf("%s.GitHubURL: want nil, got %v", d.Kind, *d.GitHubURL)
 					}
 				}
 			}
 		})
 	})
 
-	t.Run("orphan adapter file excluded", func(t *testing.T) {
+	t.Run("empty code path yields nil github url", func(t *testing.T) {
 		withTx(t, func(tx *gorm.DB) {
 			ctx := t.Context()
-			p := seedProtocol(t, tx, "mystery", "Mystery", pq.StringArray{"ethereum"})
-			seedOrphanAdapterFile(t, tx, p.ID, "tvl", "DefiLlama-Adapters", "projects/mystery/index.js")
+			seedIdentity(t, tx, "mystery", "Mystery", pq.StringArray{"ethereum"})
+			seedMatrixRow(t, tx, "mystery", "tvl", "")
 
 			detail, err := fetchMatrixDetail(ctx, tx, "mystery")
 			if err != nil {
 				t.Fatalf("fetchMatrixDetail: %v", err)
 			}
 			for _, d := range detail.Dimensions {
-				if d.Kind == "tvl" {
-					if d.Present {
-						t.Errorf("tvl.Present: want false (orphan excluded), got true")
-					}
-					if d.FilePath != nil {
-						t.Errorf("tvl.FilePath: want nil (orphan excluded), got %v", *d.FilePath)
-					}
+				if d.Kind != "tvl" {
+					continue
+				}
+				if !d.Present {
+					t.Errorf("tvl.Present: want true (row exists), got false")
+				}
+				if d.GitHubURL != nil {
+					t.Errorf("tvl.GitHubURL: want nil (empty code_path), got %v", *d.GitHubURL)
 				}
 			}
 		})
