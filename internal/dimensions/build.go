@@ -143,7 +143,7 @@ func resolveTVL(
 	rel := registry.TVLAdapterPath + module
 	_, ok := byRel[rel]
 	if !ok {
-		log.Warn("tvl adapter missing on disk", "module", module)
+		log.Debug("tvl adapter missing on disk", "module", module)
 		stats.Skipped++
 		return nil
 	}
@@ -195,7 +195,7 @@ func resolveDimension(
 ) error {
 	resolved := findDimensionAdapter(byRel, dimType, dimSlug)
 	if resolved == nil {
-		log.Warn("dimension adapter missing on disk", "type", dimType, "slug", dimSlug)
+		log.Debug("dimension adapter missing on disk", "type", dimType, "slug", dimSlug)
 		stats.Skipped++
 		return nil
 	}
