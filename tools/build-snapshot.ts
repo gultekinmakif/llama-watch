@@ -6,7 +6,11 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // bun runtime: tools/ has no tsconfig pulling node types.
-declare const process: { cwd(): string; stderr: { write(s: string): void } };
+declare const process: {
+  cwd(): string;
+  env: Record<string, string | undefined>;
+  stderr: { write(s: string): void };
+};
 
 // Canonical metric set per dimType, mirrored from defillama-server getDimensionsConfig KEYS_TO_STORE (running total* aggregates dropped).
 // Coverage is dimType-level: every metric here lights up when the protocol has any adapter under that dimType.
@@ -153,7 +157,10 @@ function processProtocol(
 
 function build(): { cells: Cell[]; protocols: OutputProtocol[] } {
   const root = process.cwd();
-  const catalog = readJson<CatalogFile>(resolve(root, "var/snapshot/protocols.json"));
+  // PROTOCOLS_JSON / SNAPSHOT_OUT match the refresh.sh + README env contract;
+  // resolve() handles both relative (joined to root) and absolute overrides.
+  const catalogPath = resolve(root, process.env.PROTOCOLS_JSON ?? "var/snapshot/protocols.json");
+  const catalog = readJson<CatalogFile>(catalogPath);
   const tvlModules = readJson<TvlModules>(resolve(root, "var/snapshot/tvlModules.json"));
   const dimensionModules = readJson<DimensionModules>(
     resolve(root, "var/snapshot/dimensionModules.json"),
@@ -190,4 +197,5 @@ function writeAtomic(path: string, payload: unknown): void {
 }
 
 const out = build();
-writeAtomic(resolve(process.cwd(), "var/snapshot/snapshot.json"), out);
+const snapshotPath = resolve(process.cwd(), process.env.SNAPSHOT_OUT ?? "var/snapshot/snapshot.json");
+writeAtomic(snapshotPath, out);
