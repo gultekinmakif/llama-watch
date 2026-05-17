@@ -1,5 +1,4 @@
-// 0.3: Postgres handle and AutoMigrate.
-// Shared by cmd/refresh (writes) and cmd/server (reads). Migrate runs at every boot.
+// Postgres handle and AutoMigrate. Opens the connection and runs Migrate at boot.
 package postgres
 
 import (
@@ -75,14 +74,13 @@ func Ping(ctx context.Context) error {
 	return sqlDB.PingContext(ctx)
 }
 
-// Migrate runs AutoMigrate for every model.
-// Order matters for FKs: commit_refs FK-references adapter_files.
+// Migrate drops the retired legacy tables then AutoMigrates the live models.
+// The DROP is idempotent so any binary calling Migrate cleans up on next boot.
 func Migrate() error {
+	if err := db.Exec("DROP TABLE IF EXISTS protocols, adapter_files, commit_refs, refresh_runs CASCADE").Error; err != nil {
+		return err
+	}
 	return db.AutoMigrate(
-		&models.Protocol{},
-		&models.AdapterFile{},
-		&models.CommitRef{},
-		&models.RefreshRun{},
 		&models.Matrix{},
 		&models.ProtocolIdentity{},
 	)
