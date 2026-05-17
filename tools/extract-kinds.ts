@@ -1,7 +1,7 @@
 // Run from repo root: bun tools/extract-kinds.ts
 
 import { type Dirent, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const UPSTREAM_ROOT = "var/upstream";
 const DIMS_REPO = "dimension-adapters";
@@ -12,25 +12,29 @@ const DIM_TYPES = [
   "dexs",
   "aggregators",
   "aggregator-derivatives",
-  "derivatives",
   "bridge-aggregators",
   "open-interest",
   "active-users",
   "users",
 ] as const;
 
-function filterFiles(entry: Dirent): boolean {
+// An entry is an adapter entry point if it sits at either
+// <type>/<name>.{ts,js} (flat) or <type>/<name>/index.{ts,js} (folder).
+function isAdapterEntry(entry: Dirent, typeRoot: string): boolean {
   if (!entry.isFile()) return false;
-  if (entry.name.endsWith(".d.ts")) return false;
-  if (!entry.name.endsWith(".ts") && !entry.name.endsWith(".js")) return false;
-  return true;
+  if (entry.parentPath === typeRoot) {
+    return entry.name.endsWith(".ts") || entry.name.endsWith(".js");
+  }
+  if (entry.name !== "index.ts" && entry.name !== "index.js") return false;
+  return dirname(entry.parentPath) === typeRoot;
 }
 
 function walkDimType(dimsRoot: string, dimType: string): string[] {
-  const entries = readdirSync(join(dimsRoot, dimType), { withFileTypes: true, recursive: true });
+  const typeRoot = join(dimsRoot, dimType);
+  const entries = readdirSync(typeRoot, { withFileTypes: true, recursive: true });
   const out: string[] = [];
   for (const entry of entries) {
-    if (!filterFiles(entry)) continue;
+    if (!isAdapterEntry(entry, typeRoot)) continue;
     out.push(join(entry.parentPath, entry.name));
   }
   return out;
