@@ -3,15 +3,13 @@
 // with internal/registry/columns.go.
 
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const RESOLVED_SNAPSHOT_PATH = resolve(
-  process.cwd(),
-  '..',
-  'var',
-  'snapshot',
-  'snapshot.json',
-)
+// Resolve relative to this source file so the path holds no matter where the
+// Next build is invoked from (CI uses /, local dev uses /web, both work).
+const HERE = dirname(fileURLToPath(import.meta.url))
+const RESOLVED_SNAPSHOT_PATH = resolve(HERE, '..', '..', 'var', 'snapshot', 'snapshot.json')
 
 const COLUMNS = [
   { key: 'tvl', label: 'TVL' },
@@ -56,6 +54,8 @@ export interface Row {
   category?: string
   chains: string[]
   cells: Cells
+  // Precomputed at build time so sort/render does not redo Object.values on every pass.
+  coverage: number
 }
 
 export interface Snapshot {
@@ -73,7 +73,7 @@ interface RawCell {
 interface RawProtocol {
   slug: string
   name: string
-  category: string
+  category?: string
   chains: string[]
   dataFile: string
 }
@@ -88,12 +88,20 @@ export function loadSnapshot(): Snapshot {
   const raw = readRaw()
   const presence = presenceBySlug(raw.cells)
   const rows = raw.protocols.map((p) => projectRow(p, presence.get(p.slug)))
+  if (rows.length === 0) {
+    // Next refuses output:'export' on dynamic routes when generateStaticParams
+    // returns []; catching here keeps the failure mode loud and on-topic.
+    throw new Error(
+      `snapshot at ${RESOLVED_SNAPSHOT_PATH} has zero protocols; static export needs at least one`,
+    )
+  }
   return { columns: COLUMNS.map((c) => ({ ...c })), rows, total: rows.length }
 }
 
 function readRaw(): RawSnapshot {
+  let parsed: unknown
   try {
-    return JSON.parse(readFileSync(RESOLVED_SNAPSHOT_PATH, 'utf8')) as RawSnapshot
+    parsed = JSON.parse(readFileSync(RESOLVED_SNAPSHOT_PATH, 'utf8'))
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       throw new Error(
@@ -102,6 +110,17 @@ function readRaw(): RawSnapshot {
     }
     throw err
   }
+  if (
+    parsed == null ||
+    typeof parsed !== 'object' ||
+    !Array.isArray((parsed as RawSnapshot).cells) ||
+    !Array.isArray((parsed as RawSnapshot).protocols)
+  ) {
+    throw new Error(
+      `snapshot at ${RESOLVED_SNAPSHOT_PATH} is malformed; expected {cells:[], protocols:[]}`,
+    )
+  }
+  return parsed as RawSnapshot
 }
 
 function presenceBySlug(cells: RawCell[]): Map<string, Set<string>> {
@@ -119,8 +138,17 @@ function presenceBySlug(cells: RawCell[]): Map<string, Set<string>> {
 
 function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
   const cells = {} as Cells
+  let coverage = 0
   for (const col of COLUMNS) {
-    cells[col.key] = present && present.has(col.key) ? 1 : 0
+    const value = present && present.has(col.key) ? 1 : 0
+    cells[col.key] = value
+    coverage += value
   }
-  return { slug: p.slug, name: p.name, category: p.category, chains: p.chains, cells }
+  // Empty-string category from the wire collapses to undefined so the
+  // category filter and chip strip do not show a blank entry.
+  const category = p.category != null && p.category !== '' ? p.category : undefined
+  // Lowercase defensively so the chain filter matches its URL token regardless
+  // of upstream casing drift; today the upstream already emits lowercase.
+  const chains = p.chains.map((c) => c.toLowerCase())
+  return { slug: p.slug, name: p.name, category, chains, cells, coverage }
 }
