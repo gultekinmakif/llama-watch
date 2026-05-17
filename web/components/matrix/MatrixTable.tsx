@@ -49,7 +49,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       columnHelper.accessor('name', {
         id: 'name',
         header: () => <SortHeader columnKey="name" label="name" />,
-        cell: ({ row }) => <NameCell row={row.original} />,
+        cell: ({ row }) => (
+          <NameCell
+            row={row.original}
+            coverage={{ value: coverageOf(row.original), total: columns.length }}
+          />
+        ),
       }),
       columnHelper.accessor((r) => r.category, {
         id: 'category',
