@@ -8,7 +8,6 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
-  type SortingFn,
   type SortingState,
 } from '@tanstack/react-table'
 
@@ -27,17 +26,11 @@ function coverageOf(row: Row): number {
   return Object.values(row.cells).filter((v) => v === 1).length
 }
 
-const tvlSortingFn: SortingFn<Row> = (a, b) => {
-  const diff = a.original.cells.tvl - b.original.cells.tvl
-  if (diff !== 0) return diff
-  return a.original.name.localeCompare(b.original.name)
-}
-
 function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
   }
-  return [{ id: 'tvl', desc: true }]
+  return [{ id: 'coverage', desc: true }]
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
@@ -75,15 +68,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         header: () => <SortHeader columnKey="coverage" label="coverage" />,
       }),
     ]
-    const dimension = columns.map((col) => {
-      const isTvl = col.key === 'tvl'
-      return columnHelper.accessor((r) => r.cells[col.key], {
+    const dimension = columns.map((col) =>
+      columnHelper.accessor((r) => r.cells[col.key], {
         id: col.key,
-        header: isTvl ? () => <SortHeader columnKey="tvl" label={col.label} /> : col.label,
-        enableSorting: isTvl,
-        ...(isTvl ? { sortingFn: tvlSortingFn } : {}),
-      })
-    })
+        header: col.label,
+        enableSorting: false,
+      }),
+    )
     return [...identity, ...dimension]
   }, [columns])
 

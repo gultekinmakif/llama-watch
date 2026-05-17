@@ -3,10 +3,10 @@
 import { useCallback } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
-export type SortKey = 'name' | 'tvl' | 'category' | 'coverage'
+export type SortKey = 'name' | 'category' | 'coverage'
 export type SortOrder = 'asc' | 'desc'
 
-const SORT_KEYS: readonly SortKey[] = ['name', 'tvl', 'category', 'coverage']
+const SORT_KEYS: readonly SortKey[] = ['name', 'category', 'coverage']
 
 export function isSortKey(value: string | null | undefined): value is SortKey {
   return value != null && (SORT_KEYS as readonly string[]).includes(value)
