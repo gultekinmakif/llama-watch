@@ -83,5 +83,6 @@ func Migrate() error {
 		&models.AdapterFile{},
 		&models.CommitRef{},
 		&models.RefreshRun{},
+		&models.Matrix{},
 	)
 }
