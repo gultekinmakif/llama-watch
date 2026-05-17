@@ -13,45 +13,45 @@ export interface ColumnOption {
 }
 
 export interface ColumnsMenuProps {
-  forced: ColumnOption[]
   toggleable: ColumnOption[]
   visibleIds: string[]
   onChange: (visibleIds: string[]) => void
 }
 
-export function ColumnsMenu({ forced, toggleable, visibleIds, onChange }: ColumnsMenuProps) {
-  const forcedIds = forced.map((c) => c.id)
+// `name` is the lone identity column; it ships as a disabled checkbox at the top
+// of the menu so users see it is locked. Owned here rather than as a prop so the
+// caller does not have to mirror the same constant in its visibility derivation.
+const FORCED_ID = 'name'
+const FORCED_LABEL = 'name'
 
+export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuProps) {
   return (
     <MenuProvider
       values={{ cols: visibleIds }}
       setValues={(next) => {
-        // MenuStoreValues is loosely typed across all fields; narrow to our single key.
-        const raw = (next as { cols?: string[] | string | number | boolean }).cols
+        // ariakit's setValues is widened across every menu key; narrow to ours.
+        const raw = (next as { cols?: string[] | string }).cols
         const list = Array.isArray(raw) ? raw.map(String) : []
-        // Forced ids stay visible even if Ariakit drops them from the values array.
-        const merged = Array.from(new Set([...forcedIds, ...list]))
+        // FORCED_ID stays visible even if ariakit drops it from the values array.
+        const merged = Array.from(new Set([FORCED_ID, ...list]))
         onChange(merged)
       }}
     >
-      <MenuButton className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg hover:text-fg">
+      <MenuButton className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted">
         {visibleIds.length} Columns
       </MenuButton>
       <Menu
         gutter={4}
         className="z-10 min-w-48 rounded border border-border bg-surface p-1 text-sm text-fg shadow"
       >
-        {forced.map((c) => (
-          <MenuItemCheckbox
-            key={c.id}
-            name="cols"
-            value={c.id}
-            disabled
-            className="flex items-center gap-2 px-2 py-1 opacity-60"
-          >
-            <span>{c.label}</span>
-          </MenuItemCheckbox>
-        ))}
+        <MenuItemCheckbox
+          name="cols"
+          value={FORCED_ID}
+          disabled
+          className="flex items-center gap-2 px-2 py-1 text-fg-muted"
+        >
+          <span>{FORCED_LABEL}</span>
+        </MenuItemCheckbox>
         {toggleable.map((c) => (
           <MenuItemCheckbox
             key={c.id}
