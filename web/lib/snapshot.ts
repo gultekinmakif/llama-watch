@@ -35,6 +35,9 @@ const COLUMNS = [
   { key: 'dailyTransactionsCount', label: 'Transactions' },
   { key: 'dailyGasUsed', label: 'Gas Used' },
   { key: 'dailyNewUsers', label: 'New Users' },
+  { key: 'dailyNormalizedVolume', label: 'Normalized Volume' },
+  { key: 'dailyActiveLiquidity', label: 'Active Liquidity' },
+  { key: 'tokenIncentives', label: 'Token Incentives' },
 ] as const
 
 export type ColumnKey = (typeof COLUMNS)[number]['key']
