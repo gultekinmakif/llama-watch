@@ -11,9 +11,17 @@ interface AdapterEntry {
   dimType: string;
 }
 
+const UPSTREAM_ROOT = "var/upstream";
+const DIMS_REPO = "dimension-adapters";
+
 function isAdapterExt(name: string): boolean {
   if (name.endsWith(".d.ts")) return false;
   return name.endsWith(".ts") || name.endsWith(".js");
+}
+
+
+function toRelSlash(upstreamRoot: string, absPath: string): string {
+  return relative(upstreamRoot, absPath).split(sep).join("/");
 }
 
 function walkDimType(
@@ -30,28 +38,24 @@ function walkDimType(
   }
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
+      if ((entry.name.startsWith(".") || entry.name === "node_modules")) continue;
       walkDimType(join(dir, entry.name), upstreamRoot, dimType, out);
     } else if (entry.isFile() && isAdapterExt(entry.name)) {
-      out.push({
-        relPath: relative(upstreamRoot, join(dir, entry.name)).split(sep).join("/"),
-        dimType,
-      });
+      out.push({ relPath: toRelSlash(upstreamRoot, join(dir, entry.name)), dimType });
     }
   }
 }
 
 function collect(upstreamRoot: string): AdapterEntry[] {
-  const dimsRoot = join(upstreamRoot, "dimension-adapters");
+  const dimsRoot = join(upstreamRoot, DIMS_REPO);
   const out: AdapterEntry[] = [];
   let topLevel = readdirSync(dimsRoot, { withFileTypes: true });
 
   for (const entry of topLevel) {
-    if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules")
-      continue;
+    if (!entry.isDirectory() || (entry.name.startsWith(".") || entry.name === "node_modules")) continue;
     walkDimType(join(dimsRoot, entry.name), upstreamRoot, entry.name, out);
   }
   return out;
 }
 
-process.stdout.write(JSON.stringify(collect("var/upstream")) + "\n");
+process.stdout.write(JSON.stringify(collect(UPSTREAM_ROOT)) + "\n");
