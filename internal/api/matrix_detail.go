@@ -47,10 +47,9 @@ type ProtocolDimension struct {
 }
 
 type ProtocolDetail struct {
-	Slug        string              `json:"slug"`
-	Name        string              `json:"name"`
-	Category    *string             `json:"category,omitempty"`
-	Chains      []string            `json:"chains"`
-	Methodology map[string]string   `json:"methodology"`
-	Dimensions  []ProtocolDimension `json:"dimensions"`
+	Slug       string              `json:"slug"`
+	Name       string              `json:"name"`
+	Category   *string             `json:"category,omitempty"`
+	Chains     []string            `json:"chains"`
+	Dimensions []ProtocolDimension `json:"dimensions"`
 }

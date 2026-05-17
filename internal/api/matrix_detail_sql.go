@@ -10,7 +10,7 @@ import (
 )
 
 // fetchMatrixDetail assembles a ProtocolDetail. Returns gorm.ErrRecordNotFound on unknown slug.
-// Methodology and last_commit are stubbed until the refresh pipeline surfaces them.
+// last_commit is stubbed until the refresh pipeline surfaces per-file commit metadata.
 func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*ProtocolDetail, error) {
 	var p models.Protocol
 	if err := db.WithContext(ctx).Where("slug = ?", slug).Take(&p).Error; err != nil {
@@ -48,11 +48,10 @@ func fetchMatrixDetail(ctx context.Context, db *gorm.DB, slug string) (*Protocol
 	}
 
 	return &ProtocolDetail{
-		Slug:        p.Slug,
-		Name:        p.Name,
-		Category:    p.Category,
-		Chains:      []string(p.Chains),
-		Methodology: map[string]string{},
-		Dimensions:  dims,
+		Slug:       p.Slug,
+		Name:       p.Name,
+		Category:   p.Category,
+		Chains:     []string(p.Chains),
+		Dimensions: dims,
 	}, nil
 }

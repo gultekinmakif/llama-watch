@@ -26,8 +26,6 @@ export interface ProtocolDetail {
   name: string
   category?: string
   chains: string[]
-  // TODO: in v1 until the refresh pipeline surfaces methodology text.
-  methodology: Record<string, string>
   dimensions: Dimension[]
 }
 

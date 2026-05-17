@@ -46,12 +46,6 @@ func TestFetchMatrixDetail(t *testing.T) {
 			if len(detail.Chains) != 2 || detail.Chains[0] != "ethereum" || detail.Chains[1] != "polygon" {
 				t.Errorf("Chains: want [ethereum polygon], got %v", detail.Chains)
 			}
-			if detail.Methodology == nil {
-				t.Error("Methodology: want non-nil empty map, got nil")
-			}
-			if len(detail.Methodology) != 0 {
-				t.Errorf("Methodology: want empty, got %v", detail.Methodology)
-			}
 			if len(detail.Dimensions) != len(cols) {
 				t.Fatalf("Dimensions: want %d entries, got %d", len(cols), len(detail.Dimensions))
 			}
