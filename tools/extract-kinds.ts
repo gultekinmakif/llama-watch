@@ -1,42 +1,53 @@
-// Walks var/upstream/dimension-adapters/ and emits one entry per adapter file.
 // Run from repo root: bun tools/extract-kinds.ts
 
-import { readdirSync } from "node:fs";
-import { join, relative, sep } from "node:path";
-
-declare const process: { stdout: { write(s: string): void } };
-
-interface AdapterEntry {
-  relPath: string;
-  dimType: string;
-}
+import { type Dirent, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 const UPSTREAM_ROOT = "var/upstream";
 const DIMS_REPO = "dimension-adapters";
+const DIM_TYPES = [
+  "fees",
+  "options",
+  "aggregator-options",
+  "dexs",
+  "aggregators",
+  "aggregator-derivatives",
+  "derivatives",
+  "bridge-aggregators",
+  "open-interest",
+  "active-users",
+  "users",
+] as const;
 
-function isAdapterExt(name: string): boolean {
-  return (name.endsWith(".ts") || name.endsWith(".js")) && !name.endsWith(".d.ts");
+function filterFiles(entry: Dirent): boolean {
+  if (!entry.isFile()) return false;
+  if (entry.name.endsWith(".d.ts")) return false;
+  if (!entry.name.endsWith(".ts") && !entry.name.endsWith(".js")) return false;
+  return true;
 }
 
-function isSkippedDir(name: string): boolean {
-  return name.startsWith(".") || name === "node_modules";
-}
-
-function collect(upstreamRoot: string): AdapterEntry[] {
-  const dimsRoot = join(upstreamRoot, DIMS_REPO);
-  const out: AdapterEntry[] = [];
-  for (const entry of readdirSync(dimsRoot, { withFileTypes: true, recursive: true })) {
-    if (!entry.isFile() || !isAdapterExt(entry.name)) continue;
-    const fullPath = join(entry.parentPath, entry.name);
-    const dirSegs = relative(dimsRoot, fullPath).split(sep).slice(0, -1);
-    const dimType = dirSegs[0];
-    if (!dimType || dirSegs.some(isSkippedDir)) continue;
-    out.push({
-      relPath: relative(upstreamRoot, fullPath).split(sep).join("/"),
-      dimType,
-    });
+function walkDimType(dimsRoot: string, dimType: string): string[] {
+  const entries = readdirSync(join(dimsRoot, dimType), { withFileTypes: true, recursive: true });
+  const out: string[] = [];
+  for (const entry of entries) {
+    if (!filterFiles(entry)) continue;
+    out.push(join(entry.parentPath, entry.name));
   }
   return out;
 }
 
-process.stdout.write(JSON.stringify(collect(UPSTREAM_ROOT)) + "\n");
+function walkDirectory(dimsRoot: string): string[] {
+  const out: string[] = [];
+  for (const dimType of DIM_TYPES) {
+    out.push(...walkDimType(dimsRoot, dimType));
+  }
+  return out;
+}
+
+function main(): void {
+  const paths = walkDirectory(join(UPSTREAM_ROOT, DIMS_REPO));
+  console.log(`${paths.length} files`);
+  for (const p of paths.slice(0, 3)) console.log(p);
+}
+
+main();
