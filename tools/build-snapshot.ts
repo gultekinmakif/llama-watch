@@ -89,7 +89,9 @@ function cellsForDimensions(
   dimensionModules: DimensionModules,
 ): Cell[] {
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
-    const codePath = dimensionModules[dimType]?.[dimSlug]?.codePath ?? "";
+    const entry = dimensionModules[dimType]?.[dimSlug];
+    if (!entry) return [];
+    const codePath = entry.codePath ?? "";
     return metricsForDimType(dimType).map((metric) => ({ slug, metric, codePath }));
   });
 }
