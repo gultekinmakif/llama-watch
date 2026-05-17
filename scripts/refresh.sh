@@ -29,9 +29,9 @@ mkdir -p "$SNAPSHOT_DIR"
   else
     git clone --depth=1 --filter=blob:none --sparse \
       "$UPSTREAM_REMOTE/defillama-server.git" "$SERVER_DIR"
-    git -C "$SERVER_DIR" sparse-checkout set \
-      defi/src/protocols defi/src/constants.ts
   fi
+  # Re-applied every run so the cone is self-healing if a prior run left the default /* + !/*/ pattern.
+  git -C "$SERVER_DIR" sparse-checkout set defi/src/protocols
 ) &
 
 (
