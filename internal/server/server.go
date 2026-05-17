@@ -23,6 +23,7 @@ func New(cfg *config.Config) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", api.Health)
 	mux.HandleFunc("GET /api/chains", api.Chains)
+	mux.HandleFunc("GET /api/dimensions", api.Dimensions)
 	mux.HandleFunc("GET /api/matrix", api.Matrix)
 	mux.HandleFunc("GET /api/matrix/{slug}", api.MatrixDetail)
 	// Static export from `web/out/`. Returns 404 from the FS when the path is
