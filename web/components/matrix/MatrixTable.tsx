@@ -81,6 +81,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     data: rows,
     columns: tableColumns,
     state: { sorting },
+    initialState: { columnVisibility: { category: false, chains: false, coverage: false } },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
