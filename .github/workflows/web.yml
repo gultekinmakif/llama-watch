@@ -19,7 +19,9 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - name: stub snapshot for static export
+        # Next refuses output:'export' on a dynamic route when generateStaticParams
+        # returns an empty list, so the stub seeds one protocol to produce one path.
         run: |
           mkdir -p ../var/snapshot
-          echo '{"cells":[],"protocols":[]}' > ../var/snapshot/snapshot.json
+          echo '{"cells":[{"slug":"stub","metric":"tvl","codePath":""}],"protocols":[{"slug":"stub","name":"Stub","category":"Other","chains":["ethereum"],"dataFile":"stub.json"}]}' > ../var/snapshot/snapshot.json
       - run: bun run build
