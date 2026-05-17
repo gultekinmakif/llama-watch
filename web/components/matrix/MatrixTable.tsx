@@ -33,9 +33,7 @@ const tvlSortingFn: SortingFn<Row> = (a, b) => {
   return a.original.name.localeCompare(b.original.name)
 }
 
-function readInitialSorting(params: URLSearchParams): SortingState {
-  const sort = params.get('sort')
-  const order = params.get('order')
+function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
   }
@@ -47,7 +45,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const searchParams = useSearchParams()
 
   const sorting = useMemo<SortingState>(
-    () => readInitialSorting(new URLSearchParams(searchParams.toString())),
+    () => readInitialSorting(searchParams.get('sort'), searchParams.get('order')),
     [searchParams],
   )
 
