@@ -1,13 +1,16 @@
-.PHONY: build build-server build-refresh run dev refresh test tidy clean help
+.PHONY: build build-server build-refresh build-sync-db run dev refresh test tidy clean help
 .DEFAULT_GOAL := help
 
-build: build-server build-refresh ## Build both server and refresh binaries into bin/
+build: build-server build-refresh build-sync-db ## Build all binaries into bin/
 
 build-server: ## Build the server binary into bin/server
 	go build -o bin/server ./cmd/server
 
 build-refresh: ## Build the refresh binary into bin/refresh
 	go build -o bin/refresh ./cmd/refresh
+
+build-sync-db: ## Build the sync-db binary into bin/sync-db
+	go build -o bin/sync-db ./cmd/sync-db
 
 run: ## Run the server (sources .env if present)
 	@if [ -f .env ]; then set -a; . ./.env; set +a; fi; go run ./cmd/server
