@@ -84,5 +84,6 @@ func Migrate() error {
 		&models.CommitRef{},
 		&models.RefreshRun{},
 		&models.Matrix{},
+		&models.ProtocolIdentity{},
 	)
 }
