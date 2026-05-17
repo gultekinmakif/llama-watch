@@ -62,9 +62,24 @@ if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models 
 fi
 bin/sync-db
 
-# 5. Build the frontend; Next writes the static export directly to web/out/. Skip when web/ is unscaffolded.
+# 5. Build the frontend in a sibling staging dir, then atomic-swap web/out/.
+#    Building in place would clear web/out/ early in next build's export phase
+#    and the Go static handler would serve 404s until the new tree finished
+#    writing. The sibling pattern keeps web/out/ untouched until the final mv.
+#    rsync skips node_modules / .next / out for speed; node_modules is reused
+#    via symlink so bun does not have to reinstall.
 if [ -f web/package.json ]; then
-  ( cd web && bun run build )
+  WEB_STAGE="$PWD/web.stage"
+  rm -rf "$WEB_STAGE"
+  rsync -a --delete \
+    --exclude=node_modules --exclude=.next --exclude=out \
+    web/ "$WEB_STAGE/"
+  ln -snf "$PWD/web/node_modules" "$WEB_STAGE/node_modules"
+  ( cd "$WEB_STAGE" && bun run build )
+  rm -rf web/out.old
+  [ -d web/out ] && mv web/out web/out.old
+  mv "$WEB_STAGE/out" web/out
+  rm -rf "$WEB_STAGE"
 else
   echo "web/package.json missing; skipping frontend build"
 fi
