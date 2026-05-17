@@ -13,7 +13,7 @@ type MatrixQuery struct {
 	Chains     []string // lowercased, deduped, order-preserving; nil if absent
 	Categories []string // case preserved, deduped, order-preserving; nil if absent
 	Q          string   // trimmed; empty if absent
-	Sort       string   // one of: name, tvl, category, coverage; never empty post-parse
+	Sort       string   // one of: name, category, coverage; never empty post-parse
 	Order      string   // "asc" or "desc"; never empty post-parse
 }
 
@@ -38,12 +38,11 @@ const (
 
 // Whitelist of sort keys. Referenced by both the parser and the error message
 // so they cannot drift apart.
-var sortWhitelist = []string{"name", "tvl", "category", "coverage"}
+var sortWhitelist = []string{"name", "category", "coverage"}
 
 // Default order per sort key when ?order= is absent.
 var defaultOrderBySort = map[string]string{
 	"name":     "asc",
-	"tvl":      "desc",
 	"category": "asc",
 	"coverage": "desc",
 }
@@ -97,7 +96,7 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 
 	sortRaw := q.Get("sort")
 	if sortRaw == "" {
-		out.Sort = "tvl"
+		out.Sort = "coverage"
 	} else if _, ok := defaultOrderBySort[sortRaw]; ok {
 		out.Sort = sortRaw
 	} else {

@@ -55,7 +55,6 @@ type Row struct {
 	Slug     string         `json:"slug"`
 	Name     string         `json:"name"`
 	Category *string        `json:"category,omitempty"`
-	TVL      *float64       `json:"tvl,omitempty"`
 	Chains   []string       `json:"chains"`
 	Cells    map[string]int `json:"cells"`
 }
