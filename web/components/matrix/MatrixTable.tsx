@@ -20,6 +20,7 @@ import { NameCell } from './NameCell'
 import { PresenceCell } from './PresenceCell'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
 import { SearchBox } from './SearchBox'
+import { FilterBar } from './FilterBar'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -125,8 +126,27 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
   }, [rows, q])
 
+  // Chain options derive from row.chains directly, independent of column visibility.
+  const chainOptions = useMemo<string[]>(() => {
+    const set = new Set<string>()
+    for (const r of rows) for (const c of r.chains) set.add(c)
+    return Array.from(set).sort()
+  }, [rows])
+
+  const selectedChains = useMemo(
+    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
+    [searchParams],
+  )
+
+  // Apply the chains filter after search so match-sorter ranking is preserved.
+  const visibleRows = useMemo(() => {
+    if (selectedChains.length === 0) return filteredRows
+    const want = new Set(selectedChains)
+    return filteredRows.filter((r) => r.chains.some((c) => want.has(c)))
+  }, [filteredRows, selectedChains])
+
   const table = useReactTable({
-    data: filteredRows,
+    data: visibleRows,
     columns: tableColumns,
     state: { sorting, columnVisibility },
     getCoreRowModel: getCoreRowModel(),
@@ -164,6 +184,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     <div className="flex flex-col gap-2">
       <div className="flex justify-end gap-2">
         <SearchBox />
+        <FilterBar chainOptions={chainOptions} />
         <ColumnsMenu
           forced={[{ id: 'name', label: 'name' }]}
           toggleable={toggleableOptions}
