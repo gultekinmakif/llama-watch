@@ -1,0 +1,9 @@
+{
+  "name": "llama-watch-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "typescript": "5.7.3"
+  }
+}
