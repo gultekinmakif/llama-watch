@@ -126,10 +126,16 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
   }, [rows, q])
 
-  // Chain options derive from row.chains directly, independent of column visibility.
+  // Filter options derive from row data directly, independent of column visibility.
   const chainOptions = useMemo<string[]>(() => {
     const set = new Set<string>()
     for (const r of rows) for (const c of r.chains) set.add(c)
+    return Array.from(set).sort()
+  }, [rows])
+
+  const categoryOptions = useMemo<string[]>(() => {
+    const set = new Set<string>()
+    for (const r of rows) if (r.category != null) set.add(r.category)
     return Array.from(set).sort()
   }, [rows])
 
@@ -138,12 +144,25 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [searchParams],
   )
 
-  // Apply the chains filter after search so match-sorter ranking is preserved.
+  const selectedCategories = useMemo(
+    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
+    [searchParams],
+  )
+
+  // Apply filters after search so match-sorter ranking is preserved.
+  // AND across chains and categories; OR within each list.
   const visibleRows = useMemo(() => {
-    if (selectedChains.length === 0) return filteredRows
-    const want = new Set(selectedChains)
-    return filteredRows.filter((r) => r.chains.some((c) => want.has(c)))
-  }, [filteredRows, selectedChains])
+    let result = filteredRows
+    if (selectedChains.length > 0) {
+      const want = new Set(selectedChains)
+      result = result.filter((r) => r.chains.some((c) => want.has(c)))
+    }
+    if (selectedCategories.length > 0) {
+      const want = new Set(selectedCategories)
+      result = result.filter((r) => r.category != null && want.has(r.category))
+    }
+    return result
+  }, [filteredRows, selectedChains, selectedCategories])
 
   const table = useReactTable({
     data: visibleRows,
@@ -182,9 +201,9 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-end gap-2">
+      <div role="toolbar" aria-label="matrix controls" className="flex justify-end gap-2">
         <SearchBox />
-        <FilterBar chainOptions={chainOptions} />
+        <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
         <ColumnsMenu
           forced={[{ id: 'name', label: 'name' }]}
           toggleable={toggleableOptions}
