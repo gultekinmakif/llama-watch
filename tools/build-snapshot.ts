@@ -74,8 +74,18 @@ interface ProtocolRow {
   cells: Cell[];
 }
 
+// Aggregated drift counters flushed by build() so refresh.sh logs surface
+// manifest gaps without one stderr line per skip across ~6k protocols.
+const unresolvedManifestEntries = new Map<string, number>(); // dimType -> count
+const unknownDimTypes = new Map<string, number>();           // dimType -> count
+
 function metricsForDimType(dimType: string): readonly string[] {
-  return KEYS_TO_STORE[dimType] ?? [];
+  const metrics = KEYS_TO_STORE[dimType];
+  if (!metrics) {
+    unknownDimTypes.set(dimType, (unknownDimTypes.get(dimType) ?? 0) + 1);
+    return [];
+  }
+  return metrics;
 }
 
 function readJson<T>(path: string): T {
@@ -93,7 +103,10 @@ function cellsForDimensions(
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
     const entry = dimensionModules[dimType]?.[dimSlug];
-    if (!entry) return [];
+    if (!entry) {
+      unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
+      return [];
+    }
     const codePath = entry.codePath ?? "";
     return metricsForDimType(dimType).flatMap((metric) => {
       if (seen.has(metric)) return [];
@@ -153,10 +166,21 @@ function build(): { cells: Cell[]; protocols: OutputProtocol[] } {
       .filter((r): r is ProtocolRow => r !== null),
   );
 
+  flushDriftCounters();
+
   return {
     cells: rows.flatMap((r) => r.cells),
     protocols: rows.map((r) => r.protocol),
   };
+}
+
+function flushDriftCounters(): void {
+  for (const [dimType, count] of unresolvedManifestEntries) {
+    process.stderr.write(`build-snapshot: ${count} catalog entries for dimType=${dimType} not in manifest\n`);
+  }
+  for (const [dimType, count] of unknownDimTypes) {
+    process.stderr.write(`build-snapshot: ${count} catalog entries for unknown dimType=${dimType} (not in KEYS_TO_STORE)\n`);
+  }
 }
 
 function writeAtomic(path: string, payload: unknown): void {
