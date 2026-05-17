@@ -77,11 +77,7 @@ func main() {
 	rows := buildMatrix(snap.Cells)
 
 	err = db.Transaction(func(tx *gorm.DB) error {
-		// One transaction: truncate both, then batch insert.
-		if err := tx.Exec("TRUNCATE matrix").Error; err != nil {
-			return err
-		}
-		if err := tx.Exec("TRUNCATE protocol_identities").Error; err != nil {
+		if err := tx.Exec("TRUNCATE matrix, protocol_identities").Error; err != nil {
 			return err
 		}
 		if len(identities) > 0 {
@@ -125,12 +121,21 @@ func buildIdentities(in []snapshotProtocol) []models.ProtocolIdentity {
 		out[i] = models.ProtocolIdentity{
 			Slug:     p.Slug,
 			Name:     p.Name,
-			Category: &p.Category,
+			Category: nilIfEmpty(p.Category),
 			Chains:   pq.StringArray(p.Chains),
-			DataFile: &p.DataFile,
+			DataFile: nilIfEmpty(p.DataFile),
 		}
 	}
 	return out
+}
+
+// Empty strings in the snapshot represent "not set" upstream; persist as SQL NULL
+// rather than "" so IS NULL queries work and the column's NULL semantics survive.
+func nilIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func buildMatrix(in []snapshotCell) []models.Matrix {
