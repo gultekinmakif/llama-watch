@@ -1,0 +1,25 @@
+name: web
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**']
+  pull_request:
+    paths: ['web/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - name: stub snapshot for static export
+        run: |
+          mkdir -p ../var/snapshot
+          echo '{"cells":[],"protocols":[]}' > ../var/snapshot/snapshot.json
+      - run: bun run build
