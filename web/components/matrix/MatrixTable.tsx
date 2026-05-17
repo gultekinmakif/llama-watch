@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
   flexRender,
@@ -14,6 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
+import { useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
 import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
 import { NameCell } from './NameCell'
@@ -31,10 +32,6 @@ const columnHelper = createColumnHelper<Row>()
 
 const DEFAULT_HIDDEN: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
 
-function coverageOf(row: Row): number {
-  return Object.values(row.cells).filter((v) => v === 1).length
-}
-
 function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
@@ -45,8 +42,7 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const replaceParams = useReplaceParams()
 
   const sorting = useMemo<SortingState>(
     () => readInitialSorting(searchParams.get('sort'), searchParams.get('order')),
@@ -61,7 +57,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         cell: ({ row }) => (
           <NameCell
             row={row.original}
-            coverage={{ value: coverageOf(row.original), total: columns.length }}
+            coverage={{ value: row.original.coverage, total: columns.length }}
           />
         ),
       }),
@@ -75,7 +71,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         header: 'chains',
         enableSorting: false,
       }),
-      columnHelper.accessor(coverageOf, {
+      // Coverage stays in the column model even when default-hidden so the
+      // default sort (coverage desc) keeps a working accessor; visibility only
+      // affects render.
+      columnHelper.accessor((r) => r.coverage, {
         id: 'coverage',
         header: () => <SortHeader columnKey="coverage" label="coverage" />,
       }),
@@ -126,6 +125,16 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
   }, [rows, q])
 
+  const selectedChains = useMemo(
+    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
+    [searchParams],
+  )
+
+  const selectedCategories = useMemo(
+    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
+    [searchParams],
+  )
+
   // Filter options derive from row data directly, independent of column visibility.
   const chainOptions = useMemo<string[]>(() => {
     const set = new Set<string>()
@@ -138,16 +147,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     for (const r of rows) if (r.category != null) set.add(r.category)
     return Array.from(set).sort()
   }, [rows])
-
-  const selectedChains = useMemo(
-    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
-
-  const selectedCategories = useMemo(
-    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
 
   // Apply filters after search so match-sorter ranking is preserved.
   // AND across chains and categories; OR within each list.
@@ -186,17 +185,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       visible.add('name')
       const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
       const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
-      const next = new URLSearchParams(searchParams.toString())
       // Drop the param when the selection matches the default policy so default deep links stay clean.
-      if (csv === defaultCsv) {
-        next.delete('cols')
-      } else {
-        next.set('cols', csv)
-      }
-      const qs = next.toString()
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+      replaceParams({ cols: csv === defaultCsv ? null : csv })
     },
-    [allIds, pathname, router, searchParams],
+    [allIds, replaceParams],
   )
 
   return (
@@ -205,26 +197,32 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         <SearchBox />
         <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
         <ColumnsMenu
-          forced={[{ id: 'name', label: 'name' }]}
           toggleable={toggleableOptions}
           visibleIds={visibleIds}
           onChange={handleVisibleChange}
         />
       </div>
-      <div ref={setScrollElement} className="h-[640px] overflow-auto border">
+      <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
-          <thead className="sticky top-0 bg-white">
+          <caption className="sr-only">protocol coverage matrix</caption>
+          <thead className="sticky top-0 z-10 bg-surface">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((h) => (
-                  <th
-                    key={h.id}
-                    scope="col"
-                    className="border px-2 py-1 text-left"
-                  >
-                    {flexRender(h.column.columnDef.header, h.getContext())}
-                  </th>
-                ))}
+                {hg.headers.map((h) => {
+                  const sorted = h.column.getIsSorted()
+                  const ariaSort =
+                    sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                  return (
+                    <th
+                      key={h.id}
+                      scope="col"
+                      aria-sort={h.column.getCanSort() ? ariaSort : undefined}
+                      className="border border-border px-2 py-1 text-left"
+                    >
+                      {flexRender(h.column.columnDef.header, h.getContext())}
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>
