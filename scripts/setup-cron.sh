@@ -65,26 +65,28 @@ uninstall_systemd() {
   echo "systemd: removed ${svc_target} and ${tmr_target}, timer disabled"
 }
 
+# Calendar fallback (cron has no elapsed-time mode like launchd StartInterval or
+# systemd OnUnitActiveSec). 04:00 UTC sits after most end-of-day churn upstream.
+CRON_LINE="0 4 * * * cd ${REPO_DIR} && ./scripts/refresh.sh >> var/log/refresh.log 2>&1"
+
 install_crontab() {
-  local line="0 * * * * cd ${REPO_DIR} && ./scripts/refresh.sh >> var/log/refresh.log 2>&1"
   # Idempotent: match the full assembled line so a stray comment or stale entry from
   # another checkout cannot trick the gate into a silent no-op.
-  if crontab -l 2>/dev/null | grep -Fqx "${line}"; then
+  if crontab -l 2>/dev/null | grep -Fqx "${CRON_LINE}"; then
     echo "crontab: already installed for ${REPO_DIR}"
     return 0
   fi
-  (crontab -l 2>/dev/null; echo "${line}") | crontab -
-  echo "crontab: installed hourly entry for ${REPO_DIR}"
+  (crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
+  echo "crontab: installed daily entry for ${REPO_DIR}"
 }
 
 uninstall_crontab() {
-  local line="0 * * * * cd ${REPO_DIR} && ./scripts/refresh.sh >> var/log/refresh.log 2>&1"
-  if ! crontab -l 2>/dev/null | grep -Fqx "${line}"; then
+  if ! crontab -l 2>/dev/null | grep -Fqx "${CRON_LINE}"; then
     echo "crontab: nothing to uninstall for ${REPO_DIR}"
     return 0
   fi
-  crontab -l 2>/dev/null | grep -Fvx "${line}" | crontab -
-  echo "crontab: removed hourly entry for ${REPO_DIR}"
+  crontab -l 2>/dev/null | grep -Fvx "${CRON_LINE}" | crontab -
+  echo "crontab: removed daily entry for ${REPO_DIR}"
 }
 
 case "$(uname -s)" in
