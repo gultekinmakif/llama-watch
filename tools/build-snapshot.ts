@@ -6,7 +6,11 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // bun runtime: tools/ has no tsconfig pulling node types.
-declare const process: { cwd(): string; stderr: { write(s: string): void } };
+declare const process: {
+  cwd(): string;
+  env: Record<string, string | undefined>;
+  stderr: { write(s: string): void };
+};
 
 // Canonical metric set per dimType, mirrored from defillama-server getDimensionsConfig KEYS_TO_STORE (running total* aggregates dropped).
 // Coverage is dimType-level: every metric here lights up when the protocol has any adapter under that dimType.
@@ -74,8 +78,18 @@ interface ProtocolRow {
   cells: Cell[];
 }
 
+// Aggregated drift counters flushed by build() so refresh.sh logs surface
+// manifest gaps without one stderr line per skip across ~6k protocols.
+const unresolvedManifestEntries = new Map<string, number>(); // dimType -> count
+const unknownDimTypes = new Map<string, number>();           // dimType -> count
+
 function metricsForDimType(dimType: string): readonly string[] {
-  return KEYS_TO_STORE[dimType] ?? [];
+  const metrics = KEYS_TO_STORE[dimType];
+  if (!metrics) {
+    unknownDimTypes.set(dimType, (unknownDimTypes.get(dimType) ?? 0) + 1);
+    return [];
+  }
+  return metrics;
 }
 
 function readJson<T>(path: string): T {
@@ -93,7 +107,10 @@ function cellsForDimensions(
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
     const entry = dimensionModules[dimType]?.[dimSlug];
-    if (!entry) return [];
+    if (!entry) {
+      unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
+      return [];
+    }
     const codePath = entry.codePath ?? "";
     return metricsForDimType(dimType).flatMap((metric) => {
       if (seen.has(metric)) return [];
@@ -140,7 +157,10 @@ function processProtocol(
 
 function build(): { cells: Cell[]; protocols: OutputProtocol[] } {
   const root = process.cwd();
-  const catalog = readJson<CatalogFile>(resolve(root, "var/snapshot/protocols.json"));
+  // PROTOCOLS_JSON / SNAPSHOT_OUT match the refresh.sh + README env contract;
+  // resolve() handles both relative (joined to root) and absolute overrides.
+  const catalogPath = resolve(root, process.env.PROTOCOLS_JSON ?? "var/snapshot/protocols.json");
+  const catalog = readJson<CatalogFile>(catalogPath);
   const tvlModules = readJson<TvlModules>(resolve(root, "var/snapshot/tvlModules.json"));
   const dimensionModules = readJson<DimensionModules>(
     resolve(root, "var/snapshot/dimensionModules.json"),
@@ -153,10 +173,21 @@ function build(): { cells: Cell[]; protocols: OutputProtocol[] } {
       .filter((r): r is ProtocolRow => r !== null),
   );
 
+  flushDriftCounters();
+
   return {
     cells: rows.flatMap((r) => r.cells),
     protocols: rows.map((r) => r.protocol),
   };
+}
+
+function flushDriftCounters(): void {
+  for (const [dimType, count] of unresolvedManifestEntries) {
+    process.stderr.write(`build-snapshot: ${count} catalog entries for dimType=${dimType} not in manifest\n`);
+  }
+  for (const [dimType, count] of unknownDimTypes) {
+    process.stderr.write(`build-snapshot: ${count} catalog entries for unknown dimType=${dimType} (not in KEYS_TO_STORE)\n`);
+  }
 }
 
 function writeAtomic(path: string, payload: unknown): void {
@@ -166,4 +197,5 @@ function writeAtomic(path: string, payload: unknown): void {
 }
 
 const out = build();
-writeAtomic(resolve(process.cwd(), "var/snapshot/snapshot.json"), out);
+const snapshotPath = resolve(process.cwd(), process.env.SNAPSHOT_OUT ?? "var/snapshot/snapshot.json");
+writeAtomic(snapshotPath, out);

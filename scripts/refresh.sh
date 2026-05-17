@@ -3,11 +3,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# 1. Load env (DATABASE_URL, INTERVAL, UPSTREAM_DIR, PROTOCOLS_JSON, SNAPSHOT_OUT).
+# Fail loud on missing toolchain rather than midway through a parallel fetch.
+command -v bun >/dev/null 2>&1 || { echo "refresh.sh: bun not on PATH; install bun and retry" >&2; exit 1; }
+
+# 1. Load env (DATABASE_URL, UPSTREAM_DIR, PROTOCOLS_JSON, SNAPSHOT_OUT).
 [ -f .env ] && source .env
 
 : "${UPSTREAM_REMOTE:=https://github.com/DefiLlama}"
-: "${INTERVAL:=3300}"
 : "${UPSTREAM_DIR:=./var/upstream}"
 : "${PROTOCOLS_JSON:=./var/snapshot/protocols.json}"
 : "${SNAPSHOT_OUT:=./var/snapshot/snapshot.json}"
@@ -22,6 +24,8 @@ TVL_MODULES="$SNAPSHOT_DIR/tvlModules.json"
 DIM_MODULES="$SNAPSHOT_DIR/dimensionModules.json"
 mkdir -p "$SNAPSHOT_DIR"
 
+pids=()
+
 (
   if [ -d "$SERVER_DIR/.git" ]; then
     git -C "$SERVER_DIR" fetch --depth=1
@@ -33,6 +37,7 @@ mkdir -p "$SNAPSHOT_DIR"
   # Re-applied every run so the cone is self-healing if a prior run left the default /* + !/*/ pattern.
   git -C "$SERVER_DIR" sparse-checkout set defi/src/protocols
 ) &
+pids+=("$!")
 
 (
   curl -fsSL \
@@ -40,6 +45,7 @@ mkdir -p "$SNAPSHOT_DIR"
     -o "$TVL_MODULES.tmp"
   mv "$TVL_MODULES.tmp" "$TVL_MODULES"
 ) &
+pids+=("$!")
 
 (
   curl -fsSL \
@@ -47,8 +53,15 @@ mkdir -p "$SNAPSHOT_DIR"
     -o "$DIM_MODULES.tmp"
   mv "$DIM_MODULES.tmp" "$DIM_MODULES"
 ) &
+pids+=("$!")
 
-wait
+# Bare `wait` only returns the last job's status. Wait on each pid so any
+# failure across the three parallel fetches aborts the script.
+fail=0
+for pid in "${pids[@]}"; do
+  if ! wait "$pid"; then fail=1; fi
+done
+[ "$fail" -eq 0 ] || { echo "refresh.sh: one or more upstream fetches failed" >&2; exit 1; }
 
 # 3. Run the bun extractor over defillama-server/data*.ts to produce $PROTOCOLS_JSON.
 mkdir -p "$(dirname "$PROTOCOLS_JSON")"
@@ -62,9 +75,24 @@ if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models 
 fi
 bin/sync-db
 
-# 5. Build the frontend; Next writes the static export directly to web/out/. Skip when web/ is unscaffolded.
+# 5. Build the frontend in a sibling staging dir, then atomic-swap web/out/.
+#    Building in place would clear web/out/ early in next build's export phase
+#    and the Go static handler would serve 404s until the new tree finished
+#    writing. The sibling pattern keeps web/out/ untouched until the final mv.
+#    rsync skips node_modules / .next / out for speed; node_modules is reused
+#    via symlink so bun does not have to reinstall.
 if [ -f web/package.json ]; then
-  ( cd web && bun run build )
+  WEB_STAGE="$PWD/web.stage"
+  rm -rf "$WEB_STAGE"
+  rsync -a --delete \
+    --exclude=node_modules --exclude=.next --exclude=out \
+    web/ "$WEB_STAGE/"
+  ln -snf "$PWD/web/node_modules" "$WEB_STAGE/node_modules"
+  ( cd "$WEB_STAGE" && bun run build )
+  rm -rf web/out.old
+  [ -d web/out ] && mv web/out web/out.old
+  mv "$WEB_STAGE/out" web/out
+  rm -rf "$WEB_STAGE"
 else
   echo "web/package.json missing; skipping frontend build"
 fi
