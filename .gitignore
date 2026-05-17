@@ -34,7 +34,6 @@ tmp/
 .*.env
 
 # Plan + runtime data
-/plan.md
 /specs/
 /var/
 /web/out/
