@@ -11,6 +11,7 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
+import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
 import { VirtualBody } from './VirtualBody'
@@ -18,6 +19,7 @@ import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
 import { NameCell } from './NameCell'
 import { PresenceCell } from './PresenceCell'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
+import { SearchBox } from './SearchBox'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -117,8 +119,14 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return result
   }, [searchParams, allIds])
 
+  const q = searchParams.get('q')?.trim() ?? ''
+  const filteredRows = useMemo(() => {
+    if (q === '') return rows
+    return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
+  }, [rows, q])
+
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns: tableColumns,
     state: { sorting, columnVisibility },
     getCoreRowModel: getCoreRowModel(),
@@ -154,7 +162,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <SearchBox />
         <ColumnsMenu
           forced={[{ id: 'name', label: 'name' }]}
           toggleable={toggleableOptions}
