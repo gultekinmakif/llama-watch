@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useState } from 'react'
 import {
   createColumnHelper,
   flexRender,
@@ -23,7 +23,7 @@ function coverageOf(row: Row): number {
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
-  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
 
   const tableColumns = useMemo(() => {
     const identity = [
@@ -62,7 +62,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div
-      ref={scrollRef}
+      ref={setScrollElement}
       style={{ height: 640, overflow: 'auto' }}
       className="border"
     >
@@ -80,7 +80,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         </thead>
         <VirtualBody
           rows={tableRows}
-          scrollRef={scrollRef}
+          scrollElement={scrollElement}
           columnCount={columnCount}
         />
       </table>

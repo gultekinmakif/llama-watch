@@ -1,6 +1,5 @@
 'use client'
 
-import { type RefObject } from 'react'
 import { flexRender, type Row as TableRow } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
@@ -8,16 +7,16 @@ import type { Row } from '../../lib/snapshot'
 
 interface VirtualBodyProps {
   rows: TableRow<Row>[]
-  scrollRef: RefObject<HTMLDivElement | null>
+  scrollElement: HTMLDivElement | null
   columnCount: number
 }
 
 const ROW_HEIGHT = 44
 
-export function VirtualBody({ rows, scrollRef, columnCount }: VirtualBodyProps) {
+export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyProps) {
   const virtualizer = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: () => scrollElement,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
   })
