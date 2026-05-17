@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import {
   createColumnHelper,
   flexRender,
@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
+import { VirtualBody } from './VirtualBody'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -22,6 +23,8 @@ function coverageOf(row: Row): number {
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+
   const tableColumns = useMemo(() => {
     const identity = [
       columnHelper.accessor('slug', { id: 'slug', header: 'slug' }),
@@ -54,30 +57,33 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     getCoreRowModel: getCoreRowModel(),
   })
 
+  const tableRows = table.getRowModel().rows
+  const columnCount = table.getVisibleLeafColumns().length
+
   return (
-    <table className="border-collapse text-sm">
-      <thead>
-        {table.getHeaderGroups().map((hg) => (
-          <tr key={hg.id}>
-            {hg.headers.map((h) => (
-              <th key={h.id} className="border px-2 py-1 text-left">
-                {flexRender(h.column.columnDef.header, h.getContext())}
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-      <tbody>
-        {table.getRowModel().rows.map((row) => (
-          <tr key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="border px-2 py-1">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div
+      ref={scrollRef}
+      style={{ height: 640, overflow: 'auto' }}
+      className="border"
+    >
+      <table className="border-collapse text-sm">
+        <thead className="sticky top-0 bg-white">
+          {table.getHeaderGroups().map((hg) => (
+            <tr key={hg.id}>
+              {hg.headers.map((h) => (
+                <th key={h.id} className="border px-2 py-1 text-left">
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <VirtualBody
+          rows={tableRows}
+          scrollRef={scrollRef}
+          columnCount={columnCount}
+        />
+      </table>
+    </div>
   )
 }
