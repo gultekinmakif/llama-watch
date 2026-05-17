@@ -61,17 +61,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const columnCount = table.getVisibleLeafColumns().length
 
   return (
-    <div
-      ref={setScrollElement}
-      style={{ height: 640, overflow: 'auto' }}
-      className="border"
-    >
+    <div ref={setScrollElement} className="h-[640px] overflow-auto border">
       <table className="border-collapse text-sm">
         <thead className="sticky top-0 bg-white">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => (
-                <th key={h.id} className="border px-2 py-1 text-left">
+                <th
+                  key={h.id}
+                  scope="col"
+                  className="border px-2 py-1 text-left"
+                >
                   {flexRender(h.column.columnDef.header, h.getContext())}
                 </th>
               ))}
