@@ -21,6 +21,8 @@ A daily refresh sparse-clones [DefiLlama/defillama-server](https://github.com/De
 
 ## Quick start
 
+Prereqs: `bun`, `go` 1.26+, `postgres` (or Docker), `rsync` (refresh.sh uses it for the atomic web swap; present on macOS and stock Linux).
+
 ### 1. Postgres
 
 ```sh
@@ -61,7 +63,7 @@ The api package opens the singleton via `postgres.New`, runs `Migrate`, and roll
 
 `scripts/refresh.sh` is the orchestrator, scheduled daily. Each tick, in parallel:
 
-- Sparse-clones (or fetches) `defillama-server` into `var/upstream/defillama-server/`, scoped to `defi/src/protocols` and `defi/src/constants.ts`.
+- Sparse-clones (or fetches) `defillama-server` into `var/upstream/defillama-server/`, scoped to `defi/src/protocols`.
 - Curls `tvlModules.json` from the `DefiLlama-Adapters` `latest` release into `var/snapshot/tvlModules.json`.
 - Curls `dimensionModules.json` from the `dimension-adapters` `latest` release into `var/snapshot/dimensionModules.json`.
 
@@ -88,6 +90,8 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 | `GET` | `/health` | `{"status":"ok","db":"ok","db_ms":12}` on 200, or `{"status":"down","db":"down","db_ms":2000}` on 503 if the DB ping fails (2s timeout). `db_ms` is the actual ping latency, useful for plotting degradation before it becomes downtime. |
 | `GET` | `/api/matrix` | `{ columns, rows, total }` paginated via `?limit` (default 200, max 1000) and `?offset`. |
 | `GET` | `/api/matrix/{slug}` | Detail view for one matrix row: `{ slug, name, category, chains, dimensions[] }`. Each `dimensions[]` entry carries `kind`, `present`, and a `github_url` pointing into the dimension-adapters repo when the protocol has an adapter for that metric. 404 envelope if the slug is unknown. |
+| `GET` | `/api/chains` | `{ chains: [{ key, label, protocol_count }] }`. Distinct chains across all protocols, ordered by key; label is titlecase of key. |
+| `GET` | `/api/dimensions` | `{ dimensions: [{ kind, display_name, coverage }] }`. Ordered by `internal/registry/columns.go`; `coverage` is the per-metric `COUNT(*)` over the matrix table. |
 | `GET` | `/*` | Static files from `web/out/` (the prerendered Next export). 404 from the file system on miss. |
 
 ## Stack
@@ -95,7 +99,7 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 - **Backend.** Go 1.26 + stdlib `net/http` (1.22+ ServeMux). GORM v1.31 against Postgres. `log/slog` via `lmittmann/tint` for dev colored logs, JSON for prod.
 - **Refresh pipeline:**
   - Bash orchestrator (`scripts/refresh.sh`)
-  - Sparse `git` checkout of `defillama-server` (`defi/src/protocols`, `defi/src/constants.ts`) plus two parallel `curl`s for `tvlModules.json` and `dimensionModules.json`.
+  - Sparse `git` checkout of `defillama-server` (`defi/src/protocols`) plus two parallel `curl`s for `tvlModules.json` and `dimensionModules.json`.
   - bun TS pipeline: `tools/extract-protocols.ts` normalizes the catalog, `tools/build-snapshot.ts` joins it against both manifests into `snapshot.json`.
   - Go `bin/sync-db`: opens one transaction, truncates `matrix` + `protocol_identities`, bulk-inserts in batches of 500.
 - **Frontend.** Next.js 16 + React 19 + Tailwind 4 + `@tanstack/react-table` + `@tanstack/react-virtual`.
@@ -105,9 +109,9 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 
 ## Development
 
-CI runs `go build`, `go vet`, `go test`, `golangci-lint`, and `shellcheck --severity=warning scripts/*.sh` on every PR. Run the same locally before pushing; install `shellcheck` via `brew install shellcheck` (or your package manager) if you don't have it.
+CI runs `go build`, `go vet`, `go test`, `golangci-lint`, and `shellcheck --severity=warning scripts/*.sh` on every PR.
 
-Conventional Commits for subjects (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`, `perf:`, `ci:`). One logical change per commit; the subject alone should tell the story.
+Run the same locally before pushing; install `shellcheck` via `brew install shellcheck` (or your package manager) if you don't have it.
 
 ## License
 
