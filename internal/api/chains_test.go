@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+
+	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 func TestChainsShape(t *testing.T) {
@@ -43,4 +47,40 @@ func TestChainsLabelTitlecase(t *testing.T) {
 			t.Errorf("titlecase(%q): want %q, got %q", c.in, c.want, got)
 		}
 	}
+}
+
+func TestListChainsWithDB(t *testing.T) {
+	if os.Getenv("TEST_DATABASE_URL") == "" {
+		t.Skip("TEST_DATABASE_URL not set")
+	}
+	withTx(t, func(tx *gorm.DB) {
+		seedIdentity(t, tx, "p1", "P1", pq.StringArray{"ethereum", "polygon"})
+		seedIdentity(t, tx, "p2", "P2", pq.StringArray{"ethereum"})
+		seedIdentity(t, tx, "p3", "P3", pq.StringArray{"bsc"})
+
+		rows, err := listChains(t.Context(), tx)
+		if err != nil {
+			t.Fatalf("listChains: %v", err)
+		}
+
+		got := make(map[string]int, len(rows))
+		for _, r := range rows {
+			got[r.Key] = r.ProtocolCount
+		}
+		if got["ethereum"] != 2 {
+			t.Errorf("ethereum count: want 2, got %d", got["ethereum"])
+		}
+		if got["polygon"] != 1 {
+			t.Errorf("polygon count: want 1, got %d", got["polygon"])
+		}
+		if got["bsc"] != 1 {
+			t.Errorf("bsc count: want 1, got %d", got["bsc"])
+		}
+
+		for _, r := range rows {
+			if r.Key == "ethereum" && r.Label != "Ethereum" {
+				t.Errorf("ethereum label: want Ethereum, got %s", r.Label)
+			}
+		}
+	})
 }
