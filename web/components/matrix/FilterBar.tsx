@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import {
   SelectProvider,
   Select,
@@ -9,6 +9,8 @@ import {
   SelectItem,
   SelectItemCheck,
 } from '@ariakit/react'
+
+import { useReplaceParams } from '../../lib/url-state'
 
 export interface FilterBarProps {
   chainOptions: string[]
@@ -19,8 +21,7 @@ type FilterKey = 'chains' | 'categories'
 
 export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const replaceParams = useReplaceParams()
 
   const selectedChains = useMemo(
     () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
@@ -33,11 +34,9 @@ export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
   )
 
   const writeParam = (key: FilterKey, values: string[]) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (values.length === 0) params.delete(key)
-    else params.set(key, values.join(','))
-    const qs = params.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    // chains uses lowercased tokens so the URL matches the row-side normalization.
+    const normalized = key === 'chains' ? values.map((v) => v.toLowerCase()) : values
+    replaceParams({ [key]: normalized.length === 0 ? null : normalized.join(',') })
   }
 
   const chainsLabel =
@@ -55,15 +54,14 @@ export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
       <SelectProvider<string[]>
         value={selectedChains}
         setValue={(next) => {
-          // Ariakit narrows setValue's argument by the provider's value type, but the
-          // single-vs-multi branches share one signature so we re-narrow defensively.
+          // ariakit's setValue signature is shared single-vs-multi; re-narrow defensively.
           const list = Array.isArray(next) ? next : [next]
           writeParam('chains', list)
         }}
       >
         <Select
           aria-label="filter by chains"
-          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg"
+          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
         >
           {chainsLabel}
         </Select>
@@ -93,7 +91,7 @@ export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
       >
         <Select
           aria-label="filter by categories"
-          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg"
+          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
         >
           {categoriesLabel}
         </Select>

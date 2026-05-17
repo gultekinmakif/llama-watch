@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+
+import { useReplaceParams } from '../../lib/url-state'
 
 // 150ms after the last keystroke before the URL is updated.
 const DEBOUNCE_MS = 150
 
 export function SearchBox() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const replaceParams = useReplaceParams()
   const urlQ = searchParams.get('q') ?? ''
 
   const [value, setValue] = useState(urlQ)
@@ -25,11 +26,7 @@ export function SearchBox() {
     setValue(next)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (next.trim() === '') params.delete('q')
-      else params.set('q', next)
-      const qs = params.toString()
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+      replaceParams({ q: next.trim() === '' ? null : next })
     }, DEBOUNCE_MS)
   }
 
@@ -40,7 +37,7 @@ export function SearchBox() {
       onChange={onChange}
       placeholder="search protocols"
       aria-label="search protocols"
-      className="rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted"
+      className="rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
     />
   )
 }

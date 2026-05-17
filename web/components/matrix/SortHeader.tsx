@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+
+import { useReplaceParams } from '../../lib/url-state'
 
 export type SortKey = 'name' | 'category' | 'coverage'
 export type SortOrder = 'asc' | 'desc'
@@ -22,9 +24,8 @@ interface SortHeaderProps {
 }
 
 export function SortHeader({ columnKey, label }: SortHeaderProps) {
-  const router = useRouter()
-  const pathname = usePathname()
   const params = useSearchParams()
+  const replaceParams = useReplaceParams()
 
   const urlSort = params.get('sort')
   const urlOrder = params.get('order')
@@ -35,7 +36,6 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
   const direction: SortOrder | null = isActive ? activeOrder : null
 
   const onClick = useCallback(() => {
-    const next = new URLSearchParams(params.toString())
     let nextOrder: SortOrder | null
     if (!isActive) {
       nextOrder = 'asc'
@@ -44,16 +44,11 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
     } else {
       nextOrder = null
     }
-    if (nextOrder === null) {
-      next.delete('sort')
-      next.delete('order')
-    } else {
-      next.set('sort', columnKey)
-      next.set('order', nextOrder)
-    }
-    const qs = next.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [columnKey, direction, isActive, params, pathname, router])
+    replaceParams({
+      sort: nextOrder === null ? null : columnKey,
+      order: nextOrder,
+    })
+  }, [columnKey, direction, isActive, replaceParams])
 
   const indicator = direction === 'asc' ? '↑' : direction === 'desc' ? '↓' : ''
   const ariaLabel =
@@ -68,7 +63,7 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1 text-left"
+      className="inline-flex items-center gap-1 rounded text-left focus-visible:outline focus-visible:outline-fg-muted"
     >
       <span>{label}</span>
       <span aria-hidden="true" className="w-3 text-xs">{indicator}</span>
