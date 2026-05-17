@@ -15,45 +15,26 @@ const UPSTREAM_ROOT = "var/upstream";
 const DIMS_REPO = "dimension-adapters";
 
 function isAdapterExt(name: string): boolean {
-  if (name.endsWith(".d.ts")) return false;
-  return name.endsWith(".ts") || name.endsWith(".js");
+  return (name.endsWith(".ts") || name.endsWith(".js")) && !name.endsWith(".d.ts");
 }
 
-
-function toRelSlash(upstreamRoot: string, absPath: string): string {
-  return relative(upstreamRoot, absPath).split(sep).join("/");
-}
-
-function walkDimType(
-  dir: string,
-  upstreamRoot: string,
-  dimType: string,
-  out: AdapterEntry[],
-): void {
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    if (entry.isDirectory()) {
-      if ((entry.name.startsWith(".") || entry.name === "node_modules")) continue;
-      walkDimType(join(dir, entry.name), upstreamRoot, dimType, out);
-    } else if (entry.isFile() && isAdapterExt(entry.name)) {
-      out.push({ relPath: toRelSlash(upstreamRoot, join(dir, entry.name)), dimType });
-    }
-  }
+function isSkippedDir(name: string): boolean {
+  return name.startsWith(".") || name === "node_modules";
 }
 
 function collect(upstreamRoot: string): AdapterEntry[] {
   const dimsRoot = join(upstreamRoot, DIMS_REPO);
   const out: AdapterEntry[] = [];
-  let topLevel = readdirSync(dimsRoot, { withFileTypes: true });
-
-  for (const entry of topLevel) {
-    if (!entry.isDirectory() || (entry.name.startsWith(".") || entry.name === "node_modules")) continue;
-    walkDimType(join(dimsRoot, entry.name), upstreamRoot, entry.name, out);
+  for (const entry of readdirSync(dimsRoot, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile() || !isAdapterExt(entry.name)) continue;
+    const fullPath = join(entry.parentPath, entry.name);
+    const dirSegs = relative(dimsRoot, fullPath).split(sep).slice(0, -1);
+    const dimType = dirSegs[0];
+    if (!dimType || dirSegs.some(isSkippedDir)) continue;
+    out.push({
+      relPath: relative(upstreamRoot, fullPath).split(sep).join("/"),
+      dimType,
+    });
   }
   return out;
 }
