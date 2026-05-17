@@ -15,6 +15,7 @@ import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
 import { VirtualBody } from './VirtualBody'
 import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
 import { NameCell } from './NameCell'
+import { PresenceCell } from './PresenceCell'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -70,6 +71,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         id: col.key,
         header: col.label,
         enableSorting: false,
+        cell: ({ getValue }) => <PresenceCell value={getValue()} />,
       }),
     )
     return [...identity, ...dimension]
