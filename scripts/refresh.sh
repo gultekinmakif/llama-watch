@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 : "${UPSTREAM_REMOTE:=https://github.com/DefiLlama}"
 : "${INTERVAL:=3300}"
 : "${UPSTREAM_DIR:=./var/upstream}"
-: "${PROTOCOLS_JSON:=./var/extracted/protocols.json}"
+: "${PROTOCOLS_JSON:=./var/snapshot/protocols.json}"
 : "${SNAPSHOT_OUT:=./var/snapshot/snapshot.json}"
 
 
@@ -54,19 +54,27 @@ wait
 mkdir -p "$(dirname "$PROTOCOLS_JSON")"
 bun run tools/extract-protocols.ts > "$PROTOCOLS_JSON"
 
-# 4. Ensure bin/refresh exists and is newer than its sources, then rebuild if stale.
+# 4. Build snapshot.json from the catalog and the two manifests, then sync into matrix and protocol_identities.
+bun run tools/build-snapshot.ts
+
+if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models -newer bin/sync-db -type f 2>/dev/null)" ]; then
+  go build -o bin/sync-db ./cmd/sync-db
+fi
+bin/sync-db
+
+# 5. Ensure bin/refresh exists and is newer than its sources, then rebuild if stale.
 if [ ! -x bin/refresh ] || [ -n "$(find cmd/refresh internal/dimensions internal/snapshot internal/models -newer bin/refresh -type f 2>/dev/null)" ]; then
   go build -o bin/refresh ./cmd/refresh
 fi
 
-# 5. Run the Go refresh binary; the --interval gate inside skips redundant runs.
+# 6. Run the Go refresh binary; the --interval gate inside skips redundant runs.
 bin/refresh \
   --interval="$INTERVAL" \
   --upstream-dir="$UPSTREAM_DIR" \
   --protocols-json="$PROTOCOLS_JSON" \
   --snapshot-out="$SNAPSHOT_OUT"
 
-# 6. Build the frontend and atomic-swap web/out/. Skip when web/ is unscaffolded.
+# 7. Build the frontend and atomic-swap web/out/. Skip when web/ is unscaffolded.
 if [ -f web/package.json ]; then
   ( cd web && bun run build )
   # Phase 2 may emit directly to web/out/; revisit this swap when the real build path lands.
