@@ -7,6 +7,9 @@ import (
 	"runtime/debug"
 )
 
+// Body literal (not extracted to internal/api) to avoid an api→middleware→api import cycle.
+var panicBody = []byte(`{"error":{"code":"internal","message":"internal server error"}}` + "\n")
+
 // Recoverer recovers from panics, logs the panic with stack trace and request
 // ID (if present), and returns a 500 to the client.
 func Recoverer(next http.Handler) http.HandlerFunc {
@@ -19,7 +22,9 @@ func Recoverer(next http.Handler) http.HandlerFunc {
 					"request_id", GetReqID(r.Context()),
 					"stack", string(debug.Stack()),
 				)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write(panicBody)
 			}
 		}()
 		next.ServeHTTP(w, r)
