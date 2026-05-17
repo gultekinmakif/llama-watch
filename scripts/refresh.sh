@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 # 1. Load env (DATABASE_URL, INTERVAL, UPSTREAM_DIR, PROTOCOLS_JSON, SNAPSHOT_OUT, REPOS).
 [ -f .env ] && source .env
 
-: "${REPOS:=DefiLlama-Adapters dimension-adapters defillama-server}"
+: "${REPOS:=DefiLlama-Adapters dimension-adapters}"
 : "${UPSTREAM_REMOTE:=https://github.com/DefiLlama}"
 : "${INTERVAL:=3300}"
 : "${UPSTREAM_DIR:=./var/upstream}"
@@ -28,7 +28,21 @@ for repo in $REPOS; do
   fi
 done
 
-# 3. Run the bun extractor over defillama-server/data*.ts to produce $PROTOCOLS_JSON.
+# 3. Maintain a sparse clone of defillama-server holding only the protocol
+#    catalog sources the extractor reads. First run clones with blob filter and
+#    sparse-checkout; later runs fetch + reset to origin/master.
+SERVER_DIR="$UPSTREAM_DIR/defillama-server"
+if [ -d "$SERVER_DIR/.git" ]; then
+  git -C "$SERVER_DIR" fetch --depth=1
+  git -C "$SERVER_DIR" reset --hard origin/master
+else
+  git clone --depth=1 --filter=blob:none --sparse \
+    "$UPSTREAM_REMOTE/defillama-server.git" "$SERVER_DIR"
+  git -C "$SERVER_DIR" sparse-checkout set \
+    defi/src/protocols defi/src/constants.ts
+fi
+
+# 4. Run the bun extractor over defillama-server/data*.ts to produce $PROTOCOLS_JSON.
 mkdir -p "$(dirname "$PROTOCOLS_JSON")"
 bun run tools/extract-protocols.ts > "$PROTOCOLS_JSON"
 
