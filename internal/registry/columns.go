@@ -30,6 +30,9 @@ var columns = []Column{
 	{Key: "dailyTransactionsCount", Label: "Transactions"},
 	{Key: "dailyGasUsed", Label: "Gas Used"},
 	{Key: "dailyNewUsers", Label: "New Users"},
+	{Key: "dailyNormalizedVolume", Label: "Normalized Volume"},
+	{Key: "dailyActiveLiquidity", Label: "Active Liquidity"},
+	{Key: "tokenIncentives", Label: "Token Incentives"},
 }
 
 // Columns returns a copy of the pinned column set so external callers can read
