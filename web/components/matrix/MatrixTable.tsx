@@ -14,6 +14,7 @@ import {
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
 import { VirtualBody } from './VirtualBody'
 import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
+import { NameCell } from './NameCell'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -44,14 +45,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   const tableColumns = useMemo(() => {
     const identity = [
-      columnHelper.accessor('slug', {
-        id: 'slug',
-        header: 'slug',
-        enableSorting: false,
-      }),
       columnHelper.accessor('name', {
         id: 'name',
         header: () => <SortHeader columnKey="name" label="name" />,
+        cell: ({ row }) => <NameCell row={row.original} />,
       }),
       columnHelper.accessor((r) => r.category, {
         id: 'category',
