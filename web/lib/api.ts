@@ -31,13 +31,20 @@ export class ApiError extends Error {
   }
 }
 
-export async function getProtocolDetail(slug: string): Promise<ProtocolDetail> {
+export async function getProtocolDetail(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ProtocolDetail> {
   const url = `${API_BASE}/api/matrix/${encodeURIComponent(slug)}`
 
   let response: Response
   try {
-    response = await fetch(url)
+    response = await fetch(url, { signal })
   } catch (err) {
+    // Aborts surface as a typed code so callers can ignore the rejection cleanly.
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new ApiError('aborted', 0, 'request aborted')
+    }
     const message = err instanceof Error ? err.message : 'network error'
     throw new ApiError('network', 0, message)
   }

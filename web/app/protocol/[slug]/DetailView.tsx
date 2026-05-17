@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 import { ApiError, getProtocolDetail, type ProtocolDetail } from '../../../lib/api'
@@ -17,32 +17,48 @@ type State =
 
 export function DetailView({ slug }: { slug: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' })
+  // Bumped to retry; abort fires on unmount or before each retry.
+  const [attempt, setAttempt] = useState(0)
 
-  const load = useCallback(() => {
+  useEffect(() => {
+    const ctl = new AbortController()
     setState({ kind: 'loading' })
-    getProtocolDetail(slug)
+    getProtocolDetail(slug, ctl.signal)
       .then((detail) => setState({ kind: 'ok', detail }))
       .catch((err: unknown) => {
-        if (err instanceof ApiError && err.code === 'not_found') {
-          setState({ kind: 'not_found' })
+        if (err instanceof ApiError) {
+          if (err.code === 'aborted') return
+          if (err.code === 'not_found') {
+            setState({ kind: 'not_found' })
+            return
+          }
+          setState({ kind: 'error', message: err.message })
           return
         }
         const message = err instanceof Error ? err.message : 'unknown error'
         setState({ kind: 'error', message })
       })
-  }, [slug])
-
-  useEffect(() => { load() }, [load])
+    return () => ctl.abort()
+  }, [slug, attempt])
 
   return (
     <>
-      <Link href="/" className="self-start text-sm text-fg-muted hover:text-fg">{'← back to matrix'}</Link>
+      <Link
+        href="/"
+        className="self-start rounded text-sm text-fg-muted hover:text-fg focus-visible:outline focus-visible:outline-fg-muted"
+      >
+        {'← back to matrix'}
+      </Link>
       {state.kind === 'loading' ? <Empty title="loading…" /> : null}
       {state.kind === 'not_found' ? (
         <Empty title="protocol not found" hint={`no detail row for slug "${slug}"`} />
       ) : null}
       {state.kind === 'error' ? (
-        <ErrorPanel title="failed to load protocol" message={state.message} onRetry={load} />
+        <ErrorPanel
+          title="failed to load protocol"
+          message={state.message}
+          onRetry={() => setAttempt((n) => n + 1)}
+        />
       ) : null}
       {state.kind === 'ok' ? (
         <>
