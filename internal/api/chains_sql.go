@@ -10,7 +10,7 @@ import (
 
 const listChainsSQL = `
 SELECT chain AS key, COUNT(*) AS protocol_count
-FROM (SELECT unnest(chains) AS chain FROM protocols) sub
+FROM (SELECT unnest(chains) AS chain FROM protocol_identities) sub
 GROUP BY chain
 ORDER BY chain
 `
