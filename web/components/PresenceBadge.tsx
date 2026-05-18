@@ -1,18 +1,37 @@
+import type { CellState } from '../lib/snapshot'
+
 interface PresenceBadgeProps {
   variant: 'cell' | 'pill'
-  present: boolean
+  state: CellState
 }
 
-export function PresenceBadge({ variant, present }: PresenceBadgeProps) {
-  const tile = present
-    ? 'bg-cell-present text-cell-fg-present'
-    : 'bg-cell-absent text-cell-fg-absent'
-  const glyph = present ? '✓' : '✗'
-  const label = present ? 'present' : 'absent'
+const TILE: Record<CellState, string> = {
+  na: 'bg-cell-na text-cell-fg-na',
+  missing: 'bg-cell-missing text-cell-fg-missing',
+  present: 'bg-cell-present text-cell-fg-present',
+  over: 'bg-cell-over text-cell-fg-over',
+}
+
+const GLYPH: Record<CellState, string> = {
+  na: '·',
+  missing: '✗',
+  present: '✓',
+  over: '!',
+}
+
+// na cells are background noise; aria-hide so screen readers walk the signal cells.
+// Other states announce with a human-readable label.
+const LABEL: Record<Exclude<CellState, 'na'>, string> = {
+  missing: 'missing',
+  present: 'present',
+  over: 'unexpected',
+}
+
+export function PresenceBadge({ variant, state }: PresenceBadgeProps) {
+  const tile = TILE[state]
+  const glyph = GLYPH[state]
   if (variant === 'cell') {
-    // 24-cell-per-row spam if labelled
-    // Present cells stay announced because they carry the actual signal.
-    if (!present) {
+    if (state === 'na') {
       return (
         <span
           aria-hidden="true"
@@ -25,18 +44,22 @@ export function PresenceBadge({ variant, present }: PresenceBadgeProps) {
     return (
       <span
         role="img"
-        aria-label={label}
+        aria-label={LABEL[state]}
         className={`inline-flex h-6 w-6 items-center justify-center rounded text-sm ${tile}`}
       >
         {glyph}
       </span>
     )
   }
+  if (state === 'na') {
+    return (
+      <span aria-hidden="true" className={`rounded px-2 py-0.5 text-xs ${tile}`}>
+        {glyph}
+      </span>
+    )
+  }
   return (
-    <span
-      aria-label={label}
-      className={`rounded px-2 py-0.5 text-xs ${tile}`}
-    >
+    <span aria-label={LABEL[state]} className={`rounded px-2 py-0.5 text-xs ${tile}`}>
       {glyph}
     </span>
   )

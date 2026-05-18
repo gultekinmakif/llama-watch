@@ -68,7 +68,11 @@ export function DetailView({ slug }: { slug: string }) {
           ) : (
             <ul className="flex flex-col">
               {state.detail.dimensions.map((d) => (
-                <DimensionRow key={d.kind} dimension={d} />
+                <DimensionRow
+                  key={d.kind}
+                  dimension={d}
+                  category={state.detail.category ?? ''}
+                />
               ))}
             </ul>
           )}

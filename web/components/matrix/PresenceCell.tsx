@@ -6,6 +6,5 @@ interface PresenceCellProps {
 }
 
 export function PresenceCell({ state }: PresenceCellProps) {
-  const present = state === 'present' || state === 'over'
-  return <PresenceBadge variant="cell" present={present} />
+  return <PresenceBadge variant="cell" state={state} />
 }
