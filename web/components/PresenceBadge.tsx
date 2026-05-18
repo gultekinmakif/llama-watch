@@ -19,9 +19,8 @@ const GLYPH: Record<CellState, string> = {
   over: '!',
 }
 
-// na cells are background noise; aria-hide so screen readers walk the signal cells.
-// Other states announce with a human-readable label.
-const LABEL: Record<Exclude<CellState, 'na'>, string> = {
+const LABEL: Record<CellState, string> = {
+  na: 'not applicable',
   missing: 'missing',
   present: 'present',
   over: 'unexpected',
@@ -47,13 +46,6 @@ export function PresenceBadge({ variant, state }: PresenceBadgeProps) {
         aria-label={LABEL[state]}
         className={`inline-flex h-6 w-6 items-center justify-center rounded text-sm ${tile}`}
       >
-        {glyph}
-      </span>
-    )
-  }
-  if (state === 'na') {
-    return (
-      <span aria-hidden="true" className={`rounded px-2 py-0.5 text-xs ${tile}`}>
         {glyph}
       </span>
     )
