@@ -72,7 +72,7 @@ function isProtocolDetail(body: unknown): body is ProtocolDetail {
   )
 }
 
-async function parseErrorEnvelope(
+export async function parseErrorEnvelope(
   response: Response,
 ): Promise<{ code: string; message: string }> {
   let body: unknown

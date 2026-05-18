@@ -64,13 +64,13 @@ export interface Snapshot {
   total: number
 }
 
-interface RawCell {
+export interface RawCell {
   slug: string
   metric: string
   codePath: string
 }
 
-interface RawProtocol {
+export interface RawProtocol {
   slug: string
   name: string
   category?: string
@@ -78,7 +78,7 @@ interface RawProtocol {
   dataFile: string
 }
 
-interface RawSnapshot {
+export interface RawSnapshot {
   cells: RawCell[]
   protocols: RawProtocol[]
 }
@@ -136,7 +136,7 @@ function presenceBySlug(cells: RawCell[]): Map<string, Set<string>> {
   return out
 }
 
-function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
+export function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
   const cells = {} as Cells
   let coverage = 0
   for (const col of COLUMNS) {
