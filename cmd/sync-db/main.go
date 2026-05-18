@@ -1,5 +1,5 @@
 // Invoked after tools/build-snapshot.ts.
-// Loads var/snapshot/snapshot.json into the matrix and protocol_identities tables.
+// Loads var/snapshot/snapshot.json into the matrix, protocol_identities, and dim_file_coverage tables.
 package main
 
 import (
@@ -75,9 +75,10 @@ func main() {
 	db := postgres.Get()
 	identities := buildIdentities(snap.Protocols)
 	rows := buildMatrix(snap.Cells)
+	coverage := buildCoverage(snap.Cells)
 
 	err = db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("TRUNCATE matrix, protocol_identities").Error; err != nil {
+		if err := tx.Exec("TRUNCATE matrix, protocol_identities, dim_file_coverage").Error; err != nil {
 			return err
 		}
 		if len(identities) > 0 {
@@ -90,6 +91,11 @@ func main() {
 				return err
 			}
 		}
+		if len(coverage) > 0 {
+			if err := tx.CreateInBatches(coverage, 500).Error; err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	if err != nil {
@@ -99,6 +105,7 @@ func main() {
 	lg.Info("sync-db complete",
 		"protocols", len(identities),
 		"matrix_rows", len(rows),
+		"coverage_rows", len(coverage),
 		"snapshot", snapshotPath,
 	)
 }
@@ -145,6 +152,28 @@ func buildMatrix(in []snapshotCell) []models.Matrix {
 			Slug:     c.Slug,
 			Metric:   c.Metric,
 			CodePath: c.CodePath,
+		}
+	}
+	return out
+}
+
+func buildCoverage(in []snapshotCell) []models.DimFileCoverage {
+	seen := make(map[string]map[string]struct{}, len(in))
+	for _, c := range in {
+		if c.CodePath == "" {
+			continue
+		}
+		set, ok := seen[c.CodePath]
+		if !ok {
+			set = make(map[string]struct{})
+			seen[c.CodePath] = set
+		}
+		set[c.Metric] = struct{}{}
+	}
+	out := make([]models.DimFileCoverage, 0)
+	for codePath, metrics := range seen {
+		for metric := range metrics {
+			out = append(out, models.DimFileCoverage{CodePath: codePath, Metric: metric})
 		}
 	}
 	return out

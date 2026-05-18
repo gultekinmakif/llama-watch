@@ -83,5 +83,6 @@ func Migrate() error {
 	return db.AutoMigrate(
 		&models.Matrix{},
 		&models.ProtocolIdentity{},
+		&models.DimFileCoverage{},
 	)
 }
