@@ -22,6 +22,7 @@ import { PresenceCell } from './PresenceCell'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
 import { SearchBox } from './SearchBox'
 import { FilterBar } from './FilterBar'
+import { Legend } from './Legend'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -186,14 +187,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div role="toolbar" aria-label="matrix controls" className="flex justify-end gap-2">
-        <SearchBox count={visibleRows.length} total={rows.length} />
-        <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
-        <ColumnsMenu
-          toggleable={toggleableOptions}
-          visibleIds={visibleIds}
-          onChange={handleVisibleChange}
-        />
+      <div className="flex items-center justify-between gap-2">
+        <Legend />
+        <div role="toolbar" aria-label="matrix controls" className="flex gap-2">
+          <SearchBox count={visibleRows.length} total={rows.length} />
+          <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
+          <ColumnsMenu
+            toggleable={toggleableOptions}
+            visibleIds={visibleIds}
+            onChange={handleVisibleChange}
+          />
+        </div>
       </div>
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
