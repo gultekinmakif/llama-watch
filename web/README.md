@@ -6,7 +6,7 @@ Next.js 16 static export. Built into `web/out/`; the Go server in this repo serv
 
 ```sh
 cd web
-bun install
+bun install --backend=copyfile
 bun run typecheck
 bun run build
 ```

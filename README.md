@@ -107,6 +107,10 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 - **Scheduler.** launchd plist (macOS), systemd `.service` + `.timer` (Linux), or a crontab line.
   - Templates in `scripts/launchd/` and `scripts/systemd/`.
 
+## Frontend
+
+The Next.js 16 static export lives under [`web/`](web/). See [`web/README.md`](web/README.md) for the frontend quick start.
+
 ## Development
 
 CI runs `go build`, `go vet`, `go test`, `golangci-lint`, and `shellcheck --severity=warning scripts/*.sh` on every PR.
