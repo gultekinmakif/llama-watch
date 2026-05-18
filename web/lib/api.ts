@@ -50,11 +50,26 @@ export async function getProtocolDetail(
   }
 
   if (response.ok) {
-    return (await response.json()) as ProtocolDetail
+    const body = (await response.json()) as unknown
+    if (!isProtocolDetail(body)) {
+      throw new ApiError('shape', response.status, `unexpected /api/matrix/${slug} response shape`)
+    }
+    return body
   }
 
   const { code, message } = await parseErrorEnvelope(response)
   throw new ApiError(code, response.status, message)
+}
+
+function isProtocolDetail(body: unknown): body is ProtocolDetail {
+  return (
+    body != null &&
+    typeof body === 'object' &&
+    typeof (body as ProtocolDetail).slug === 'string' &&
+    typeof (body as ProtocolDetail).name === 'string' &&
+    Array.isArray((body as ProtocolDetail).chains) &&
+    Array.isArray((body as ProtocolDetail).dimensions)
+  )
 }
 
 async function parseErrorEnvelope(
