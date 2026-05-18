@@ -187,7 +187,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   return (
     <div className="flex flex-col gap-2">
       <div role="toolbar" aria-label="matrix controls" className="flex justify-end gap-2">
-        <SearchBox />
+        <SearchBox count={visibleRows.length} total={rows.length} />
         <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
         <ColumnsMenu
           toggleable={toggleableOptions}

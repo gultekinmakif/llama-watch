@@ -10,6 +10,18 @@ export function PresenceBadge({ variant, present }: PresenceBadgeProps) {
   const glyph = present ? '✓' : '✗'
   const label = present ? 'present' : 'absent'
   if (variant === 'cell') {
+    // 24-cell-per-row spam if labelled
+    // Present cells stay announced because they carry the actual signal.
+    if (!present) {
+      return (
+        <span
+          aria-hidden="true"
+          className={`inline-flex h-6 w-6 items-center justify-center rounded text-sm ${tile}`}
+        >
+          {glyph}
+        </span>
+      )
+    }
     return (
       <span
         role="img"

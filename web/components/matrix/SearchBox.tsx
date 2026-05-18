@@ -8,7 +8,12 @@ import { useReplaceParams } from '../../lib/url-state'
 // 150ms after the last keystroke before the URL is updated.
 const DEBOUNCE_MS = 150
 
-export function SearchBox() {
+interface SearchBoxProps {
+  count: number
+  total: number
+}
+
+export function SearchBox({ count, total }: SearchBoxProps) {
   const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
   const urlQ = searchParams.get('q') ?? ''
@@ -31,13 +36,23 @@ export function SearchBox() {
   }
 
   return (
-    <input
-      type="search"
-      value={value}
-      onChange={onChange}
-      placeholder="search protocols"
-      aria-label="search protocols"
-      className="rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
-    />
+    <div className="flex items-center gap-2">
+      <input
+        type="search"
+        value={value}
+        onChange={onChange}
+        placeholder="search protocols"
+        aria-label="search protocols"
+        className="rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
+      />
+      <span
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="text-xs text-fg-muted tabular-nums"
+      >
+        {count === total ? `${total}` : `${count} of ${total}`}
+      </span>
+    </div>
   )
 }
