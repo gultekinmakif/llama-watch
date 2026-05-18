@@ -1,5 +1,5 @@
 import type { ProtocolDimension } from '../../lib/api'
-import { classifyCell } from '../../lib/snapshot'
+import { classifyCell } from '../../lib/cell-state'
 import { PresenceBadge } from '../PresenceBadge'
 
 interface DimensionRowProps {

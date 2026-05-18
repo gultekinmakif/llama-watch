@@ -1,4 +1,4 @@
-import type { CellState } from '../../lib/snapshot'
+import type { CellState } from '../../lib/cell-state'
 import { PresenceBadge } from '../PresenceBadge'
 
 interface PresenceCellProps {

@@ -36,6 +36,7 @@ tmp/
 # Plan + runtime data
 /specs/
 /var/
+/web.stage
 /web/out/
 /web/out.old/
 /web/.next/
