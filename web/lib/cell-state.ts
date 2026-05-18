@@ -3,10 +3,10 @@
 
 export type CellState = 'na' | 'missing' | 'present' | 'over'
 
-// Mirror of internal/registry/expectations.go. 
+// Mirror of internal/registry/expectations.go.
 // Drift between this map and Go means the build-time matrix disagrees with /api/matrix.
 // Keep in lockstep with the Go seed.
-const EXPECTATIONS: Record<string, Record<string, true>> = {
+export const EXPECTATIONS: Record<string, Record<string, true>> = {
   Lending: { tvl: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true, dailyUserFees: true, dailySupplySideRevenue: true, dailyProtocolRevenue: true },
   'DEX Aggregator': { dailyVolume: true, dailyFees: true },
   Derivatives: { tvl: true, dailyVolume: true, openInterestAtEnd: true, longOpenInterestAtEnd: true, shortOpenInterestAtEnd: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true },
