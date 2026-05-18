@@ -1,9 +1,11 @@
+import type { CellState } from '../../lib/snapshot'
 import { PresenceBadge } from '../PresenceBadge'
 
 interface PresenceCellProps {
-  value: 0 | 1
+  state: CellState
 }
 
-export function PresenceCell({ value }: PresenceCellProps) {
-  return <PresenceBadge variant="cell" present={value === 1} />
+export function PresenceCell({ state }: PresenceCellProps) {
+  const present = state === 'present' || state === 'over'
+  return <PresenceBadge variant="cell" present={present} />
 }

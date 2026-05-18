@@ -84,7 +84,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         id: col.key,
         header: col.label,
         enableSorting: false,
-        cell: ({ getValue }) => <PresenceCell value={getValue()} />,
+        cell: ({ getValue }) => <PresenceCell state={getValue()} />,
       }),
     )
     return [...identity, ...dimension]
