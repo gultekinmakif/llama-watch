@@ -37,5 +37,6 @@ tmp/
 /specs/
 /var/
 /web/out/
+/web/out.old/
 /web/.next/
 /web/node_modules/
