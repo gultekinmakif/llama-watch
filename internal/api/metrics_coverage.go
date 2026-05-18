@@ -2,7 +2,10 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
+
+	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 )
 
 type MetricsCoverageEntry struct {
@@ -17,5 +20,19 @@ type metricsCoverageResponse struct {
 
 // MetricsCoverage serves GET /api/metrics-coverage.
 func MetricsCoverage(w http.ResponseWriter, r *http.Request) {
+	db := postgres.Get()
+	ctx := r.Context()
 
+	q := r.URL.Query()
+	metric := q.Get("metric")
+	protocol := q.Get("protocol")
+
+	rows, err := listMetricsCoverage(ctx, db, metric, protocol)
+	if err != nil {
+		slog.Error("metrics coverage failed", "error", err)
+		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, metricsCoverageResponse{Rows: rows, Total: len(rows)})
 }
