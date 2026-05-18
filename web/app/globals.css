@@ -16,12 +16,16 @@
   --color-fg: oklch(0.96 0.005 264);
   --color-fg-muted: oklch(0.72 0.012 264);
 
-  /* Cell tokens carry both tile and glyph color so PresenceCell can render */
-  /* a check or x that visually reinforces the tile without per-cell overrides. */
+  /* Four-state cell palette: na is background-mute, missing is red, present is */
+  /* green, over is amber. Each tile carries a matching fg for the glyph. */
+  --color-cell-na: oklch(0.22 0.005 264);
+  --color-cell-missing: oklch(0.30 0.07 25);
   --color-cell-present: oklch(0.32 0.06 150);
-  --color-cell-absent: oklch(0.30 0.07 25);
+  --color-cell-over: oklch(0.40 0.10 90);
+  --color-cell-fg-na: oklch(0.55 0.012 264);
+  --color-cell-fg-missing: oklch(0.82 0.14 25);
   --color-cell-fg-present: oklch(0.88 0.14 150);
-  --color-cell-fg-absent: oklch(0.82 0.14 25);
+  --color-cell-fg-over: oklch(0.88 0.16 90);
 }
 
 body {
