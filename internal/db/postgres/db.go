@@ -74,14 +74,13 @@ func Ping(ctx context.Context) error {
 	return sqlDB.PingContext(ctx)
 }
 
-// Migrate drops the retired legacy tables, AutoMigrates the live models, then
-// rebuilds dim_file_coverage as a view over matrix. All steps are idempotent.
+// Migrate drops the retired legacy tables, AutoMigrates the live models.
 func Migrate() error {
 	if err := db.Exec("DROP TABLE IF EXISTS protocols, adapter_files, commit_refs, refresh_runs CASCADE").Error; err != nil {
 		return err
 	}
 	return db.AutoMigrate(
 		&models.Matrix{},
-		&models.ProtocolIdentity{}
+		&models.ProtocolIdentity{},
 	)
 }
