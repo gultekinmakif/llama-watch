@@ -36,7 +36,14 @@ Runtime is `bun`. There is no `packageManager` field in `package.json`; pick bun
 
 ## Where things live
 
-- `app/` - routes, layout, providers, global styles.
+- `app/` - routes, layout, global styles.
 - `lib/snapshot.ts` - build-time JSON loader and `Snapshot` type.
 - `lib/api.ts` - runtime API client and `ProtocolDetail` type.
-- `components/matrix/` - the matrix table and its header / virtualizer.
+- `lib/url-state.ts` - `useReplaceParams` hook shared by every URL writer.
+- `components/matrix/` - the matrix table, toolbar, and virtualizer.
+- `components/detail/` - the per-protocol detail render components.
+- `components/ui/` - shared empty / error primitives.
+
+## TODOs
+
+The backlog moved to the repo root. See [`TODO.md`](../TODO.md) for the phased Action List with branch names, time estimates, and status checkboxes.
