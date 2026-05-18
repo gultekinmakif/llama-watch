@@ -11,8 +11,8 @@ import (
 )
 
 // listProtocols returns the protocol_identities page ordered by q.Sort then slug.
-// Each Row's Cells is zero-filled across the pinned column set and then flipped to 1
-// for any metric present in matrix for that slug.
+// Each Row's Cells classifies every pinned column through registry.ClassifyCell so
+// the wire shape carries the four-state coloring instead of a present/absent bit.
 func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, error) {
 	tx := db.WithContext(ctx).Model(&models.ProtocolIdentity{})
 	tx = applyMatrixFilters(tx, q)
@@ -36,13 +36,19 @@ func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, erro
 		return nil, err
 	}
 
+	// Hoisted: registry.Columns allocates a fresh slice on every call.
+	cols := registry.Columns()
 	rows := make([]Row, 0, len(idents))
 	for _, p := range idents {
-		cells := initCells()
-		for metric := range cellsBySlug[p.Slug] {
-			if _, ok := cells[metric]; ok {
-				cells[metric] = 1
-			}
+		category := ""
+		if p.Category != nil {
+			category = *p.Category
+		}
+		present := cellsBySlug[p.Slug]
+		cells := make(map[string]registry.CellState, len(cols))
+		for _, c := range cols {
+			_, isPresent := present[c.Key]
+			cells[c.Key] = registry.ClassifyCell(category, c.Key, isPresent)
 		}
 		rows = append(rows, Row{
 			Slug:     p.Slug,
@@ -125,14 +131,4 @@ func fetchCells(ctx context.Context, db *gorm.DB, slugs []string) (map[string]ma
 		m[r.Metric] = 1
 	}
 	return out, nil
-}
-
-// initCells returns a fresh cells map with every pinned column key set to 0.
-func initCells() map[string]int {
-	cols := registry.Columns()
-	cells := make(map[string]int, len(cols))
-	for _, c := range cols {
-		cells[c.Key] = 0
-	}
-	return cells
 }
