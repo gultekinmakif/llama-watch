@@ -1,7 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
 import {
   SelectProvider,
   Select,
@@ -10,7 +8,7 @@ import {
   SelectItemCheck,
 } from '@ariakit/react'
 
-import { useReplaceParams } from '../../lib/url-state'
+import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 
 export interface FilterBarProps {
   chainOptions: string[]
@@ -20,18 +18,9 @@ export interface FilterBarProps {
 type FilterKey = 'chains' | 'categories'
 
 export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
-  const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
-
-  const selectedChains = useMemo(
-    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
-
-  const selectedCategories = useMemo(
-    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
+  const selectedChains = useCsvParam('chains')
+  const selectedCategories = useCsvParam('categories')
 
   const writeParam = (key: FilterKey, values: string[]) => {
     // chains uses lowercased tokens so the URL matches the row-side normalization.

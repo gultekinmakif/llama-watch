@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
-import { useReplaceParams } from '../../lib/url-state'
+import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
 import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
 import { NameCell } from './NameCell'
@@ -125,15 +125,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
   }, [rows, q])
 
-  const selectedChains = useMemo(
-    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
-
-  const selectedCategories = useMemo(
-    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
+  const selectedChains = useCsvParam('chains')
+  const selectedCategories = useCsvParam('categories')
 
   // Filter options derive from row data directly, independent of column visibility.
   const chainOptions = useMemo<string[]>(() => {

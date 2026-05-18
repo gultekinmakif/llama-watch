@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 // Replace one or more query params at once. Pass null or '' for any key to drop
@@ -21,5 +21,14 @@ export function useReplaceParams(): (patch: Record<string, string | null>) => vo
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
     [router, pathname, params],
+  )
+}
+
+// Read a CSV-encoded query param as a string array.
+export function useCsvParam(key: string): string[] {
+  const params = useSearchParams()
+  return useMemo(
+    () => params.get(key)?.split(',').filter(Boolean) ?? [],
+    [params, key],
   )
 }
