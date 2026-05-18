@@ -10,14 +10,14 @@ describe('projectRow', () => {
     dataFile: 'aave.json',
   }
 
-  test('writes 1 for present metrics and 0 for absent ones', () => {
+  test('classifies cells against the category expectations', () => {
     const present = new Set(['tvl', 'dailyFees'])
     const row = projectRow(baseProtocol, present)
 
-    expect(row.cells.tvl).toBe(1)
-    expect(row.cells.dailyFees).toBe(1)
-    expect(row.cells.dailyRevenue).toBe(0)
-    expect(row.cells.dailyVolume).toBe(0)
+    expect(row.cells.tvl).toBe('present')
+    expect(row.cells.dailyFees).toBe('present')
+    expect(row.cells.dailyRevenue).toBe('missing')
+    expect(row.cells.dailyVolume).toBe('na')
   })
 
   test('coverage equals the count of present metrics', () => {
@@ -29,7 +29,7 @@ describe('projectRow', () => {
   test('coverage is 0 when presence set is undefined', () => {
     const row = projectRow(baseProtocol, undefined)
     expect(row.coverage).toBe(0)
-    expect(row.cells.tvl).toBe(0)
+    expect(row.cells.tvl).toBe('missing')
   })
 
   test('empty-string category collapses to undefined', () => {

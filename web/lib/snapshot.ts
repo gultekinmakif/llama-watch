@@ -45,8 +45,47 @@ export interface Column {
   label: string
 }
 
-// 1 = an adapter file exists for this (protocol, metric); 0 = absent.
-export type Cells = Record<ColumnKey, 0 | 1>
+export type CellState = 'na' | 'missing' | 'present' | 'over'
+
+// Mirror of internal/registry/expectations.go. Keep in lockstep with the Go seed.
+// Drift between this map and Go means the build-time matrix disagrees with /api/matrix.
+const EXPECTATIONS: Record<string, Record<string, true>> = {
+  Lending: { tvl: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true, dailyUserFees: true, dailySupplySideRevenue: true, dailyProtocolRevenue: true },
+  'DEX Aggregator': { dailyVolume: true, dailyFees: true },
+  Derivatives: { tvl: true, dailyVolume: true, openInterestAtEnd: true, longOpenInterestAtEnd: true, shortOpenInterestAtEnd: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true },
+  Options: { tvl: true, dailyNotionalVolume: true, dailyPremiumVolume: true, dailyFees: true },
+  Bridge: { tvl: true, dailyBridgeVolume: true, dailyFees: true },
+  'Canonical Bridge': { tvl: true, dailyBridgeVolume: true },
+  'Cross Chain Bridge': { tvl: true, dailyBridgeVolume: true, dailyFees: true },
+  'Bridge Aggregator': { dailyBridgeVolume: true, dailyVolume: true, dailyFees: true },
+  Insurance: { tvl: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true },
+  'Liquid Staking': { tvl: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true, dailySupplySideRevenue: true },
+  CDP: { tvl: true, dailyFees: true, dailyRevenue: true, dailyHoldersRevenue: true, dailyUserFees: true },
+  'CDP Manager': { tvl: true, dailyFees: true, dailyRevenue: true },
+  Synthetics: { tvl: true, dailyVolume: true, dailyFees: true, dailyRevenue: true },
+  Yield: { tvl: true, dailyFees: true, dailyRevenue: true },
+  'Yield Aggregator': { tvl: true, dailyFees: true, dailyRevenue: true },
+  Farm: { tvl: true, dailyFees: true, dailyRevenue: true },
+  'Leveraged Farming': { tvl: true, dailyFees: true, dailyRevenue: true },
+  'Algo-Stables': { tvl: true, dailyFees: true },
+  Chain: { tvl: true, dailyFees: true, dailyRevenue: true, dailyTransactionsCount: true, dailyGasUsed: true, dailyActiveUsers: true, dailyNewUsers: true },
+  Indexes: { tvl: true, dailyFees: true, dailyRevenue: true },
+}
+
+// Classifies a (category, metric, present) triple into one of na/missing/present/over.
+// Mirrors internal/registry/expectations.go::ClassifyCell. Unseeded categories fall
+// through: present is CellPresent, absent is CellNA.
+export function classifyCell(category: string, metric: string, present: boolean): CellState {
+  const seed = EXPECTATIONS[category]
+  if (!seed) return present ? 'present' : 'na'
+  const expected = seed[metric] === true
+  if (present && expected) return 'present'
+  if (present && !expected) return 'over'
+  if (!present && expected) return 'missing'
+  return 'na'
+}
+
+export type Cells = Record<ColumnKey, CellState>
 
 export interface Row {
   slug: string
@@ -140,9 +179,10 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   const cells = {} as Cells
   let coverage = 0
   for (const col of COLUMNS) {
-    const value = present && present.has(col.key) ? 1 : 0
-    cells[col.key] = value
-    coverage += value
+    const isPresent = present !== undefined && present.has(col.key)
+    const state = classifyCell(p.category ?? '', col.key, isPresent)
+    cells[col.key] = state
+    if (state === 'present') coverage += 1
   }
   // Empty-string category from the wire collapses to undefined so the
   // category filter and chip strip do not show a blank entry.
