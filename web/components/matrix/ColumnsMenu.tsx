@@ -42,7 +42,7 @@ export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuPro
       </MenuButton>
       <Menu
         gutter={4}
-        className="z-10 min-w-48 rounded border border-border bg-surface p-1 text-sm text-fg shadow"
+        className="z-50 min-w-48 rounded border border-border bg-surface p-1 text-sm text-fg shadow"
       >
         <MenuItemCheckbox
           name="cols"

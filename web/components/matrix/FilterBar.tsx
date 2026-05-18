@@ -57,7 +57,7 @@ export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
         <SelectPopover
           gutter={4}
           sameWidth
-          className="z-10 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
+          className="z-50 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
         >
           {chainOptions.map((c) => (
             <SelectItem
@@ -87,7 +87,7 @@ export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
         <SelectPopover
           gutter={4}
           sameWidth
-          className="z-10 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
+          className="z-50 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
         >
           {categoryOptions.map((c) => (
             <SelectItem
