@@ -28,9 +28,9 @@ export function CopyLinkButton({ className = '' }: { className?: string }) {
       onClick={onClick}
       aria-label="copy link to current view"
       title="copy link to current view"
-      className={`inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-[11px] font-semibold text-bg transition-colors hover:bg-accent-strong focus-visible:focus-ring ${className}`}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-sm font-semibold text-bg transition-colors hover:bg-accent-strong focus-visible:focus-ring ${className}`}
     >
-      <Icon name={state === 'copied' ? 'check' : 'link'} size={12} />
+      <Icon name={state === 'copied' ? 'check' : 'link'} size={14} />
       <span>{state === 'copied' ? 'copied' : 'share'}</span>
     </button>
   )

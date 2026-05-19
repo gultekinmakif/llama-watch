@@ -1,19 +1,14 @@
-import { CopyLinkButton } from '../ui/CopyLinkButton'
-
 export function Brand() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <a
-          href="/"
-          aria-label="llama-watch home"
-          className="group/brand inline-flex items-center gap-2.5 rounded text-lg font-semibold text-fg transition-colors hover:text-accent-strong focus-visible:focus-ring"
-        >
-          <LogoMark />
-          <span className="leading-none">llama-watch</span>
-        </a>
-        <CopyLinkButton />
-      </div>
+      <a
+        href="/"
+        aria-label="MetaLlama home"
+        className="group/brand inline-flex h-9 items-center gap-2.5 self-start rounded text-lg font-semibold text-fg transition-colors hover:text-accent-strong focus-visible:focus-ring"
+      >
+        <LogoMark />
+        <span className="leading-none"> · MetaLlama</span>
+      </a>
       <p className="text-[12.5px] leading-snug text-fg-muted">
         Live coverage matrix of every protocol DefiLlama tracks.
         Find which adapters emit which metrics, what is missing, what is unexpected.

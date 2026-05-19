@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { type CellState } from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
+import { CopyLinkButton } from '../ui/CopyLinkButton'
 import { Icon } from '../ui/Icon'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
 import { FilterBar } from './FilterBar'
@@ -104,6 +105,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
         visibleIds={visibleIds}
         onChange={onColumnsChange}
       />
+      <CopyLinkButton />
     </div>
   )
 }
