@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -142,10 +142,11 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   }, [colsParam, categoryPreset, adapterPreset, allIds])
 
   const q = searchParams.get('q')?.trim() ?? ''
+  const deferredQ = useDeferredValue(q)
   const filteredRows = useMemo(() => {
-    if (q === '') return rows
-    return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
-  }, [rows, q])
+    if (deferredQ === '') return rows
+    return matchSorter(rows, deferredQ, { keys: ['slug', 'name'], keepDiacritics: false })
+  }, [rows, deferredQ])
 
   const selectedChains = useCsvParam('chains')
 
