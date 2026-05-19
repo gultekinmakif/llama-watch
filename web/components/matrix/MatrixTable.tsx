@@ -225,8 +225,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <Legend />
+      <div className="flex items-center justify-end gap-2">
         <SearchBox count={visibleRows.length} total={rows.length} />
       </div>
       {/* role="toolbar" is a landmark grouping; arrow-key navigation is delegated to each child widget. */}
@@ -239,6 +238,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         <FilterBar chainOptions={chainOptions} />
       </div>
       <PresetPills />
+      <Legend />
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
