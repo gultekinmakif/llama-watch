@@ -7,11 +7,13 @@ import { type CellState } from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
+import { FilterBar } from './FilterBar'
 
 interface FilterPresetsProps {
   toggleable: ColumnOption[]
   visibleIds: string[]
   onColumnsChange: (visibleIds: string[]) => void
+  chainOptions: string[]
 }
 
 // Identity columns hidden by default; the info toggle flips all three together.
@@ -33,7 +35,7 @@ function toStringOptions(options: readonly string[]): { value: string; label: st
   return options.map((o) => ({ value: o, label: o }))
 }
 
-export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: FilterPresetsProps) {
+export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOptions }: FilterPresetsProps) {
   const params = useSearchParams()
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
@@ -65,7 +67,6 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-xs uppercase tracking-wide text-fg-muted">filters</span>
       <button
         type="button"
         onClick={toggleInfo}
@@ -75,30 +76,31 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         {infoVisible ? 'hide info' : 'show info'}
       </button>
       <PresetDropdown
-        label={category || `${CATEGORIES.length} categories`}
-        value={category}
-        options={toStringOptions(CATEGORIES)}
-        onChange={onCategoryChange}
-        ariaLabel="filter columns by category"
-      />
-      <PresetDropdown
         label={adapter || `${DIMTYPES.length} adapters`}
         value={adapter}
         options={toStringOptions(DIMTYPES)}
         onChange={onAdapterChange}
         ariaLabel="filter columns by adapter type"
       />
-      <ColumnsMenu
-        toggleable={toggleable}
-        visibleIds={visibleIds}
-        onChange={onColumnsChange}
+      <PresetDropdown
+        label={category || `${CATEGORIES.length} categories`}
+        value={category}
+        options={toStringOptions(CATEGORIES)}
+        onChange={onCategoryChange}
+        ariaLabel="filter columns by category"
       />
+      <FilterBar chainOptions={chainOptions} />
       <PresetDropdown
         label={cellState ? CELL_STATE_LABELS[cellState] : `${CELL_STATE_OPTIONS.length} colors`}
         value={cellState}
         options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}
         ariaLabel="filter rows by cell color"
+      />
+      <ColumnsMenu
+        toggleable={toggleable}
+        visibleIds={visibleIds}
+        onChange={onColumnsChange}
       />
     </div>
   )

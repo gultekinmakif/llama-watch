@@ -24,7 +24,6 @@ import { PresenceCell } from './PresenceCell'
 import { type ColumnOption } from './ColumnsMenu'
 import { FilterPresets } from './FilterPresets'
 import { SearchBox } from './SearchBox'
-import { FilterBar } from './FilterBar'
 import { PresetPills } from './PresetPills'
 import { Legend } from './Legend'
 
@@ -250,17 +249,18 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       <div className="flex items-center justify-end gap-2">
         <SearchBox count={visibleRows.length} total={rows.length} />
       </div>
-      {/* role="toolbar" is a landmark grouping; arrow-key navigation is delegated to each child widget. */}
-      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-2">
-        <FilterPresets
-          toggleable={toggleableOptions}
-          visibleIds={visibleIds}
-          onColumnsChange={handleVisibleChange}
-        />
-        <FilterBar chainOptions={chainOptions} />
+      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-3">
+        <Legend />
+        <div className="ml-auto flex items-center gap-2">
+          <FilterPresets
+            toggleable={toggleableOptions}
+            visibleIds={visibleIds}
+            onColumnsChange={handleVisibleChange}
+            chainOptions={chainOptions}
+          />
+        </div>
       </div>
       <PresetPills />
-      <Legend />
       <div className="border border-border">
         <table
           style={{ width: tableWidth }}
