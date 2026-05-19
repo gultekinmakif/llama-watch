@@ -61,7 +61,7 @@ export function ActiveFilters() {
     chips.push({
       key: 'chains',
       label: chains.length === 1 ? 'chain' : 'chains',
-      value: chains.length === 1 ? chains[0] : `${chains.length}`,
+      value: chains.length === 1 ? (chains[0] ?? '') : `${chains.length}`,
       clear: { chains: null },
     })
   }
