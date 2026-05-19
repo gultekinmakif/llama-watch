@@ -80,6 +80,7 @@ export interface RawProtocol {
   category?: string
   chains: string[]
   dataFile: string
+  dimTypes: string[]
 }
 
 export interface RawSnapshot {
@@ -145,7 +146,7 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   let coverage = 0
   for (const col of COLUMNS) {
     const isPresent = present !== undefined && present.has(col.key)
-    const state = classifyCell(p.category ?? '', col.key, isPresent)
+    const state = classifyCell(p.dimTypes, col.key, isPresent)
     cells[col.key] = state
     if (state === 'present') coverage += 1
   }

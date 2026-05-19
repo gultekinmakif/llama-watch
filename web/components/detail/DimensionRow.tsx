@@ -1,14 +1,13 @@
 import type { ProtocolDimension } from '../../lib/api'
-import { classifyCell } from '../../lib/cell-state'
+import type { CellState } from '../../lib/cell-state'
 import { PresenceBadge } from '../PresenceBadge'
 
 interface DimensionRowProps {
   dimension: ProtocolDimension
-  category: string
 }
 
-export function DimensionRow({ dimension, category }: DimensionRowProps) {
-  const state = classifyCell(category, dimension.kind, dimension.present)
+export function DimensionRow({ dimension }: DimensionRowProps) {
+  const state: CellState = dimension.present ? 'present' : 'na'
   return (
     <li className="flex items-center justify-between gap-3 border-b border-border py-2 text-sm">
       <span className="font-mono text-fg">{dimension.kind}</span>
