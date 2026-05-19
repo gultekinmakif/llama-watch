@@ -46,6 +46,7 @@ interface OutputProtocol {
   category: string;
   chains: string[];
   dataFile: string;
+  dimTypes: string[];
 }
 
 interface ProtocolRow {
@@ -81,6 +82,8 @@ function cellsForDimensions(
 ): Cell[] {
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
+    // 'derivatives' is retired upstream; data ships under dexs / open-interest instead.
+    if (dimType === "derivatives") return [];
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) {
       unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
@@ -121,8 +124,17 @@ function processProtocol(
   }
   seen.add(slug);
 
+  const dimTypes = Object.keys(p.dimensions).filter((dt) => dt !== "derivatives");
+
   return {
-    protocol: { slug, name: p.name, category: p.category, chains: p.chains, dataFile },
+    protocol: {
+      slug,
+      name: p.name,
+      category: p.category,
+      chains: p.chains,
+      dataFile,
+      dimTypes,
+    },
     cells: [
       { slug, metric: "tvl", codePath: "" },
       ...cellsForDimensions(slug, p.dimensions, dimensionModules),
