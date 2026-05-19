@@ -1,34 +1,29 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from "../ui/Icon";
 
-const VERSION = 'v0.1.0'
-const REPO_URL = 'https://github.com/gultekinmakif/llama-watch'
-const ADAPTERS_URL = 'https://github.com/DefiLlama/dimension-adapters'
-const DEFILLAMA_URL = 'https://defillama.com'
+const VERSION = "v0.1.0";
+const REPO_URL = "https://github.com/gultekinmakif/llama-watch";
+const ADAPTERS_URL = "https://github.com/DefiLlama/dimension-adapters";
+const DEFILLAMA_URL = "https://defillama.com";
 
 export function SidebarFooter() {
   return (
     <footer className="mt-auto flex flex-col gap-3 border-t border-border pt-5 text-[11px]">
-      <div className="flex items-center justify-between text-fg-subtle">
-        <span className="font-mono tabular-nums">{VERSION}</span>
-        <span className="font-mono tabular-nums">static export</span>
-      </div>
       <nav aria-label="external links" className="flex flex-col gap-1">
-        <FooterLink href={REPO_URL} icon="github">
-          gultekinmakif/llama-watch
+        <FooterLink href={DEFILLAMA_URL} icon="external-link">
+          defillama.com
         </FooterLink>
         <FooterLink href={ADAPTERS_URL} icon="external-link">
           DefiLlama/dimension-adapters
         </FooterLink>
-        <FooterLink href={DEFILLAMA_URL} icon="external-link">
-          defillama.com
+        <FooterLink href={REPO_URL} icon="github">
+          gultekinmakif/llama-watch
         </FooterLink>
+        <div className="flex items-center justify-between text-fg-subtle">
+          <span className="font-mono tabular-nums">{VERSION}</span>
+        </div>
       </nav>
-      <p className="text-[10.5px] leading-relaxed text-fg-subtle">
-        Built for adapter maintainers. Data refreshes hourly from the dimension-adapters
-        registry.
-      </p>
     </footer>
-  )
+  );
 }
 
 function FooterLink({
@@ -36,9 +31,9 @@ function FooterLink({
   icon,
   children,
 }: {
-  href: string
-  icon: 'github' | 'external-link'
-  children: React.ReactNode
+  href: string;
+  icon: "github" | "external-link";
+  children: React.ReactNode;
 }) {
   return (
     <a
@@ -54,5 +49,5 @@ function FooterLink({
       />
       <span className="truncate">{children}</span>
     </a>
-  )
+  );
 }

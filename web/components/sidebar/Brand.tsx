@@ -32,7 +32,6 @@ function LogoMark() {
       className="shrink-0"
     >
       <rect x="0" y="0" width="10" height="10" rx="1.5" fill="var(--color-cell-present)" />
-      <rect x="12" y="0" width="10" height="10" rx="1.5" fill="var(--color-cell-present)" />
       <rect x="0" y="12" width="10" height="10" rx="1.5" fill="var(--color-cell-missing)" />
       <rect x="12" y="12" width="10" height="10" rx="1.5" fill="var(--color-cell-unexpected)" />
     </svg>
