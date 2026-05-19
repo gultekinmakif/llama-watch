@@ -11,7 +11,7 @@ export default function Page() {
   return (
     <Suspense>
       <AppShell sidebar={<SidebarContent stats={stats} />}>
-        <section className="flex min-w-0 flex-col gap-4 p-4 md:p-6">
+        <section className="flex min-w-0 flex-col gap-4 p-4 md:p-5">
           <MatrixTable columns={columns} rows={rows} />
         </section>
       </AppShell>

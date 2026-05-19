@@ -245,7 +245,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
+      <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">
         <div className="min-w-0 flex-1">
           <SearchBox count={visibleRows.length} total={rows.length} />
         </div>
