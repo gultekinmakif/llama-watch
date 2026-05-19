@@ -205,3 +205,28 @@ a {
 @utility animate-pulse-accent {
   animation: pulse-accent 2.4s ease-out infinite;
 }
+
+.search-underline {
+  position: relative;
+}
+
+.search-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 6px var(--color-accent));
+  pointer-events: none;
+  transition: filter 200ms ease-out;
+}
+
+.search-underline:focus-within::after {
+  filter: drop-shadow(0 0 10px var(--color-accent));
+}
