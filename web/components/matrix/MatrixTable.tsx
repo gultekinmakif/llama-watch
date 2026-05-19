@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
-import type { CellState } from '../../lib/cell-state'
+import { parseSpotlightParam } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -112,7 +112,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const colsParam = searchParams.get('cols')
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
-  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+  const cellStatePreset = parseSpotlightParam(searchParams.get('cellState'))
 
   // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
   // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
@@ -220,16 +220,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <Legend />
-        <div role="toolbar" aria-label="matrix controls" className="flex gap-2">
-          <SearchBox count={visibleRows.length} total={rows.length} />
-          <FilterBar chainOptions={chainOptions} />
-        </div>
+        <SearchBox count={visibleRows.length} total={rows.length} />
       </div>
-      <FilterPresets
-        toggleable={toggleableOptions}
-        visibleIds={visibleIds}
-        onColumnsChange={handleVisibleChange}
-      />
+      {/* role="toolbar" is a landmark grouping; arrow-key navigation is delegated to each child widget. */}
+      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-2">
+        <FilterPresets
+          toggleable={toggleableOptions}
+          visibleIds={visibleIds}
+          onColumnsChange={handleVisibleChange}
+        />
+        <FilterBar chainOptions={chainOptions} />
+      </div>
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
