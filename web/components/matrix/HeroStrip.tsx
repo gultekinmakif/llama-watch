@@ -42,7 +42,7 @@ function CoverageBar({ pct }: { pct: number }) {
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface"
+      className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-hover"
     >
       <div
         className="h-full rounded-full bg-accent transition-all duration-700 ease-out"

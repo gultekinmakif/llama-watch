@@ -208,6 +208,8 @@ a {
 
 .search-underline {
   position: relative;
+  display: flex;
+  overflow: hidden;
 }
 
 .search-underline::after {
