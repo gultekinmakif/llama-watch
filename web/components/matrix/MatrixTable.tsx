@@ -246,19 +246,21 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <SearchBox count={visibleRows.length} total={rows.length} />
-      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-3">
-        <Legend />
-        <div className="ml-auto flex items-center gap-2">
-          <FilterPresets
-            toggleable={toggleableOptions}
-            visibleIds={visibleIds}
-            onColumnsChange={handleVisibleChange}
-            chainOptions={chainOptions}
-          />
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <SearchBox count={visibleRows.length} total={rows.length} />
         </div>
+        <FilterPresets
+          toggleable={toggleableOptions}
+          visibleIds={visibleIds}
+          onColumnsChange={handleVisibleChange}
+          chainOptions={chainOptions}
+        />
       </div>
-      <PresetPills />
+      <div className="flex items-center gap-4">
+        <Legend />
+        <PresetPills />
+      </div>
       <div className="overflow-x-auto overflow-y-visible border border-border">
         <table
           style={{ width: tableWidth }}

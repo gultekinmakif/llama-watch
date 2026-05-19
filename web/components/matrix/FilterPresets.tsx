@@ -1,6 +1,6 @@
 'use client'
 
-import { Select, SelectItem, SelectPopover, SelectProvider } from '@ariakit/react'
+import { Select, SelectItem, SelectItemCheck, SelectPopover, SelectProvider } from '@ariakit/react'
 import { useSearchParams } from 'next/navigation'
 
 import { type CellState } from '../../lib/cell-state'
@@ -139,10 +139,12 @@ function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDr
         className="z-50 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
       >
         <SelectItem value="" className="flex items-center gap-2 px-2 py-1 text-fg-muted hover:bg-bg">
+          <span className="inline-block w-4" />
           <span>clear</span>
         </SelectItem>
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value} className="flex items-center gap-2 px-2 py-1 hover:bg-bg">
+            <SelectItemCheck />
             <span>{o.label}</span>
           </SelectItem>
         ))}

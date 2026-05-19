@@ -3,6 +3,7 @@
 import {
   Menu,
   MenuButton,
+  MenuItemCheck,
   MenuItemCheckbox,
   MenuProvider,
 } from '@ariakit/react'
@@ -50,6 +51,7 @@ export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuPro
             value={c.id}
             className="flex items-center gap-2 px-2 py-1 hover:bg-bg"
           >
+            <MenuItemCheck />
             <span>{c.label}</span>
           </MenuItemCheckbox>
         ))}
