@@ -24,7 +24,7 @@ export default function Page() {
         <HeroStrip stats={stats} />
       </aside>
       <main style={{ paddingLeft: SIDEBAR_WIDTH }} className="min-h-screen">
-        <section className="flex min-w-0 flex-col gap-4 p-6">
+        <section className="flex min-w-0 flex-col gap-4 py-6">
           <MatrixTable columns={columns} rows={rows} />
         </section>
       </main>
