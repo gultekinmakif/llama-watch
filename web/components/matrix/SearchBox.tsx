@@ -37,14 +37,27 @@ export function SearchBox({ count, total }: SearchBoxProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <input
-        type="search"
-        value={value}
-        onChange={onChange}
-        placeholder="search protocols"
-        aria-label="search protocols"
-        className="w-full rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
-      />
+      <div className="relative">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-fg-muted"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          value={value}
+          onChange={onChange}
+          placeholder="search protocols"
+          aria-label="search protocols"
+          className="w-full rounded border border-border bg-surface py-1 pr-3 pl-8 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
+        />
+      </div>
       <span
         role="status"
         aria-live="polite"
