@@ -1,14 +1,13 @@
 // Pure-runtime four-state classifier. Lives separately from lib/snapshot.ts so
 // client components can import it without pulling in node:fs / node:path / node:url.
 
-import presets from '../../internal/registry/presets.json' with { type: 'json' }
+import { CATEGORIES_EXPECTED } from './categories'
 
 export type CellState = 'na' | 'missing' | 'present' | 'over'
 
-// Same JSON source as Go and tools/build-snapshot.ts.
 const EXPECTATIONS: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}
-  for (const [category, metrics] of Object.entries(presets.categories)) {
+  for (const [category, metrics] of Object.entries(CATEGORIES_EXPECTED)) {
     const set: Record<string, true> = {}
     for (const m of metrics) set[m] = true
     out[category] = set
