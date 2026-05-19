@@ -2,7 +2,7 @@
 // onto the closed column set the table renders. Keep COLUMNS in lockstep
 // with internal/registry/columns.go.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -62,10 +62,17 @@ export interface Row {
   coverage: number
 }
 
+export interface SnapshotStats {
+  tracked: number
+  coveragePct: number
+  updatedAt: string
+}
+
 export interface Snapshot {
   columns: Column[]
   rows: Row[]
   total: number
+  stats: SnapshotStats
 }
 
 export interface RawCell {
@@ -113,7 +120,28 @@ export function loadSnapshot(): Snapshot {
   const columns = COLUMNS.map((c) => ({ ...c })).sort(
     (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
   )
-  return { columns, rows, total: rows.length }
+
+  // Coverage = present cells / (present + missing) cells across the matrix.
+  // 'na' and 'unexpected' are excluded so the percentage reflects how much of the
+  // expected data we actually see.
+  let presentTotal = 0
+  let trackedTotal = 0
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      const s = r.cells[col.key]
+      if (s === 'present') {
+        presentTotal += 1
+        trackedTotal += 1
+      } else if (s === 'missing') {
+        trackedTotal += 1
+      }
+    }
+  }
+  const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
+  const updatedAt = statSync(RESOLVED_SNAPSHOT_PATH).mtime.toISOString()
+  const stats: SnapshotStats = { tracked: rows.length, coveragePct, updatedAt }
+
+  return { columns, rows, total: rows.length, stats }
 }
 
 function readRaw(): RawSnapshot {
