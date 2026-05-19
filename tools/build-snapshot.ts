@@ -15,6 +15,9 @@ declare const process: {
 import presets from "../internal/registry/presets.json" with { type: "json" };
 const KEYS_TO_STORE: Record<string, readonly string[]> = presets;
 
+// dimType buckets retired upstream; the catalog still lists them but the manifest is empty.
+const RETIRED_DIMTYPES = new Set<string>(["derivatives"]);
+
 interface CatalogProtocol {
   name: string;
   category: string;
@@ -82,8 +85,7 @@ function cellsForDimensions(
 ): Cell[] {
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
-    // 'derivatives' is retired upstream; data ships under dexs / open-interest instead.
-    if (dimType === "derivatives") return [];
+    if (RETIRED_DIMTYPES.has(dimType)) return [];
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) {
       unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
@@ -124,7 +126,11 @@ function processProtocol(
   }
   seen.add(slug);
 
-  const dimTypes = Object.keys(p.dimensions).filter((dt) => dt !== "derivatives");
+  // Drop retired buckets and any registration the manifest cannot resolve so the classifier
+  // does not raise missing-data for adapter slugs that no longer exist upstream.
+  const dimTypes = Object.entries(p.dimensions)
+    .filter(([dt, dimSlug]) => !RETIRED_DIMTYPES.has(dt) && dimensionModules[dt]?.[dimSlug] !== undefined)
+    .map(([dt]) => dt);
 
   return {
     protocol: {
