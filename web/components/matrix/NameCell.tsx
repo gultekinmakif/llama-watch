@@ -8,13 +8,16 @@ interface NameCellProps {
 }
 
 export function NameCell({ row, coverage }: NameCellProps) {
-  const title = coverage ? `coverage: ${coverage.value} / ${coverage.total}` : undefined
   return (
-    <div className="flex flex-col leading-tight" title={title}>
+    <div className="flex flex-col leading-tight" title={row.slug}>
       <Link href={`/protocol/${row.slug}`} className="font-medium text-fg hover:underline">
         {row.name}
       </Link>
-      <span className="font-mono text-xs text-fg-muted">{row.slug}</span>
+      {coverage ? (
+        <span className="font-mono text-[11px] text-fg-muted">
+          {coverage.value}/{coverage.total} coverage
+        </span>
+      ) : null}
     </div>
   )
 }
