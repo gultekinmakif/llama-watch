@@ -62,7 +62,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         cell: ({ row }) => (
           <NameCell
             row={row.original}
-            coverage={{ value: row.original.coverage, total: columns.length }}
+            coverage={{ value: row.original.coverage, total: row.original.expected }}
           />
         ),
       }),
