@@ -22,7 +22,7 @@ const INFO_IDS = ['category', 'chains', 'coverage'] as const
 const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
   missing: 'missing',
-  over: 'unexpected',
+  unexpected: 'unexpected',
   na: 'n/a',
 }
 const CELL_STATE_OPTIONS = (Object.entries(CELL_STATE_LABELS) as [CellState, string][]).map(
