@@ -254,7 +254,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                       key={h.id}
                       scope="col"
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
-                      className="border-b border-border px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-fg-muted"
+                      className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-fg-muted"
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                     </th>
