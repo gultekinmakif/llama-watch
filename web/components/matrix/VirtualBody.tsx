@@ -85,11 +85,19 @@ export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyPr
           >
             {row.getVisibleCells().map((cell) => {
               const isIdentity = IDENTITY_IDS.has(cell.column.id)
-              const className = isIdentity
+              const isStickyLeft = cell.column.id === 'name'
+              const base = isIdentity
                 ? 'px-3 py-2'
                 : 'relative border-r border-border last:border-r-0'
+              const sticky = isStickyLeft
+                ? 'bg-bg shadow-[1px_0_0_var(--color-border)]'
+                : ''
               return (
-                <td key={cell.id} className={className}>
+                <td
+                  key={cell.id}
+                  style={isStickyLeft ? { position: 'sticky', left: 0, zIndex: 1 } : undefined}
+                  className={`${base} ${sticky}`}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               )

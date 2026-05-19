@@ -261,7 +261,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         <Legend />
         <PresetPills />
       </div>
-      <div className="overflow-x-auto overflow-y-visible border border-border">
+      <div className="thin-scrollbar overflow-x-auto overflow-y-visible border border-border">
         <table
           style={{ width: tableWidth }}
           className="table-fixed border-collapse text-sm"
@@ -280,6 +280,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                   const ariaSort =
                     sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
                   const canHide = h.column.id !== 'name'
+                  const isStickyLeft = h.column.id === 'name'
                   return (
                     <th
                       key={h.id}
@@ -287,7 +288,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
                       onDoubleClick={canHide ? () => handleHideColumn(h.column.id) : undefined}
                       title={canHide ? 'double-click to hide' : undefined}
-                      className="overflow-hidden px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wide break-words text-fg-muted"
+                      style={isStickyLeft ? { position: 'sticky', left: 0, zIndex: 20 } : undefined}
+                      className={`overflow-hidden px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wide break-words text-fg-muted ${isStickyLeft ? 'bg-surface shadow-[1px_0_0_var(--color-border)]' : ''}`}
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                     </th>
