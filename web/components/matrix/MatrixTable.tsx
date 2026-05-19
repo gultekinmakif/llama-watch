@@ -257,7 +257,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       </div>
       <PresetPills />
       <Legend />
-      <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
+      <div ref={setScrollElement} className="h-160 overflow-auto border border-border">
         <table className="table-fixed border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
           <colgroup>

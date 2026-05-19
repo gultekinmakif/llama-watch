@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 
 import { loadSnapshot } from '../lib/snapshot'
 import { MatrixTable } from '../components/matrix/MatrixTable'
@@ -10,7 +11,9 @@ export default function Page() {
   return (
     <main className="mx-auto flex max-w-screen-2xl flex-col gap-4 p-6">
       <div className="flex items-baseline justify-between gap-4">
-        <h1 className="text-xl font-semibold">[llama-watch]</h1>
+        <Link href="/" className="text-xl font-semibold hover:underline">
+          [llama-watch]
+        </Link>
         <HeroStrip stats={stats} />
       </div>
       <Suspense fallback={<Empty title="loading matrix…" />}>
