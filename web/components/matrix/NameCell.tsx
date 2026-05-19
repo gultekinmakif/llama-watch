@@ -23,7 +23,7 @@ export function NameCell({ row, coverage }: NameCellProps) {
         />
       </a>
       {coverage ? (
-        <span className="font-mono text-[11px] text-fg-subtle tabular-nums">
+        <span className="font-mono text-[11px] text-accent tabular-nums">
           {coverage.value}/{coverage.total}
         </span>
       ) : null}

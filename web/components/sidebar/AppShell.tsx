@@ -29,7 +29,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
   return (
     <>
       <aside
-        aria-label="llama-watch sidebar"
+        aria-label="MetaLlama sidebar"
         className="thin-scrollbar fixed top-0 left-0 z-30 hidden h-screen w-[260px] flex-col gap-6 overflow-y-auto border-r border-border bg-bg-elevated p-5 md:flex"
       >
         {sidebar}
@@ -46,7 +46,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         </button>
         <a href="/" className="flex items-center gap-2 rounded text-base font-semibold text-fg focus-visible:focus-ring">
           <MiniLogo />
-          <span>llama-watch</span>
+          <span> MetaLlama</span>
         </a>
         <CopyLinkButton />
       </header>

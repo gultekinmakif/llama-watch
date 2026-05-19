@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata = {
-  title: ' · llama-watch · ',
+  title: ' MetaLlama · DL metrics ',
   description:
     'A live coverage matrix of every protocol DefiLlama tracks. See which metrics are live, missing, extra, or out of scope across 6,000+ protocols.',
 }
