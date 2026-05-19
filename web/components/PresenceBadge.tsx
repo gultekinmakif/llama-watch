@@ -9,14 +9,14 @@ const TILE: Record<CellState, string> = {
   na: 'bg-cell-na',
   missing: 'bg-cell-missing',
   present: 'bg-cell-present',
-  over: 'bg-cell-over',
+  unexpected: 'bg-cell-unexpected',
 }
 
 const LABEL: Record<CellState, string> = {
   na: 'not applicable',
   missing: 'missing',
   present: 'present',
-  over: 'unexpected',
+  unexpected: 'unexpected',
 }
 
 export function PresenceBadge({ variant, state }: PresenceBadgeProps) {

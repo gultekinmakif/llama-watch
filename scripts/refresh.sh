@@ -83,16 +83,17 @@ bin/sync-db
 #    via symlink so bun does not have to reinstall.
 if [ -f web/package.json ]; then
   WEB_STAGE="$PWD/web.stage"
-  rm -rf "$WEB_STAGE"
+  # Clear stragglers from a prior failed/killed run
+  rm -rf "$WEB_STAGE" web/out.old
   rsync -a --delete \
     --exclude=node_modules --exclude=.next --exclude=out \
     web/ "$WEB_STAGE/"
   ln -snf "$PWD/web/node_modules" "$WEB_STAGE/node_modules"
   ( cd "$WEB_STAGE" && bun run build )
-  rm -rf web/out.old
   [ -d web/out ] && mv web/out web/out.old
   mv "$WEB_STAGE/out" web/out
   rm -rf "$WEB_STAGE"
+  rm -rf web/out.old
 else
   echo "web/package.json missing; skipping frontend build"
 fi

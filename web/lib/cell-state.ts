@@ -1,28 +1,43 @@
-// Pure-runtime four-state classifier. Lives separately from lib/snapshot.ts so
-// client components can import it without pulling in node:fs / node:path / node:url.
+// Pure-runtime four-state classifier. Expected set is the union of dimType
+// bundles for the protocol's registered adapters, plus tvl.
 
 import presets from '../../internal/registry/presets.json' with { type: 'json' }
 
-export type CellState = 'na' | 'missing' | 'present' | 'over'
+export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
 
-// Same JSON source as Go and tools/build-snapshot.ts.
-const EXPECTATIONS: Record<string, Record<string, true>> = (() => {
+const BUNDLES: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}
-  for (const [category, metrics] of Object.entries(presets.categories)) {
+  for (const [dt, metrics] of Object.entries(presets)) {
     const set: Record<string, true> = {}
     for (const m of metrics) set[m] = true
-    out[category] = set
+    out[dt] = set
   }
   return out
 })()
 
-// Unseeded categories fall through: present is CellPresent, absent is CellNA.
-export function classifyCell(category: string, metric: string, present: boolean): CellState {
-  const seed = EXPECTATIONS[category]
-  if (!seed) return present ? 'present' : 'na'
-  const expected = seed[metric] === true
+export function metricsForDimType(dimType: string): readonly string[] {
+  const metrics = (presets as Record<string, readonly string[]>)[dimType]
+  return metrics ?? []
+}
+
+export const DIMTYPE_KEYS: readonly string[] = Object.keys(presets)
+
+export function classifyCell(
+  dimTypes: readonly string[],
+  metric: string,
+  present: boolean,
+): CellState {
+  let expected = metric === 'tvl'
+  if (!expected) {
+    for (const dt of dimTypes) {
+      if (BUNDLES[dt]?.[metric]) {
+        expected = true
+        break
+      }
+    }
+  }
   if (present && expected) return 'present'
-  if (present && !expected) return 'over'
+  if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'
   return 'na'
 }

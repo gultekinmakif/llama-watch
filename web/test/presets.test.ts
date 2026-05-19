@@ -45,7 +45,6 @@ describe('DIMTYPES', () => {
   test('includes the core dimTypes', () => {
     expect(DIMTYPES).toContain('fees')
     expect(DIMTYPES).toContain('dexs')
-    expect(DIMTYPES).toContain('derivatives')
     expect(DIMTYPES).toContain('options')
   })
 

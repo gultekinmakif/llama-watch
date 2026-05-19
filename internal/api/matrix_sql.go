@@ -11,8 +11,8 @@ import (
 )
 
 // listProtocols returns the protocol_identities page ordered by q.Sort then slug.
-// Each Row's Cells classifies every pinned column through registry.ClassifyCell so
-// the wire shape carries the four-state coloring instead of a present/absent bit.
+// Cells carry the two-state Present / NA coloring; the web client computes the full
+// four-state classification from the snapshot's per-protocol dimTypes (no Postgres column yet).
 func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, error) {
 	tx := db.WithContext(ctx).Model(&models.ProtocolIdentity{})
 	tx = applyMatrixFilters(tx, q)
@@ -40,15 +40,11 @@ func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, erro
 	cols := registry.Columns()
 	rows := make([]Row, 0, len(idents))
 	for _, p := range idents {
-		category := ""
-		if p.Category != nil {
-			category = *p.Category
-		}
 		present := cellsBySlug[p.Slug]
 		cells := make(map[string]registry.CellState, len(cols))
 		for _, c := range cols {
 			_, isPresent := present[c.Key]
-			cells[c.Key] = registry.ClassifyCell(category, c.Key, isPresent)
+			cells[c.Key] = registry.ClassifyCell(isPresent)
 		}
 		rows = append(rows, Row{
 			Slug:     p.Slug,

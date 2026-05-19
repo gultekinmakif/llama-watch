@@ -8,9 +8,10 @@ describe('projectRow', () => {
     category: 'Lending',
     chains: ['Ethereum', 'Polygon'],
     dataFile: 'aave.json',
+    dimTypes: ['fees'],
   }
 
-  test('classifies cells against the category expectations', () => {
+  test('classifies cells against the registered dimType bundles', () => {
     const present = new Set(['tvl', 'dailyFees'])
     const row = projectRow(baseProtocol, present)
 

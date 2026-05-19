@@ -12,9 +12,11 @@ declare const process: {
   stderr: { write(s: string): void };
 };
 
-// KEYS_TO_STORE flows in from internal/registry/presets.json so Go, build-snapshot, and the web client share one source.
 import presets from "../internal/registry/presets.json" with { type: "json" };
-const KEYS_TO_STORE: Record<string, readonly string[]> = presets.dimTypes;
+const KEYS_TO_STORE: Record<string, readonly string[]> = presets;
+
+// dimType buckets retired upstream; the catalog still lists them but the manifest is empty.
+const RETIRED_DIMTYPES = new Set<string>(["derivatives"]);
 
 interface CatalogProtocol {
   name: string;
@@ -47,6 +49,7 @@ interface OutputProtocol {
   category: string;
   chains: string[];
   dataFile: string;
+  dimTypes: string[];
 }
 
 interface ProtocolRow {
@@ -82,6 +85,7 @@ function cellsForDimensions(
 ): Cell[] {
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
+    if (RETIRED_DIMTYPES.has(dimType)) return [];
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) {
       unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
@@ -122,8 +126,21 @@ function processProtocol(
   }
   seen.add(slug);
 
+  // Drop retired buckets and any registration the manifest cannot resolve so the classifier
+  // does not raise missing-data for adapter slugs that no longer exist upstream.
+  const dimTypes = Object.entries(p.dimensions)
+    .filter(([dt, dimSlug]) => !RETIRED_DIMTYPES.has(dt) && dimensionModules[dt]?.[dimSlug] !== undefined)
+    .map(([dt]) => dt);
+
   return {
-    protocol: { slug, name: p.name, category: p.category, chains: p.chains, dataFile },
+    protocol: {
+      slug,
+      name: p.name,
+      category: p.category,
+      chains: p.chains,
+      dataFile,
+      dimTypes,
+    },
     cells: [
       { slug, metric: "tvl", codePath: "" },
       ...cellsForDimensions(slug, p.dimensions, dimensionModules),
