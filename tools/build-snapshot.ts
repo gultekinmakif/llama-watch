@@ -12,9 +12,8 @@ declare const process: {
   stderr: { write(s: string): void };
 };
 
-// KEYS_TO_STORE flows in from internal/registry/presets.json so Go, build-snapshot, and the web client share one source.
 import presets from "../internal/registry/presets.json" with { type: "json" };
-const KEYS_TO_STORE: Record<string, readonly string[]> = presets.dimTypes;
+const KEYS_TO_STORE: Record<string, readonly string[]> = presets;
 
 interface CatalogProtocol {
   name: string;
