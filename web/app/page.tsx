@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { loadSnapshot } from '../lib/snapshot'
 import { MatrixTable } from '../components/matrix/MatrixTable'
 import { HeroStrip } from '../components/matrix/HeroStrip'
-import { Empty } from '../components/ui/Empty'
 
 const SIDEBAR_WIDTH = 260
 
@@ -29,7 +28,7 @@ export default function Page() {
         className="min-h-screen"
       >
         <section className="flex min-w-0 flex-col gap-4 p-6">
-          <Suspense fallback={<Empty title="loading matrix…" />}>
+          <Suspense>
             <MatrixTable columns={columns} rows={rows} />
           </Suspense>
         </section>
