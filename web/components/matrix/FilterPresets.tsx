@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { type CellState } from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
+import { Icon } from '../ui/Icon'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
 import { FilterBar } from './FilterBar'
 
@@ -16,11 +17,8 @@ interface FilterPresetsProps {
   chainOptions: string[]
 }
 
-// Identity columns hidden by default; the info toggle flips all three together.
 const INFO_IDS = ['category', 'chains', 'coverage'] as const
 
-// Label vocabulary mirrors the Legend component so the legend swatch words
-// and the dropdown options agree.
 const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
   missing: 'missing',
@@ -42,17 +40,12 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
   const adapter = params.get('adapter') ?? ''
   const cellState = (params.get('cellState') ?? '') as CellState | ''
 
-  // Setting one preset clears the sibling preset and any manual ?cols=.
-  // ?chains= and ?q= are independent and untouched.
-  // ?category= also narrows rows; ?adapter= narrows columns only because adapter
-  // type is a column property, not a row property.
   const onCategoryChange = (next: string) => {
     replaceParams({ category: next || null })
   }
   const onAdapterChange = (next: string) => {
     replaceParams({ adapter: next || null })
   }
-  // cellState is an orthogonal row filter; it does not touch category/adapter/cols.
   const onCellStateChange = (next: string) => {
     replaceParams({ cellState: next || null })
   }
@@ -66,36 +59,45 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2 text-sm">
       <button
         type="button"
         onClick={toggleInfo}
         aria-pressed={infoVisible}
-        className={`inline-flex items-center rounded border ${infoVisible ? 'border-accent' : 'border-border'} bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted`}
+        title={infoVisible ? 'hide identity columns' : 'show identity columns'}
+        className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors focus-visible:focus-ring ${
+          infoVisible
+            ? 'border-accent bg-accent-soft text-fg'
+            : 'border-border-strong bg-surface text-fg-muted hover:border-border-strong hover:bg-surface-hover hover:text-fg'
+        }`}
       >
-        {infoVisible ? 'hide info' : 'show info'}
+        <Icon name={infoVisible ? 'eye-off' : 'eye'} size={14} />
+        <span className="hidden sm:inline">info</span>
       </button>
       <PresetDropdown
-        label={adapter || `${DIMTYPES.length} adapters`}
+        label={adapter || 'adapter'}
+        countLabel={adapter ? null : `${DIMTYPES.length} types`}
         value={adapter}
         options={toStringOptions(DIMTYPES)}
         onChange={onAdapterChange}
         ariaLabel="filter columns by adapter type"
       />
       <PresetDropdown
-        label={category || `${CATEGORIES.length} categories`}
+        label={category || 'category'}
+        countLabel={category ? null : `${CATEGORIES.length} options`}
         value={category}
         options={toStringOptions(CATEGORIES)}
         onChange={onCategoryChange}
-        ariaLabel="filter columns by category"
+        ariaLabel="filter by category"
       />
       <FilterBar chainOptions={chainOptions} />
       <PresetDropdown
-        label={cellState ? CELL_STATE_LABELS[cellState] : `${CELL_STATE_OPTIONS.length} colors`}
+        label={cellState ? CELL_STATE_LABELS[cellState] : 'state'}
+        countLabel={cellState ? null : `4`}
         value={cellState}
         options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}
-        ariaLabel="filter rows by cell color"
+        ariaLabel="filter rows by cell state"
       />
       <ColumnsMenu
         toggleable={toggleable}
@@ -113,13 +115,14 @@ interface PresetOption {
 
 interface PresetDropdownProps {
   label: string
+  countLabel: string | null
   value: string
   options: readonly PresetOption[]
   onChange: (next: string) => void
   ariaLabel: string
 }
 
-function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDropdownProps) {
+function PresetDropdown({ label, countLabel, value, options, onChange, ariaLabel }: PresetDropdownProps) {
   const active = value !== ''
   return (
     <SelectProvider
@@ -128,23 +131,45 @@ function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDr
     >
       <Select
         aria-label={ariaLabel}
-        className={`inline-flex items-center gap-1 rounded border ${active ? 'border-accent' : 'border-border'} bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted`}
+        className={`group/pill inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors focus-visible:focus-ring ${
+          active
+            ? 'border-accent bg-accent-soft text-fg'
+            : 'border-border-strong bg-surface text-fg-muted hover:bg-surface-hover hover:text-fg'
+        }`}
       >
-        {label}
-        <span aria-hidden="true" className="text-fg-muted">▾</span>
+        <span className={active ? 'font-medium' : ''}>{label}</span>
+        {countLabel ? (
+          <span className="hidden font-mono text-[11px] text-fg-subtle tabular-nums sm:inline">
+            {countLabel}
+          </span>
+        ) : null}
+        <Icon
+          name="chevron-down"
+          size={12}
+          className="ml-0.5 text-fg-subtle transition-transform group-aria-expanded/pill:rotate-180"
+        />
       </Select>
       <SelectPopover
-        gutter={4}
+        gutter={6}
         sameWidth
-        className="z-50 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
+        className="animate-fade-up z-50 max-h-72 min-w-48 overflow-auto rounded-md border border-border-strong bg-surface-elevated p-1 text-sm text-fg shadow-popover thin-scrollbar"
       >
-        <SelectItem value="" className="flex items-center gap-2 px-2 py-1 text-fg-muted hover:bg-bg">
-          <span className="inline-block w-4" />
-          <span>clear</span>
-        </SelectItem>
+        {active ? (
+          <SelectItem
+            value=""
+            className="flex items-center gap-2 rounded px-2 py-1.5 text-fg-subtle transition-colors hover:bg-surface-hover hover:text-fg data-[active-item]:bg-surface-hover"
+          >
+            <Icon name="x" size={12} />
+            <span>Clear selection</span>
+          </SelectItem>
+        ) : null}
         {options.map((o) => (
-          <SelectItem key={o.value} value={o.value} className="flex items-center gap-2 px-2 py-1 hover:bg-bg">
-            <SelectItemCheck />
+          <SelectItem
+            key={o.value}
+            value={o.value}
+            className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-surface-hover data-[active-item]:bg-surface-hover"
+          >
+            <SelectItemCheck className="text-accent" />
             <span>{o.label}</span>
           </SelectItem>
         ))}
