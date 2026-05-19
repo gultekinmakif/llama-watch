@@ -24,10 +24,8 @@ export function FilterBar({ chainOptions }: FilterBarProps) {
     replaceParams({ chains: normalized.length === 0 ? null : normalized.join(',') })
   }
 
-  const chainsLabel =
-    selectedChains.length === 0
-      ? 'all chains'
-      : `${selectedChains.length} chain${selectedChains.length === 1 ? '' : 's'}`
+  const chainCount = selectedChains.length === 0 ? chainOptions.length : selectedChains.length
+  const chainsLabel = `${chainCount} chain${chainCount === 1 ? '' : 's'}`
 
   return (
     <SelectProvider<string[]>

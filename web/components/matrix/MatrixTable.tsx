@@ -14,6 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
+import type { CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -111,6 +112,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const colsParam = searchParams.get('cols')
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
+  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
 
   // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
   // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
@@ -164,8 +166,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     if (categoryPreset !== '') {
       result = result.filter((r) => r.category === categoryPreset)
     }
+    // Keep rows that have at least one cell of the chosen color, scanning every
+    // dimension on the row so the filter stays stable when the user toggles columns.
+    if (cellStatePreset !== '') {
+      result = result.filter((r) => Object.values(r.cells).includes(cellStatePreset))
+    }
     return result
-  }, [filteredRows, selectedChains, categoryPreset])
+  }, [filteredRows, selectedChains, categoryPreset, cellStatePreset])
 
   const table = useReactTable({
     data: visibleRows,

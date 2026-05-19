@@ -3,6 +3,7 @@
 import { Select, SelectItem, SelectPopover, SelectProvider } from '@ariakit/react'
 import { useSearchParams } from 'next/navigation'
 
+import { type CellState } from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
@@ -13,11 +14,28 @@ interface FilterPresetsProps {
   onColumnsChange: (visibleIds: string[]) => void
 }
 
+// Label vocabulary mirrors the Legend component so the legend swatch words
+// and the dropdown options agree.
+const CELL_STATE_LABELS: Record<CellState, string> = {
+  present: 'present',
+  missing: 'missing',
+  over: 'unexpected',
+  na: 'n/a',
+}
+const CELL_STATE_OPTIONS = (Object.entries(CELL_STATE_LABELS) as [CellState, string][]).map(
+  ([value, label]) => ({ value, label }),
+)
+
+function toStringOptions(options: readonly string[]): { value: string; label: string }[] {
+  return options.map((o) => ({ value: o, label: o }))
+}
+
 export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: FilterPresetsProps) {
   const params = useSearchParams()
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
   const adapter = params.get('adapter') ?? ''
+  const cellState = (params.get('cellState') ?? '') as CellState | ''
 
   // Setting one preset clears the sibling preset and any manual ?cols=.
   // ?chains= and ?q= are independent and untouched.
@@ -29,21 +47,25 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const onAdapterChange = (next: string) => {
     replaceParams({ adapter: next || null, category: null, cols: null })
   }
+  // cellState is an orthogonal row filter; it does not touch category/adapter/cols.
+  const onCellStateChange = (next: string) => {
+    replaceParams({ cellState: next || null })
+  }
 
   return (
     <div className="flex items-center gap-2 text-sm">
       <span className="text-xs uppercase tracking-wide text-fg-muted">filter columns</span>
       <PresetDropdown
-        label={category || 'select category'}
+        label={category || `${CATEGORIES.length} categories`}
         value={category}
-        options={CATEGORIES}
+        options={toStringOptions(CATEGORIES)}
         onChange={onCategoryChange}
         ariaLabel="filter columns by category"
       />
       <PresetDropdown
-        label={adapter || 'select adapter'}
+        label={adapter || `${DIMTYPES.length} adapters`}
         value={adapter}
-        options={DIMTYPES}
+        options={toStringOptions(DIMTYPES)}
         onChange={onAdapterChange}
         ariaLabel="filter columns by adapter type"
       />
@@ -52,14 +74,26 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         visibleIds={visibleIds}
         onChange={onColumnsChange}
       />
+      <PresetDropdown
+        label={cellState ? CELL_STATE_LABELS[cellState] : `${CELL_STATE_OPTIONS.length} colors`}
+        value={cellState}
+        options={CELL_STATE_OPTIONS}
+        onChange={onCellStateChange}
+        ariaLabel="filter rows by cell color"
+      />
     </div>
   )
+}
+
+interface PresetOption {
+  value: string
+  label: string
 }
 
 interface PresetDropdownProps {
   label: string
   value: string
-  options: readonly string[]
+  options: readonly PresetOption[]
   onChange: (next: string) => void
   ariaLabel: string
 }
@@ -85,8 +119,8 @@ function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDr
           <span>clear</span>
         </SelectItem>
         {options.map((o) => (
-          <SelectItem key={o} value={o} className="flex items-center gap-2 px-2 py-1 hover:bg-bg">
-            <span>{o}</span>
+          <SelectItem key={o.value} value={o.value} className="flex items-center gap-2 px-2 py-1 hover:bg-bg">
+            <span>{o.label}</span>
           </SelectItem>
         ))}
       </SelectPopover>
