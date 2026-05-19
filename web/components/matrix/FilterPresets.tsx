@@ -3,7 +3,10 @@
 import { Select, SelectItem, SelectPopover, SelectProvider } from '@ariakit/react'
 import { useSearchParams } from 'next/navigation'
 
-import { type CellState } from '../../lib/cell-state'
+import {
+  parseSpotlightParam,
+  type SpotlightState,
+} from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
@@ -16,13 +19,12 @@ interface FilterPresetsProps {
 
 // Label vocabulary mirrors the Legend component so the legend swatch words
 // and the dropdown options agree.
-const CELL_STATE_LABELS: Record<CellState, string> = {
+const SPOTLIGHT_LABELS: Record<SpotlightState, string> = {
   present: 'present',
   missing: 'missing',
   over: 'unexpected',
-  na: 'n/a',
 }
-const CELL_STATE_OPTIONS = (Object.entries(CELL_STATE_LABELS) as [CellState, string][]).map(
+const SPOTLIGHT_OPTIONS = (Object.entries(SPOTLIGHT_LABELS) as [SpotlightState, string][]).map(
   ([value, label]) => ({ value, label }),
 )
 
@@ -35,7 +37,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
   const adapter = params.get('adapter') ?? ''
-  const cellState = (params.get('cellState') ?? '') as CellState | ''
+  const cellState = parseSpotlightParam(params.get('cellState'))
 
   // Setting one preset clears the sibling preset and any manual ?cols=.
   // ?chains= and ?q= are independent and untouched.
@@ -75,9 +77,9 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         onChange={onColumnsChange}
       />
       <PresetDropdown
-        label={cellState ? CELL_STATE_LABELS[cellState] : `${CELL_STATE_OPTIONS.length} colors`}
+        label={cellState ? SPOTLIGHT_LABELS[cellState] : `${SPOTLIGHT_OPTIONS.length} colors`}
         value={cellState}
-        options={CELL_STATE_OPTIONS}
+        options={SPOTLIGHT_OPTIONS}
         onChange={onCellStateChange}
         ariaLabel="spotlight cells by color"
       />
