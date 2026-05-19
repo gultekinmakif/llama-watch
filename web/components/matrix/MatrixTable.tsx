@@ -245,7 +245,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">
+      <div className="flex flex-col items-stretch gap-2 md:sticky md:top-0 md:z-20 md:flex-row md:items-center md:bg-bg md:py-2">
         <div className="min-w-0 flex-1">
           <SearchBox count={visibleRows.length} total={rows.length} />
         </div>
@@ -267,7 +267,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
               <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
             ))}
           </colgroup>
-          <thead className="sticky top-14 z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)] md:top-0">
+          <thead className="sticky top-14 z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)] md:top-13">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
