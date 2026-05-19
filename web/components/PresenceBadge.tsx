@@ -23,25 +23,13 @@ export function PresenceBadge({ variant, state }: PresenceBadgeProps) {
   const tile = TILE[state]
   if (variant === 'cell') {
     if (state === 'na') {
-      return (
-        <span
-          aria-hidden="true"
-          className={`inline-block h-6 w-6 rounded ${tile}`}
-        />
-      )
+      return <span aria-hidden="true" className={`absolute inset-0 ${tile}`} />
     }
     return (
-      <span
-        role="img"
-        aria-label={LABEL[state]}
-        className={`inline-block h-6 w-6 rounded ${tile}`}
-      />
+      <span role="img" aria-label={LABEL[state]} className={`absolute inset-0 ${tile}`} />
     )
   }
   return (
-    <span
-      aria-label={LABEL[state]}
-      className={`inline-block h-4 w-12 rounded ${tile}`}
-    />
+    <span aria-label={LABEL[state]} className={`inline-block h-4 w-12 rounded ${tile}`} />
   )
 }

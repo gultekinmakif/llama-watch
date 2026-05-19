@@ -41,7 +41,7 @@ export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyPro
         return (
           <tr key={row.id} style={{ height: ROW_HEIGHT }}>
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="border px-2 py-1">
+              <td key={cell.id} className="relative border px-2 py-1">
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </td>
             ))}
