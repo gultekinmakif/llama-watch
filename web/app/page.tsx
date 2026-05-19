@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import Link from 'next/link'
 
 import { loadSnapshot } from '../lib/snapshot'
 import { MatrixTable } from '../components/matrix/MatrixTable'
@@ -17,13 +16,13 @@ export default function Page() {
         className="fixed top-0 left-0 z-30 flex h-screen flex-col gap-6 overflow-y-auto border-r border-border bg-surface p-6"
       >
         <h1 className="text-xl font-semibold">
-          <Link href="/" className="hover:underline">
+          <a href="/" className="hover:underline">
             [llama-watch]
-          </Link>
+          </a>
         </h1>
         <HeroStrip stats={stats} />
       </aside>
-      <main style={{ paddingLeft: SIDEBAR_WIDTH }} className="min-h-screen">
+      <main style={{ paddingLeft: SIDEBAR_WIDTH }}>
         <section className="flex min-w-0 flex-col gap-4 p-6">
           <MatrixTable columns={columns} rows={rows} />
         </section>
