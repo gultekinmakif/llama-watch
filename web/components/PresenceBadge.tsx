@@ -5,7 +5,14 @@ interface PresenceBadgeProps {
   state: CellState
 }
 
-const TILE: Record<CellState, string> = {
+const CELL_BASE: Record<CellState, string> = {
+  na: 'bg-cell-na group-hover/row:bg-cell-na-hover',
+  missing: 'bg-cell-missing group-hover/row:bg-cell-missing-hover',
+  present: 'bg-cell-present group-hover/row:bg-cell-present-hover',
+  unexpected: 'bg-cell-unexpected group-hover/row:bg-cell-unexpected-hover',
+}
+
+const PILL: Record<CellState, string> = {
   na: 'bg-cell-na',
   missing: 'bg-cell-missing',
   present: 'bg-cell-present',
@@ -20,16 +27,14 @@ const LABEL: Record<CellState, string> = {
 }
 
 export function PresenceBadge({ variant, state }: PresenceBadgeProps) {
-  const tile = TILE[state]
   if (variant === 'cell') {
+    const className = `absolute inset-0 transition-colors duration-150 ${CELL_BASE[state]}`
     if (state === 'na') {
-      return <span aria-hidden="true" className={`absolute inset-0 ${tile}`} />
+      return <span aria-hidden="true" className={className} />
     }
-    return (
-      <span role="img" aria-label={LABEL[state]} className={`absolute inset-0 ${tile}`} />
-    )
+    return <span role="img" aria-label={LABEL[state]} className={className} />
   }
   return (
-    <span aria-label={LABEL[state]} className={`inline-block h-4 w-12 rounded ${tile}`} />
+    <span aria-label={LABEL[state]} className={`inline-block h-4 w-12 rounded ${PILL[state]}`} />
   )
 }
