@@ -18,11 +18,9 @@ export interface ColumnsMenuProps {
   onChange: (visibleIds: string[]) => void
 }
 
-// `name` is the lone identity column; it ships as a disabled checkbox at the top
-// of the menu so users see it is locked. Owned here rather than as a prop so the
-// caller does not have to mirror the same constant in its visibility derivation.
+// `name` is the lone identity column and is never offered as toggleable. Kept here
+// so the setValues merge can re-add it defensively if ariakit's array drops it.
 const FORCED_ID = 'name'
-const FORCED_LABEL = 'name'
 
 export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuProps) {
   return (
@@ -45,14 +43,6 @@ export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuPro
         gutter={4}
         className="z-50 min-w-48 rounded border border-border bg-surface p-1 text-sm text-fg shadow"
       >
-        <MenuItemCheckbox
-          name="cols"
-          value={FORCED_ID}
-          disabled
-          className="flex items-center gap-2 px-2 py-1 text-fg-muted"
-        >
-          <span>{FORCED_LABEL}</span>
-        </MenuItemCheckbox>
         {toggleable.map((c) => (
           <MenuItemCheckbox
             key={c.id}
