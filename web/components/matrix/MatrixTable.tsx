@@ -25,6 +25,7 @@ import { type ColumnOption } from './ColumnsMenu'
 import { FilterPresets } from './FilterPresets'
 import { SearchBox } from './SearchBox'
 import { FilterBar } from './FilterBar'
+import { PresetPills } from './PresetPills'
 import { Legend } from './Legend'
 
 interface MatrixTableProps {
@@ -223,7 +224,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   }, [replaceParams])
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <Legend />
         <SearchBox count={visibleRows.length} total={rows.length} />
@@ -237,10 +238,11 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         />
         <FilterBar chainOptions={chainOptions} />
       </div>
+      <PresetPills />
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
-          <thead className="sticky top-0 z-10 bg-surface">
+          <thead className="sticky top-0 z-10 bg-surface shadow-[0_1px_0_var(--color-border)]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
