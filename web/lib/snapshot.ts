@@ -100,7 +100,20 @@ export function loadSnapshot(): Snapshot {
       `snapshot at ${RESOLVED_SNAPSHOT_PATH} has zero protocols; static export needs at least one`,
     )
   }
-  return { columns: COLUMNS.map((c) => ({ ...c })), rows, total: rows.length }
+  // Densest columns first so the matrix opens with the highest-coverage metrics on the left.
+  const presentCounts = new Map<ColumnKey, number>()
+  for (const col of COLUMNS) presentCounts.set(col.key, 0)
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      if (r.cells[col.key] === 'present') {
+        presentCounts.set(col.key, (presentCounts.get(col.key) ?? 0) + 1)
+      }
+    }
+  }
+  const columns = COLUMNS.map((c) => ({ ...c })).sort(
+    (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
+  )
+  return { columns, rows, total: rows.length }
 }
 
 function readRaw(): RawSnapshot {
