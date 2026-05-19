@@ -1,4 +1,6 @@
-// Category taxonomy, web-only. Go and build-snapshot only need presets.json.
+// Category taxonomy, web-only. Hand-curated per category as the dropdown's column-narrow UX
+// rather than derived from presets bundles; the curated shape stays even if a category's
+// protocols collectively register every dimType in the catalog.
 
 import type { ColumnKey } from './snapshot'
 

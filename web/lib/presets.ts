@@ -1,13 +1,13 @@
 // Pure-runtime helpers backing the category and dimType filter dropdowns.
 // No node imports so client components can consume these directly.
 
-import presets from '../../internal/registry/presets.json' with { type: 'json' }
+import { DIMTYPE_KEYS, metricsForDimType } from './cell-state'
 import { CATEGORIES_EXPECTED } from './categories'
 import type { ColumnKey } from './snapshot'
 
 export const CATEGORIES: readonly string[] = Object.keys(CATEGORIES_EXPECTED).sort()
 
-export const DIMTYPES: readonly string[] = Object.keys(presets).sort()
+export const DIMTYPES: readonly string[] = [...DIMTYPE_KEYS].sort()
 
 // Returns a fresh array so callers can mutate without poisoning the source.
 export function expectedColumnsFor(category: string): ColumnKey[] {
@@ -18,7 +18,5 @@ export function expectedColumnsFor(category: string): ColumnKey[] {
 
 // Returns a fresh array so callers can mutate without poisoning the source.
 export function metricsFor(dimType: string): ColumnKey[] {
-  const metrics = (presets as Record<string, readonly string[]>)[dimType]
-  if (!metrics) return []
-  return [...metrics] as ColumnKey[]
+  return [...metricsForDimType(dimType)] as ColumnKey[]
 }

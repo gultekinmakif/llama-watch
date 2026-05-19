@@ -15,6 +15,13 @@ const BUNDLES: Record<string, Record<string, true>> = (() => {
   return out
 })()
 
+export function metricsForDimType(dimType: string): readonly string[] {
+  const metrics = (presets as Record<string, readonly string[]>)[dimType]
+  return metrics ?? []
+}
+
+export const DIMTYPE_KEYS: readonly string[] = Object.keys(presets)
+
 export function classifyCell(
   dimTypes: readonly string[],
   metric: string,

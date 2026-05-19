@@ -47,9 +47,6 @@ export interface Column {
 
 import { classifyCell, type CellState } from './cell-state'
 
-export type { CellState } from './cell-state'
-export { classifyCell } from './cell-state'
-
 export type Cells = Record<ColumnKey, CellState>
 
 export interface Row {
@@ -58,6 +55,9 @@ export interface Row {
   category?: string
   chains: string[]
   cells: Cells
+  // The dimType adapters the protocol is registered with, post-manifest-filter.
+  // Passed to the classifier; also surfaced so the static detail page can render four states.
+  dimTypes: string[]
   // Precomputed at build time so sort/render does not redo Object.values on every pass.
   coverage: number
 }
@@ -156,5 +156,5 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   // Lowercase defensively so the chain filter matches its URL token regardless
   // of upstream casing drift; today the upstream already emits lowercase.
   const chains = p.chains.map((c) => c.toLowerCase())
-  return { slug: p.slug, name: p.name, category, chains, cells, coverage }
+  return { slug: p.slug, name: p.name, category, chains, cells, coverage, dimTypes: p.dimTypes }
 }
