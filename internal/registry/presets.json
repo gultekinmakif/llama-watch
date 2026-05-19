@@ -1,6 +1,5 @@
 {
   "dexs": ["dailyVolume", "dailyNotionalVolume"],
-  "derivatives": ["dailyVolume"],
   "aggregators": ["dailyVolume"],
   "aggregator-derivatives": ["dailyVolume"],
   "fees": [
