@@ -210,6 +210,18 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [allIds, replaceParams],
   )
 
+  // Resets every filter that can prune rows or columns; sort/order stay.
+  const handleClearFilters = useCallback(() => {
+    replaceParams({
+      q: null,
+      cols: null,
+      category: null,
+      adapter: null,
+      cellState: null,
+      chains: null,
+    })
+  }, [replaceParams])
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
@@ -253,6 +265,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
             rows={tableRows}
             scrollElement={scrollElement}
             columnCount={columnCount}
+            onClearFilters={handleClearFilters}
           />
         </table>
       </div>

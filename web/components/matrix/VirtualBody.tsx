@@ -9,6 +9,7 @@ interface VirtualBodyProps {
   rows: TableRow<Row>[]
   scrollElement: HTMLDivElement | null
   columnCount: number
+  onClearFilters?: () => void
 }
 
 const ROW_HEIGHT = 48
@@ -17,7 +18,7 @@ const ROW_HEIGHT = 48
 // and need a 1px vertical divider so adjacent colors do not bleed together.
 const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
 
-export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyProps) {
+export function VirtualBody({ rows, scrollElement, columnCount, onClearFilters }: VirtualBodyProps) {
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollElement,
@@ -31,6 +32,33 @@ export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyPro
   const last = virtualItems[virtualItems.length - 1]
   const paddingTop = first ? first.start : 0
   const paddingBottom = last ? totalSize - last.end : 0
+
+  if (rows.length === 0) {
+    return (
+      <tbody>
+        <tr>
+          <td colSpan={columnCount} className="px-3 py-12 text-center">
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex flex-col items-center gap-3 text-sm text-fg-muted"
+            >
+              <span>Nothing to show here…</span>
+              {onClearFilters ? (
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="inline-flex items-center rounded border border-border bg-surface px-3 py-1 text-sm text-fg hover:bg-bg focus-visible:outline focus-visible:outline-fg-muted"
+                >
+                  clear filters
+                </button>
+              ) : null}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    )
+  }
 
   return (
     <tbody>
