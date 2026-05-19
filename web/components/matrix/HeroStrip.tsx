@@ -5,13 +5,12 @@ interface HeroStripProps {
 }
 
 export function HeroStrip({ stats }: HeroStripProps) {
-  const updated = new Date(stats.updatedAt)
-  const updatedLabel = `${updated.toISOString().slice(0, 10)} ${updated
-    .toISOString()
-    .slice(11, 16)}`
+  const trackedLabel = `${stats.tracked.toLocaleString('en-US')} protocol${stats.tracked === 1 ? '' : 's'}`
+  const iso = new Date(stats.updatedAt).toISOString()
+  const updatedLabel = `${iso.slice(0, 10)} ${iso.slice(11, 16)}`
   return (
     <div className="flex items-center gap-6 text-xs text-fg-muted">
-      <Stat label="Tracked" value={`${stats.tracked.toLocaleString()} protocols`} />
+      <Stat label="Tracked" value={trackedLabel} />
       <span aria-hidden="true">·</span>
       <Stat label="Coverage" value={`${stats.coveragePct.toFixed(1)}%`} />
       <span aria-hidden="true">·</span>
