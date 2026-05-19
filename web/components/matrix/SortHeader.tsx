@@ -50,7 +50,7 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
     })
   }, [columnKey, direction, isActive, replaceParams])
 
-  const indicator = direction === 'asc' ? '↑' : direction === 'desc' ? '↓' : ''
+  const indicator = direction === 'asc' ? '▴' : direction === 'desc' ? '▾' : ''
   const ariaLabel =
     direction === 'asc'
       ? `${label}, sorted ascending`
@@ -63,10 +63,12 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1 rounded text-left focus-visible:outline focus-visible:outline-fg-muted"
+      className="inline-flex items-center gap-1 rounded text-left transition-colors hover:text-fg focus-visible:outline focus-visible:outline-fg-muted"
     >
       <span>{label}</span>
-      <span aria-hidden="true" className="w-3">{indicator}</span>
+      <span aria-hidden="true" className={direction ? 'w-3 text-accent' : 'w-3'}>
+        {indicator}
+      </span>
     </button>
   )
 }
