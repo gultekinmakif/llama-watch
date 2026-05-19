@@ -123,10 +123,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const adapterPreset = searchParams.get('adapter') ?? ''
   const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
 
-  // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
-  // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
-  // ?cols=none is the sentinel for "only the forced name column visible"; without it,
-  // an empty ?cols= would collapse to delete-param via useReplaceParams and snap to defaults.
   const columnVisibility = useMemo<VisibilityState>(() => {
     const buildFromVisibleSet = (visible: Set<string>): VisibilityState => {
       visible.add('name')
@@ -138,6 +134,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     if (colsParam != null) {
       if (colsParam === 'none') return buildFromVisibleSet(new Set())
       return buildFromVisibleSet(new Set(colsParam.split(',').filter(Boolean)))
+    }
+    if (categoryPreset && adapterPreset) {
+      const catSet = new Set(expectedColumnsFor(categoryPreset))
+      const adaSet = new Set(metricsFor(adapterPreset))
+      const intersection = new Set([...catSet].filter((c) => adaSet.has(c)))
+      return buildFromVisibleSet(intersection)
     }
     if (categoryPreset) {
       return buildFromVisibleSet(new Set(expectedColumnsFor(categoryPreset)))
@@ -215,11 +217,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
       const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
       const next = csv === defaultCsv ? null : csv === '' ? 'none' : csv
-      replaceParams({
-        cols: next,
-        category: null,
-        adapter: null,
-      })
+      replaceParams({ cols: next })
     },
     [allIds, replaceParams],
   )

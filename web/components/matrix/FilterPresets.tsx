@@ -47,10 +47,10 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
   // ?category= also narrows rows; ?adapter= narrows columns only because adapter
   // type is a column property, not a row property.
   const onCategoryChange = (next: string) => {
-    replaceParams({ category: next || null, adapter: null, cols: null })
+    replaceParams({ category: next || null })
   }
   const onAdapterChange = (next: string) => {
-    replaceParams({ adapter: next || null, category: null, cols: null })
+    replaceParams({ adapter: next || null })
   }
   // cellState is an orthogonal row filter; it does not touch category/adapter/cols.
   const onCellStateChange = (next: string) => {
