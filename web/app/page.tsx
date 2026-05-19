@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <main className="mx-auto flex max-w-screen-2xl flex-col gap-4 p-6">
       <div className="flex items-baseline justify-between gap-4">
-        <h1 className="text-xl font-semibold">llama-watch</h1>
+        <h1 className="text-xl font-semibold">[llama-watch]</h1>
         <HeroStrip stats={stats} />
       </div>
       <Suspense fallback={<Empty title="loading matrix…" />}>

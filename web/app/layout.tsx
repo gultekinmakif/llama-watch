@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import './globals.css'
 
 export const metadata = {
-  title: 'llama-watch',
+  title: '[llama-watch]',
   description: 'Adapter coverage matrix for DefiLlama protocols.'
 }
 

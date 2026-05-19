@@ -221,6 +221,14 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [allIds, replaceParams],
   )
 
+  const handleHideColumn = useCallback(
+    (id: string) => {
+      if (id === 'name') return
+      handleVisibleChange(visibleIds.filter((v) => v !== id))
+    },
+    [handleVisibleChange, visibleIds],
+  )
+
   // Resets every filter that can prune rows or columns; sort/order stay.
   const handleClearFilters = useCallback(() => {
     replaceParams({
@@ -264,11 +272,14 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                   const sorted = h.column.getIsSorted()
                   const ariaSort =
                     sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                  const canHide = h.column.id !== 'name'
                   return (
                     <th
                       key={h.id}
                       scope="col"
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
+                      onDoubleClick={canHide ? () => handleHideColumn(h.column.id) : undefined}
+                      title={canHide ? 'double-click to hide' : undefined}
                       className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-fg-muted"
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
