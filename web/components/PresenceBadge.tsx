@@ -1,4 +1,4 @@
-import type { CellState } from '../lib/snapshot'
+import type { CellState } from '../lib/cell-state'
 
 interface PresenceBadgeProps {
   variant: 'cell' | 'pill'
@@ -6,53 +6,30 @@ interface PresenceBadgeProps {
 }
 
 const TILE: Record<CellState, string> = {
-  na: 'bg-cell-na text-cell-fg-na',
-  missing: 'bg-cell-missing text-cell-fg-missing',
-  present: 'bg-cell-present text-cell-fg-present',
-  over: 'bg-cell-over text-cell-fg-over',
-}
-
-const GLYPH: Record<CellState, string> = {
-  na: '·',
-  missing: '✗',
-  present: '✓',
-  over: '!',
+  na: 'bg-cell-na',
+  missing: 'bg-cell-missing',
+  present: 'bg-cell-present',
+  unexpected: 'bg-cell-unexpected',
 }
 
 const LABEL: Record<CellState, string> = {
   na: 'not applicable',
   missing: 'missing',
   present: 'present',
-  over: 'unexpected',
+  unexpected: 'unexpected',
 }
 
 export function PresenceBadge({ variant, state }: PresenceBadgeProps) {
   const tile = TILE[state]
-  const glyph = GLYPH[state]
   if (variant === 'cell') {
     if (state === 'na') {
-      return (
-        <span
-          aria-hidden="true"
-          className={`inline-flex h-6 w-6 items-center justify-center rounded text-sm ${tile}`}
-        >
-          {glyph}
-        </span>
-      )
+      return <span aria-hidden="true" className={`absolute inset-0 ${tile}`} />
     }
     return (
-      <span
-        role="img"
-        aria-label={LABEL[state]}
-        className={`inline-flex h-6 w-6 items-center justify-center rounded text-sm ${tile}`}
-      >
-        {glyph}
-      </span>
+      <span role="img" aria-label={LABEL[state]} className={`absolute inset-0 ${tile}`} />
     )
   }
   return (
-    <span aria-label={LABEL[state]} className={`rounded px-2 py-0.5 text-xs ${tile}`}>
-      {glyph}
-    </span>
+    <span aria-label={LABEL[state]} className={`inline-block h-4 w-12 rounded ${tile}`} />
   )
 }

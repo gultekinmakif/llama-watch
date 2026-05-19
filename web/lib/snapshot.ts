@@ -47,9 +47,6 @@ export interface Column {
 
 import { classifyCell, type CellState } from './cell-state'
 
-export type { CellState } from './cell-state'
-export { classifyCell } from './cell-state'
-
 export type Cells = Record<ColumnKey, CellState>
 
 export interface Row {
@@ -58,6 +55,9 @@ export interface Row {
   category?: string
   chains: string[]
   cells: Cells
+  // The dimType adapters the protocol is registered with, post-manifest-filter.
+  // Passed to the classifier; also surfaced so the static detail page can render four states.
+  dimTypes: string[]
   // Precomputed at build time so sort/render does not redo Object.values on every pass.
   coverage: number
 }
@@ -80,6 +80,7 @@ export interface RawProtocol {
   category?: string
   chains: string[]
   dataFile: string
+  dimTypes: string[]
 }
 
 export interface RawSnapshot {
@@ -99,7 +100,20 @@ export function loadSnapshot(): Snapshot {
       `snapshot at ${RESOLVED_SNAPSHOT_PATH} has zero protocols; static export needs at least one`,
     )
   }
-  return { columns: COLUMNS.map((c) => ({ ...c })), rows, total: rows.length }
+  // Densest columns first so the matrix opens with the highest-coverage metrics on the left.
+  const presentCounts = new Map<ColumnKey, number>()
+  for (const col of COLUMNS) presentCounts.set(col.key, 0)
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      if (r.cells[col.key] === 'present') {
+        presentCounts.set(col.key, (presentCounts.get(col.key) ?? 0) + 1)
+      }
+    }
+  }
+  const columns = COLUMNS.map((c) => ({ ...c })).sort(
+    (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
+  )
+  return { columns, rows, total: rows.length }
 }
 
 function readRaw(): RawSnapshot {
@@ -145,7 +159,7 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   let coverage = 0
   for (const col of COLUMNS) {
     const isPresent = present !== undefined && present.has(col.key)
-    const state = classifyCell(p.category ?? '', col.key, isPresent)
+    const state = classifyCell(p.dimTypes, col.key, isPresent)
     cells[col.key] = state
     if (state === 'present') coverage += 1
   }
@@ -155,5 +169,5 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   // Lowercase defensively so the chain filter matches its URL token regardless
   // of upstream casing drift; today the upstream already emits lowercase.
   const chains = p.chains.map((c) => c.toLowerCase())
-  return { slug: p.slug, name: p.name, category, chains, cells, coverage }
+  return { slug: p.slug, name: p.name, category, chains, cells, coverage, dimTypes: p.dimTypes }
 }

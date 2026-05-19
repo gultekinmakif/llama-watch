@@ -4,11 +4,11 @@ import { PresenceBadge } from '../PresenceBadge'
 
 interface DimensionRowProps {
   dimension: ProtocolDimension
-  category: string
+  dimTypes: readonly string[]
 }
 
-export function DimensionRow({ dimension, category }: DimensionRowProps) {
-  const state = classifyCell(category, dimension.kind, dimension.present)
+export function DimensionRow({ dimension, dimTypes }: DimensionRowProps) {
+  const state = classifyCell(dimTypes, dimension.kind, dimension.present)
   return (
     <li className="flex items-center justify-between gap-3 border-b border-border py-2 text-sm">
       <span className="font-mono text-fg">{dimension.kind}</span>

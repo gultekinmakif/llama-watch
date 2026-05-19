@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -14,12 +14,15 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
+import type { CellState } from '../../lib/cell-state'
+import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
 import { SortHeader, isSortKey, isSortOrder } from './SortHeader'
 import { NameCell } from './NameCell'
 import { PresenceCell } from './PresenceCell'
-import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
+import { type ColumnOption } from './ColumnsMenu'
+import { FilterPresets } from './FilterPresets'
 import { SearchBox } from './SearchBox'
 import { FilterBar } from './FilterBar'
 import { Legend } from './Legend'
@@ -106,28 +109,46 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [toggleableOptions],
   )
 
+  const colsParam = searchParams.get('cols')
+  const categoryPreset = searchParams.get('category') ?? ''
+  const adapterPreset = searchParams.get('adapter') ?? ''
+  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+
+  // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
+  // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
+  // ?cols=none is the sentinel for "only the forced name column visible"; without it,
+  // an empty ?cols= would collapse to delete-param via useReplaceParams and snap to defaults.
   const columnVisibility = useMemo<VisibilityState>(() => {
-    const colsParam = searchParams.get('cols')
-    if (colsParam == null) {
+    const buildFromVisibleSet = (visible: Set<string>): VisibilityState => {
+      visible.add('name')
       const result: VisibilityState = {}
-      for (const id of allIds) result[id] = !DEFAULT_HIDDEN.has(id)
+      for (const id of allIds) result[id] = visible.has(id)
       return result
     }
-    const visible = new Set(colsParam.split(',').filter(Boolean))
-    visible.add('name')
+
+    if (colsParam != null) {
+      if (colsParam === 'none') return buildFromVisibleSet(new Set())
+      return buildFromVisibleSet(new Set(colsParam.split(',').filter(Boolean)))
+    }
+    if (categoryPreset) {
+      return buildFromVisibleSet(new Set(expectedColumnsFor(categoryPreset)))
+    }
+    if (adapterPreset) {
+      return buildFromVisibleSet(new Set(metricsFor(adapterPreset)))
+    }
     const result: VisibilityState = {}
-    for (const id of allIds) result[id] = visible.has(id)
+    for (const id of allIds) result[id] = !DEFAULT_HIDDEN.has(id)
     return result
-  }, [searchParams, allIds])
+  }, [colsParam, categoryPreset, adapterPreset, allIds])
 
   const q = searchParams.get('q')?.trim() ?? ''
+  const deferredQ = useDeferredValue(q)
   const filteredRows = useMemo(() => {
-    if (q === '') return rows
-    return matchSorter(rows, q, { keys: ['slug', 'name'], keepDiacritics: false })
-  }, [rows, q])
+    if (deferredQ === '') return rows
+    return matchSorter(rows, deferredQ, { keys: ['slug', 'name'], keepDiacritics: false })
+  }, [rows, deferredQ])
 
   const selectedChains = useCsvParam('chains')
-  const selectedCategories = useCsvParam('categories')
 
   // Filter options derive from row data directly, independent of column visibility.
   const chainOptions = useMemo<string[]>(() => {
@@ -136,26 +157,23 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     return Array.from(set).sort()
   }, [rows])
 
-  const categoryOptions = useMemo<string[]>(() => {
-    const set = new Set<string>()
-    for (const r of rows) if (r.category != null) set.add(r.category)
-    return Array.from(set).sort()
-  }, [rows])
-
-  // Apply filters after search so match-sorter ranking is preserved.
-  // AND across chains and categories; OR within each list.
+  // The category preset doubles as a row filter so the visible matrix matches the column narrow.
   const visibleRows = useMemo(() => {
     let result = filteredRows
     if (selectedChains.length > 0) {
       const want = new Set(selectedChains)
       result = result.filter((r) => r.chains.some((c) => want.has(c)))
     }
-    if (selectedCategories.length > 0) {
-      const want = new Set(selectedCategories)
-      result = result.filter((r) => r.category != null && want.has(r.category))
+    if (categoryPreset !== '') {
+      result = result.filter((r) => r.category === categoryPreset)
+    }
+    // Keep rows that have at least one cell of the chosen color, scanning every
+    // dimension on the row so the filter stays stable when the user toggles columns.
+    if (cellStatePreset !== '') {
+      result = result.filter((r) => Object.values(r.cells).includes(cellStatePreset))
     }
     return result
-  }, [filteredRows, selectedChains, selectedCategories])
+  }, [filteredRows, selectedChains, categoryPreset, cellStatePreset])
 
   const table = useReactTable({
     data: visibleRows,
@@ -173,14 +191,21 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [allIds, columnVisibility],
   )
 
+  // Manual column toggle clears active presets so the dropdown labels reset to placeholders.
+  // The 'none' sentinel keeps the all-toggleable-off URL state reachable; an empty string
+  // would be dropped by useReplaceParams and silently snap back to defaults.
   const handleVisibleChange = useCallback(
     (nextIds: string[]) => {
       const visible = new Set(nextIds)
       visible.add('name')
       const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
       const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
-      // Drop the param when the selection matches the default policy so default deep links stay clean.
-      replaceParams({ cols: csv === defaultCsv ? null : csv })
+      const next = csv === defaultCsv ? null : csv === '' ? 'none' : csv
+      replaceParams({
+        cols: next,
+        category: null,
+        adapter: null,
+      })
     },
     [allIds, replaceParams],
   )
@@ -189,15 +214,16 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <Legend />
-        <div role="toolbar" aria-label="matrix controls" className="flex gap-2">
-          <SearchBox count={visibleRows.length} total={rows.length} />
-          <FilterBar chainOptions={chainOptions} categoryOptions={categoryOptions} />
-          <ColumnsMenu
-            toggleable={toggleableOptions}
-            visibleIds={visibleIds}
-            onChange={handleVisibleChange}
-          />
-        </div>
+        <SearchBox count={visibleRows.length} total={rows.length} />
+      </div>
+      {/* role="toolbar" is a landmark grouping; arrow-key navigation is delegated to each child widget. */}
+      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-2">
+        <FilterPresets
+          toggleable={toggleableOptions}
+          visibleIds={visibleIds}
+          onColumnsChange={handleVisibleChange}
+        />
+        <FilterBar chainOptions={chainOptions} />
       </div>
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
         <table className="border-collapse text-sm">
