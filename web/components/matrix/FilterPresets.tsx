@@ -14,6 +14,9 @@ interface FilterPresetsProps {
   onColumnsChange: (visibleIds: string[]) => void
 }
 
+// Identity columns hidden by default; the info toggle flips all three together.
+const INFO_IDS = ['category', 'chains', 'coverage'] as const
+
 // Label vocabulary mirrors the Legend component so the legend swatch words
 // and the dropdown options agree.
 const CELL_STATE_LABELS: Record<CellState, string> = {
@@ -52,9 +55,25 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
     replaceParams({ cellState: next || null })
   }
 
+  const infoVisible = INFO_IDS.some((id) => visibleIds.includes(id))
+  const toggleInfo = () => {
+    const next = infoVisible
+      ? visibleIds.filter((id) => !(INFO_IDS as readonly string[]).includes(id))
+      : [...visibleIds, ...INFO_IDS.filter((id) => !visibleIds.includes(id))]
+    onColumnsChange(next)
+  }
+
   return (
     <div className="flex items-center gap-2 text-sm">
       <span className="text-xs uppercase tracking-wide text-fg-muted">filter columns</span>
+      <button
+        type="button"
+        onClick={toggleInfo}
+        aria-pressed={infoVisible}
+        className="inline-flex items-center rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
+      >
+        {infoVisible ? 'hide info' : 'show info'}
+      </button>
       <PresetDropdown
         label={category || `${CATEGORIES.length} categories`}
         value={category}
