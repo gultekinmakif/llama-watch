@@ -10,7 +10,7 @@ const SIDEBAR_WIDTH = 260
 export default function Page() {
   const { columns, rows, stats } = loadSnapshot()
   return (
-    <>
+    <Suspense>
       <aside
         aria-label="llama-watch sidebar"
         style={{ width: SIDEBAR_WIDTH }}
@@ -23,16 +23,11 @@ export default function Page() {
         </h1>
         <HeroStrip stats={stats} />
       </aside>
-      <main
-        style={{ paddingLeft: SIDEBAR_WIDTH }}
-        className="min-h-screen"
-      >
+      <main style={{ paddingLeft: SIDEBAR_WIDTH }} className="min-h-screen">
         <section className="flex min-w-0 flex-col gap-4 p-6">
-          <Suspense>
-            <MatrixTable columns={columns} rows={rows} />
-          </Suspense>
+          <MatrixTable columns={columns} rows={rows} />
         </section>
       </main>
-    </>
+    </Suspense>
   )
 }

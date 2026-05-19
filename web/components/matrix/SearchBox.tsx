@@ -36,20 +36,20 @@ export function SearchBox({ count, total }: SearchBoxProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-1">
       <input
         type="search"
         value={value}
         onChange={onChange}
         placeholder="search protocols"
         aria-label="search protocols"
-        className="w-64 rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
+        className="w-full rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
       />
       <span
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className="text-xs text-fg-muted tabular-nums"
+        className="self-end text-xs text-fg-muted tabular-nums"
       >
         {count === total ? `${total}` : `${count} of ${total}`}
       </span>
