@@ -10,7 +10,7 @@ const ROWS_BY_SLUG: ReadonlyMap<string, Row> = (() => {
 })()
 
 export function generateStaticParams() {
-  return Array.from(ROWS_BY_SLUG.keys()).map((slug) => ({ slug }))
+  return [{ slug: '_disabled' }]
 }
 
 export default async function ProtocolPage({ params }: { params: Promise<{ slug: string }> }) {
