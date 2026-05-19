@@ -14,13 +14,10 @@ interface VirtualBodyProps {
 
 const ROW_HEIGHT = 56
 
-// Identity columns render text; dimension columns render the full-fill colored span
-// and need a 1px vertical divider so adjacent colors do not bleed together.
 const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
 
 export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyProps) {
   const tbodyRef = useRef<HTMLTableSectionElement>(null)
-  // scrollMargin anchors the window virtualizer to wherever the tbody sits
   const [scrollMargin, setScrollMargin] = useState(0)
   useEffect(() => {
     if (tbodyRef.current) setScrollMargin(tbodyRef.current.offsetTop)
@@ -44,20 +41,23 @@ export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyPr
     return (
       <tbody ref={tbodyRef}>
         <tr>
-          <td colSpan={columnCount} className="px-3 py-12 text-center">
+          <td colSpan={columnCount} className="px-3 py-16 text-center">
             <div
               role="status"
               aria-live="polite"
-              className="flex flex-col items-center gap-3 text-sm text-fg-muted"
+              className="mx-auto flex max-w-sm flex-col items-center gap-3 text-sm text-fg-muted"
             >
-              <span>Nothing to show here…</span>
+              <span className="text-base text-fg">No protocols match these filters</span>
+              <p className="text-xs text-fg-subtle">
+                Try removing a filter or clearing them all.
+              </p>
               {onClearFilters ? (
                 <button
                   type="button"
                   onClick={onClearFilters}
-                  className="inline-flex items-center rounded border border-border bg-surface px-3 py-1 text-sm text-fg hover:bg-bg focus-visible:outline focus-visible:outline-fg-muted"
+                  className="mt-1 inline-flex items-center rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm font-medium text-fg transition-colors hover:border-accent hover:bg-surface-hover focus-visible:focus-ring"
                 >
-                  clear filters
+                  Clear all filters
                 </button>
               ) : null}
             </div>
@@ -81,22 +81,22 @@ export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyPr
           <tr
             key={row.id}
             style={{ height: ROW_HEIGHT }}
-            className="border-b border-border hover:bg-surface/40"
+            className="group/row border-b border-border/40 transition-colors"
           >
             {row.getVisibleCells().map((cell) => {
               const isIdentity = IDENTITY_IDS.has(cell.column.id)
               const isStickyLeft = cell.column.id === 'name'
               const base = isIdentity
-                ? 'px-3 py-2'
-                : 'relative border-r border-border last:border-r-0'
+                ? 'px-3 py-2 align-middle group-hover/row:bg-accent-soft'
+                : 'relative border-r border-bg last:border-r-0'
               const sticky = isStickyLeft
-                ? 'bg-bg shadow-[1px_0_0_var(--color-border)]'
+                ? 'bg-bg shadow-[1px_0_0_var(--color-border)] group-hover/row:bg-surface'
                 : ''
               return (
                 <td
                   key={cell.id}
                   style={isStickyLeft ? { position: 'sticky', left: 0, zIndex: 1 } : undefined}
-                  className={`${base} ${sticky}`}
+                  className={`${base} ${sticky} transition-colors`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
