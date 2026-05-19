@@ -9,21 +9,19 @@ export function HeroStrip({ stats }: HeroStripProps) {
   const iso = new Date(stats.updatedAt).toISOString()
   const updatedLabel = `${iso.slice(0, 10)} ${iso.slice(11, 16)}`
   return (
-    <div className="flex items-center gap-6 text-xs text-fg-muted">
+    <dl className="flex flex-col gap-3 text-xs text-fg-muted">
       <Stat label="Tracked" value={trackedLabel} />
-      <span aria-hidden="true">·</span>
       <Stat label="Coverage" value={`${stats.coveragePct.toFixed(1)}%`} />
-      <span aria-hidden="true">·</span>
       <Stat label="Updated" value={updatedLabel} />
-    </div>
+    </dl>
   )
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="uppercase tracking-wide">{label}</span>
-      <span className="font-mono text-fg tabular-nums">{value}</span>
-    </span>
+    <div className="flex flex-col gap-0.5">
+      <dt className="uppercase tracking-wide">{label}</dt>
+      <dd className="font-mono text-fg tabular-nums">{value}</dd>
+    </div>
   )
 }

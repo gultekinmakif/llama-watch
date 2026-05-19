@@ -9,18 +9,20 @@ import { Empty } from '../components/ui/Empty'
 export default function Page() {
   const { columns, rows, stats } = loadSnapshot()
   return (
-    <main className="mx-auto grid h-screen max-w-screen-2xl grid-cols-[minmax(0,1fr)_280px] gap-6 p-6">
-      <section className="flex min-h-0 min-w-0 flex-col gap-4">
-        <Link href="/" className="text-xl font-semibold hover:underline">
-          [llama-watch]
-        </Link>
+    <main className="grid h-screen grid-cols-[260px_minmax(0,1fr)]">
+      <aside aria-label="llama-watch sidebar" className="flex flex-col gap-6 border-r border-border bg-surface p-6">
+        <h1 className="text-xl font-semibold">
+          <Link href="/" className="hover:underline">
+            [llama-watch]
+          </Link>
+        </h1>
+        <HeroStrip stats={stats} />
+      </aside>
+      <section className="flex min-h-0 min-w-0 flex-col gap-4 p-6">
         <Suspense fallback={<Empty title="loading matrix…" />}>
           <MatrixTable columns={columns} rows={rows} />
         </Suspense>
       </section>
-      <aside className="flex flex-col gap-4">
-        <HeroStrip stats={stats} />
-      </aside>
     </main>
   )
 }
