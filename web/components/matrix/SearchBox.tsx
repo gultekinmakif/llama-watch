@@ -58,55 +58,56 @@ export function SearchBox({ count, total }: SearchBoxProps) {
     inputRef.current?.focus()
   }
 
-  const countLabel = count === total
-    ? `${total.toLocaleString('en-US')} protocols`
-    : `${count.toLocaleString('en-US')} of ${total.toLocaleString('en-US')}`
+  const isNarrowed = count !== total
+  const countLabel = isNarrowed
+    ? `${count.toLocaleString('en-US')} / ${total.toLocaleString('en-US')}`
+    : null
 
   return (
-    <div className="flex w-full flex-col gap-1">
-      <div className="group/search relative">
-        <Icon
-          name="search"
-          size={16}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-subtle transition-colors group-focus-within/search:text-accent"
-        />
-        <input
-          ref={inputRef}
-          type="search"
-          value={value}
-          onChange={onChange}
-          placeholder="Search by name, category, chain…"
-          aria-label="search protocols"
-          spellCheck={false}
-          autoComplete="off"
-          className="h-9 w-full rounded-md border border-border-strong bg-surface pl-9 pr-20 text-sm text-fg placeholder:text-fg-subtle transition-colors focus:border-accent focus-visible:focus-ring focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
-        />
-        <div className="pointer-events-none absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1">
-          {value ? (
-            <button
-              type="button"
-              onClick={onClear}
-              aria-label="clear search"
-              className="pointer-events-auto rounded p-0.5 text-fg-subtle transition-colors hover:bg-surface-hover hover:text-fg focus-visible:focus-ring"
-            >
-              <Icon name="x" size={14} />
-            </button>
-          ) : (
-            <>
-              <span aria-hidden="true" className="kbd hidden sm:inline-flex">⌘</span>
-              <span aria-hidden="true" className="kbd hidden sm:inline-flex">K</span>
-            </>
-          )}
-        </div>
+    <div className="search-underline group/search relative w-full rounded-md">
+      <Icon
+        name="search"
+        size={16}
+        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-subtle transition-colors group-focus-within/search:text-accent"
+      />
+      <input
+        ref={inputRef}
+        type="search"
+        value={value}
+        onChange={onChange}
+        placeholder="Search by name, category, chain…"
+        aria-label="search protocols"
+        spellCheck={false}
+        autoComplete="off"
+        className="relative z-0 h-9 w-full rounded-md border border-border-strong bg-surface pl-9 pr-32 text-sm text-fg placeholder:text-fg-subtle transition-colors focus:border-accent focus-visible:focus-ring focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+      />
+      <div className="pointer-events-none absolute top-1/2 right-2.5 z-10 flex -translate-y-1/2 items-center gap-2">
+        {countLabel ? (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="animate-fade-in font-mono text-[11px] font-medium tabular-nums text-danger"
+          >
+            {countLabel}
+          </span>
+        ) : null}
+        {value ? (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="clear search"
+            className="pointer-events-auto rounded p-0.5 text-fg-subtle transition-colors hover:bg-surface-hover hover:text-fg focus-visible:focus-ring"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        ) : (
+          <>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">⌘</span>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">K</span>
+          </>
+        )}
       </div>
-      <span
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="self-end font-mono text-[11px] text-fg-subtle tabular-nums"
-      >
-        {countLabel}
-      </span>
     </div>
   )
 }
