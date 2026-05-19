@@ -10,11 +10,15 @@
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
 
-  --color-bg: oklch(0.18 0.012 264);
-  --color-surface: oklch(0.22 0.014 264);
-  --color-border: oklch(0.32 0.014 264);
+  --color-bg: oklch(0.14 0.012 264);
+  --color-surface: oklch(0.20 0.014 264);
+  --color-border: oklch(0.26 0.014 264);
   --color-fg: oklch(0.96 0.005 264);
-  --color-fg-muted: oklch(0.72 0.012 264);
+  --color-fg-muted: oklch(0.62 0.012 264);
+
+  /* Bright blue used for sort indicators, focus rings, and active-filter borders. */
+  --color-accent: oklch(0.65 0.18 256);
+  --color-accent-muted: oklch(0.40 0.10 256);
 
   /* Four-state cell palette: na mute, missing red, present green, unexpected amber. */
   --color-cell-na: oklch(0.22 0.005 264);
