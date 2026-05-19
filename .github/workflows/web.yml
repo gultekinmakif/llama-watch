@@ -23,5 +23,5 @@ jobs:
         # returns an empty list, so the stub seeds one protocol to produce one path.
         run: |
           mkdir -p ../var/snapshot
-          echo '{"cells":[{"slug":"stub","metric":"tvl","codePath":""}],"protocols":[{"slug":"stub","name":"Stub","category":"Other","chains":["ethereum"],"dataFile":"stub.json"}]}' > ../var/snapshot/snapshot.json
+          echo '{"cells":[{"slug":"stub","metric":"tvl","codePath":""}],"protocols":[{"slug":"stub","name":"Stub","category":"Other","chains":["ethereum"],"dataFile":"stub.json","dimTypes":[]}]}' > ../var/snapshot/snapshot.json
       - run: bun run build
