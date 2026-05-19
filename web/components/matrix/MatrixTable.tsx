@@ -37,6 +37,16 @@ const columnHelper = createColumnHelper<Row>()
 
 const DEFAULT_HIDDEN: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
 
+// Fixed column widths so the virtualizer's row swaps cannot reflow column widths
+// mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
+const COL_WIDTH: Record<string, number> = {
+  name: 240,
+  category: 140,
+  chains: 200,
+  coverage: 110,
+}
+const METRIC_WIDTH = 120
+
 function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
@@ -240,8 +250,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       <PresetPills />
       <Legend />
       <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
-        <table className="border-collapse text-sm">
+        <table className="table-fixed border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
+          <colgroup>
+            {table.getVisibleLeafColumns().map((col) => (
+              <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-surface shadow-[0_1px_0_var(--color-border)]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
