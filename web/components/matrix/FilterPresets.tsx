@@ -3,10 +3,7 @@
 import { Select, SelectItem, SelectPopover, SelectProvider } from '@ariakit/react'
 import { useSearchParams } from 'next/navigation'
 
-import {
-  parseSpotlightParam,
-  type SpotlightState,
-} from '../../lib/cell-state'
+import { type CellState } from '../../lib/cell-state'
 import { CATEGORIES, DIMTYPES } from '../../lib/presets'
 import { useReplaceParams } from '../../lib/url-state'
 import { ColumnsMenu, type ColumnOption } from './ColumnsMenu'
@@ -19,12 +16,13 @@ interface FilterPresetsProps {
 
 // Label vocabulary mirrors the Legend component so the legend swatch words
 // and the dropdown options agree.
-const SPOTLIGHT_LABELS: Record<SpotlightState, string> = {
+const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
   missing: 'missing',
   over: 'unexpected',
+  na: 'n/a',
 }
-const SPOTLIGHT_OPTIONS = (Object.entries(SPOTLIGHT_LABELS) as [SpotlightState, string][]).map(
+const CELL_STATE_OPTIONS = (Object.entries(CELL_STATE_LABELS) as [CellState, string][]).map(
   ([value, label]) => ({ value, label }),
 )
 
@@ -37,7 +35,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
   const adapter = params.get('adapter') ?? ''
-  const cellState = parseSpotlightParam(params.get('cellState'))
+  const cellState = (params.get('cellState') ?? '') as CellState | ''
 
   // Setting one preset clears the sibling preset and any manual ?cols=.
   // ?chains= and ?q= are independent and untouched.
@@ -49,7 +47,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const onAdapterChange = (next: string) => {
     replaceParams({ adapter: next || null, category: null, cols: null })
   }
-  // cellState is an orthogonal cell-spotlight; it does not touch category/adapter/cols.
+  // cellState is an orthogonal row filter; it does not touch category/adapter/cols.
   const onCellStateChange = (next: string) => {
     replaceParams({ cellState: next || null })
   }
@@ -77,11 +75,11 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         onChange={onColumnsChange}
       />
       <PresetDropdown
-        label={cellState ? SPOTLIGHT_LABELS[cellState] : `${SPOTLIGHT_OPTIONS.length} colors`}
+        label={cellState ? CELL_STATE_LABELS[cellState] : `${CELL_STATE_OPTIONS.length} colors`}
         value={cellState}
-        options={SPOTLIGHT_OPTIONS}
+        options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}
-        ariaLabel="spotlight cells by color"
+        ariaLabel="filter rows by cell color"
       />
     </div>
   )

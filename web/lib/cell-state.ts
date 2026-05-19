@@ -5,16 +5,6 @@ import presets from '../../internal/registry/presets.json' with { type: 'json' }
 
 export type CellState = 'na' | 'missing' | 'present' | 'over'
 
-// Spotlight excludes 'na' because masking non-matching cells to na would leave
-// an all-na matrix indistinguishable from the spotlight target.
-export const SPOTLIGHT_STATES = ['present', 'missing', 'over'] as const
-export type SpotlightState = (typeof SPOTLIGHT_STATES)[number]
-
-export function parseSpotlightParam(raw: string | null | undefined): SpotlightState | '' {
-  const v = raw ?? ''
-  return (SPOTLIGHT_STATES as readonly string[]).includes(v) ? (v as SpotlightState) : ''
-}
-
 // Same JSON source as Go and tools/build-snapshot.ts.
 const EXPECTATIONS: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}
