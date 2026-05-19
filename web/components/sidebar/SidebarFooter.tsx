@@ -1,0 +1,58 @@
+import { Icon } from '../ui/Icon'
+
+const VERSION = 'v0.1.0'
+const REPO_URL = 'https://github.com/gultekinmakif/llama-watch'
+const ADAPTERS_URL = 'https://github.com/DefiLlama/dimension-adapters'
+const DEFILLAMA_URL = 'https://defillama.com'
+
+export function SidebarFooter() {
+  return (
+    <footer className="mt-auto flex flex-col gap-3 border-t border-border pt-5 text-[11px]">
+      <div className="flex items-center justify-between text-fg-subtle">
+        <span className="font-mono tabular-nums">{VERSION}</span>
+        <span className="font-mono tabular-nums">static export</span>
+      </div>
+      <nav aria-label="external links" className="flex flex-col gap-1">
+        <FooterLink href={REPO_URL} icon="github">
+          gultekinmakif/llama-watch
+        </FooterLink>
+        <FooterLink href={ADAPTERS_URL} icon="external-link">
+          DefiLlama/dimension-adapters
+        </FooterLink>
+        <FooterLink href={DEFILLAMA_URL} icon="external-link">
+          defillama.com
+        </FooterLink>
+      </nav>
+      <p className="text-[10.5px] leading-relaxed text-fg-subtle">
+        Built for adapter maintainers. Data refreshes hourly from the dimension-adapters
+        registry.
+      </p>
+    </footer>
+  )
+}
+
+function FooterLink({
+  href,
+  icon,
+  children,
+}: {
+  href: string
+  icon: 'github' | 'external-link'
+  children: React.ReactNode
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group/flink inline-flex items-center gap-2 rounded px-1 py-1 -mx-1 text-fg-muted transition-colors hover:bg-surface hover:text-fg focus-visible:focus-ring"
+    >
+      <Icon
+        name={icon}
+        size={12}
+        className="shrink-0 text-fg-subtle transition-colors group-hover/flink:text-accent"
+      />
+      <span className="truncate">{children}</span>
+    </a>
+  )
+}
