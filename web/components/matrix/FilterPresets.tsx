@@ -65,7 +65,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-xs uppercase tracking-wide text-fg-muted">filter columns</span>
+      <span className="text-xs uppercase tracking-wide text-fg-muted">filters</span>
       <button
         type="button"
         onClick={toggleInfo}
