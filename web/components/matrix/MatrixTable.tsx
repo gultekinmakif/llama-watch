@@ -108,13 +108,15 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [toggleableOptions],
   )
 
-  // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
-  // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears both).
-  const columnVisibility = useMemo<VisibilityState>(() => {
-    const colsParam = searchParams.get('cols')
-    const categoryParam = searchParams.get('category')
-    const adapterParam = searchParams.get('adapter')
+  const colsParam = searchParams.get('cols')
+  const categoryPreset = searchParams.get('category') ?? ''
+  const adapterPreset = searchParams.get('adapter') ?? ''
 
+  // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
+  // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
+  // ?cols=none is the sentinel for "only the forced name column visible"; without it,
+  // an empty ?cols= would collapse to delete-param via useReplaceParams and snap to defaults.
+  const columnVisibility = useMemo<VisibilityState>(() => {
     const buildFromVisibleSet = (visible: Set<string>): VisibilityState => {
       visible.add('name')
       const result: VisibilityState = {}
@@ -123,18 +125,19 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     }
 
     if (colsParam != null) {
+      if (colsParam === 'none') return buildFromVisibleSet(new Set())
       return buildFromVisibleSet(new Set(colsParam.split(',').filter(Boolean)))
     }
-    if (categoryParam) {
-      return buildFromVisibleSet(new Set(expectedColumnsFor(categoryParam)))
+    if (categoryPreset) {
+      return buildFromVisibleSet(new Set(expectedColumnsFor(categoryPreset)))
     }
-    if (adapterParam) {
-      return buildFromVisibleSet(new Set(metricsFor(adapterParam)))
+    if (adapterPreset) {
+      return buildFromVisibleSet(new Set(metricsFor(adapterPreset)))
     }
     const result: VisibilityState = {}
     for (const id of allIds) result[id] = !DEFAULT_HIDDEN.has(id)
     return result
-  }, [searchParams, allIds])
+  }, [colsParam, categoryPreset, adapterPreset, allIds])
 
   const q = searchParams.get('q')?.trim() ?? ''
   const filteredRows = useMemo(() => {
@@ -143,7 +146,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   }, [rows, q])
 
   const selectedChains = useCsvParam('chains')
-  const categoryPreset = searchParams.get('category') ?? ''
 
   // Filter options derive from row data directly, independent of column visibility.
   const chainOptions = useMemo<string[]>(() => {
@@ -182,14 +184,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   )
 
   // Manual column toggle clears active presets so the dropdown labels reset to placeholders.
+  // The 'none' sentinel keeps the all-toggleable-off URL state reachable; an empty string
+  // would be dropped by useReplaceParams and silently snap back to defaults.
   const handleVisibleChange = useCallback(
     (nextIds: string[]) => {
       const visible = new Set(nextIds)
       visible.add('name')
       const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
       const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
+      const next = csv === defaultCsv ? null : csv === '' ? 'none' : csv
       replaceParams({
-        cols: csv === defaultCsv ? null : csv,
+        cols: next,
         category: null,
         adapter: null,
       })

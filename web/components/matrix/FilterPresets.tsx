@@ -19,8 +19,10 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const category = params.get('category') ?? ''
   const adapter = params.get('adapter') ?? ''
 
-  // Setting one preset clears the other and any manual ?cols=, so the dropdown label
-  // and the rendered column set never disagree.
+  // Setting one preset clears the sibling preset and any manual ?cols=.
+  // ?chains= and ?q= are independent and untouched.
+  // ?category= also narrows rows; ?adapter= narrows columns only because adapter
+  // type is a column property, not a row property.
   const onCategoryChange = (next: string) => {
     replaceParams({ category: next || null, adapter: null, cols: null })
   }
