@@ -9,16 +9,18 @@ import { Empty } from '../components/ui/Empty'
 export default function Page() {
   const { columns, rows, stats } = loadSnapshot()
   return (
-    <main className="mx-auto flex max-w-screen-2xl flex-col gap-4 p-6">
-      <div className="flex items-baseline justify-between gap-4">
+    <main className="mx-auto grid max-w-screen-2xl grid-cols-[minmax(0,1fr)_280px] gap-6 p-6">
+      <section className="flex min-w-0 flex-col gap-4">
         <Link href="/" className="text-xl font-semibold hover:underline">
           [llama-watch]
         </Link>
+        <Suspense fallback={<Empty title="loading matrix…" />}>
+          <MatrixTable columns={columns} rows={rows} />
+        </Suspense>
+      </section>
+      <aside className="sticky top-6 flex h-fit flex-col gap-4">
         <HeroStrip stats={stats} />
-      </div>
-      <Suspense fallback={<Empty title="loading matrix…" />}>
-        <MatrixTable columns={columns} rows={rows} />
-      </Suspense>
+      </aside>
     </main>
   )
 }

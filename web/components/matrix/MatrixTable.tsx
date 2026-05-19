@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -55,7 +55,6 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
-  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
   const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
 
@@ -257,7 +256,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       </div>
       <PresetPills />
       <Legend />
-      <div ref={setScrollElement} className="h-160 overflow-auto border border-border">
+      <div className="overflow-x-auto border border-border">
         <table className="table-fixed border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
           <colgroup>
@@ -291,7 +290,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
           </thead>
           <VirtualBody
             rows={tableRows}
-            scrollElement={scrollElement}
             columnCount={columnCount}
             onClearFilters={handleClearFilters}
           />
