@@ -12,7 +12,7 @@ interface VirtualBodyProps {
   onClearFilters?: () => void
 }
 
-const ROW_HEIGHT = 48
+const ROW_HEIGHT = 56
 
 // Identity columns render text; dimension columns render the full-fill colored span
 // and need a 1px vertical divider so adjacent colors do not bleed together.

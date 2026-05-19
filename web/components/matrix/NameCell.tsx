@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 import type { Row } from '../../lib/snapshot'
 
 interface NameCellProps {
@@ -10,12 +8,14 @@ interface NameCellProps {
 export function NameCell({ row, coverage }: NameCellProps) {
   return (
     <div className="flex min-w-0 flex-col leading-tight" title={row.slug}>
-      <Link
-        href={`/protocol/${row.slug}`}
-        className="truncate font-medium text-fg hover:underline"
+      <a
+        href={`https://defillama.com/protocol/${row.slug}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="line-clamp-2 font-medium text-fg hover:underline"
       >
         {row.name}
-      </Link>
+      </a>
       {coverage ? (
         <span className="font-mono text-[11px] text-fg-muted">
           {coverage.value}/{coverage.total}

@@ -10,8 +10,8 @@ export function HeroStrip({ stats }: HeroStripProps) {
   const updatedLabel = `${iso.slice(0, 10)} ${iso.slice(11, 16)}`
   return (
     <dl className="flex flex-col gap-3 text-xs text-fg-muted">
-      <Stat label="Tracked" value={trackedLabel} />
       <Stat label="Coverage" value={`${stats.coveragePct.toFixed(1)}%`} />
+      <Stat label="Tracked" value={trackedLabel} />
       <Stat label="Updated" value={updatedLabel} />
     </dl>
   )

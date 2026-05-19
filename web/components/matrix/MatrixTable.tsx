@@ -44,7 +44,7 @@ const COL_WIDTH: Record<string, number> = {
   chains: 200,
   coverage: 110,
 }
-const METRIC_WIDTH = 120
+const METRIC_WIDTH = 90
 
 function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
@@ -246,9 +246,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end gap-2">
-        <SearchBox count={visibleRows.length} total={rows.length} />
-      </div>
+      <SearchBox count={visibleRows.length} total={rows.length} />
       <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-3">
         <Legend />
         <div className="ml-auto flex items-center gap-2">
@@ -261,7 +259,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         </div>
       </div>
       <PresetPills />
-      <div className="border border-border">
+      <div className="overflow-x-auto overflow-y-visible border border-border">
         <table
           style={{ width: tableWidth }}
           className="table-fixed border-collapse text-sm"
@@ -287,7 +285,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
                       onDoubleClick={canHide ? () => handleHideColumn(h.column.id) : undefined}
                       title={canHide ? 'double-click to hide' : undefined}
-                      className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-fg-muted"
+                      className="overflow-hidden px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wide break-words text-fg-muted"
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                     </th>
