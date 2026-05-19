@@ -15,7 +15,7 @@ type State =
   | { kind: 'not_found' }
   | { kind: 'error'; message: string }
 
-export function DetailView({ slug }: { slug: string }) {
+export function DetailView({ slug, dimTypes }: { slug: string; dimTypes: readonly string[] }) {
   const [state, setState] = useState<State>({ kind: 'loading' })
   // Bumped to retry; abort fires on unmount or before each retry.
   const [attempt, setAttempt] = useState(0)
@@ -68,7 +68,7 @@ export function DetailView({ slug }: { slug: string }) {
           ) : (
             <ul className="flex flex-col">
               {state.detail.dimensions.map((d) => (
-                <DimensionRow key={d.kind} dimension={d} />
+                <DimensionRow key={d.kind} dimension={d} dimTypes={dimTypes} />
               ))}
             </ul>
           )}
