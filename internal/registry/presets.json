@@ -1,0 +1,39 @@
+{
+  "categories": {
+    "Lending": ["tvl", "dailyFees", "dailyRevenue", "dailyHoldersRevenue", "dailyUserFees", "dailySupplySideRevenue", "dailyProtocolRevenue"],
+    "DEX Aggregator": ["dailyVolume", "dailyFees"],
+    "Derivatives": ["tvl", "dailyVolume", "openInterestAtEnd", "longOpenInterestAtEnd", "shortOpenInterestAtEnd", "dailyFees", "dailyRevenue", "dailyHoldersRevenue"],
+    "Options": ["tvl", "dailyNotionalVolume", "dailyPremiumVolume", "dailyFees"],
+    "Bridge": ["tvl", "dailyBridgeVolume", "dailyFees"],
+    "Canonical Bridge": ["tvl", "dailyBridgeVolume"],
+    "Cross Chain Bridge": ["tvl", "dailyBridgeVolume", "dailyFees"],
+    "Bridge Aggregator": ["dailyBridgeVolume", "dailyVolume", "dailyFees"],
+    "Insurance": ["tvl", "dailyFees", "dailyRevenue", "dailyHoldersRevenue"],
+    "Liquid Staking": ["tvl", "dailyFees", "dailyRevenue", "dailyHoldersRevenue", "dailySupplySideRevenue"],
+    "CDP": ["tvl", "dailyFees", "dailyRevenue", "dailyHoldersRevenue", "dailyUserFees"],
+    "CDP Manager": ["tvl", "dailyFees", "dailyRevenue"],
+    "Synthetics": ["tvl", "dailyVolume", "dailyFees", "dailyRevenue"],
+    "Yield": ["tvl", "dailyFees", "dailyRevenue"],
+    "Yield Aggregator": ["tvl", "dailyFees", "dailyRevenue"],
+    "Farm": ["tvl", "dailyFees", "dailyRevenue"],
+    "Leveraged Farming": ["tvl", "dailyFees", "dailyRevenue"],
+    "Algo-Stables": ["tvl", "dailyFees"],
+    "Chain": ["tvl", "dailyFees", "dailyRevenue", "dailyTransactionsCount", "dailyGasUsed", "dailyActiveUsers", "dailyNewUsers"],
+    "Indexes": ["tvl", "dailyFees", "dailyRevenue"]
+  },
+  "dimTypes": {
+    "dexs": ["dailyVolume", "dailyNotionalVolume"],
+    "derivatives": ["dailyVolume"],
+    "aggregators": ["dailyVolume"],
+    "aggregator-derivatives": ["dailyVolume"],
+    "fees": ["dailyFees", "dailyRevenue", "dailyUserFees", "dailySupplySideRevenue", "dailyProtocolRevenue", "dailyHoldersRevenue", "dailyCreatorRevenue", "dailyBribesRevenue", "dailyTokenTaxes"],
+    "options": ["dailyPremiumVolume", "dailyNotionalVolume"],
+    "open-interest": ["openInterestAtEnd", "shortOpenInterestAtEnd", "longOpenInterestAtEnd"],
+    "bridge-aggregators": ["dailyBridgeVolume"],
+    "active-users": ["dailyActiveUsers", "dailyTransactionsCount", "dailyGasUsed"],
+    "new-users": ["dailyNewUsers"],
+    "nft-volume": ["dailyVolume"],
+    "normalized-volume": ["dailyNormalizedVolume", "dailyActiveLiquidity"],
+    "incentives": ["tokenIncentives"]
+  }
+}

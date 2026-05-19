@@ -1,7 +1,14 @@
 // Category-to-expected-metrics seed and the four-state cell classifier.
 package registry
 
-import "maps"
+import (
+	_ "embed"
+	"encoding/json"
+	"maps"
+)
+
+//go:embed presets.json
+var presetsJSON []byte
 
 // CellState is one of na, missing, present, over.
 type CellState string
@@ -14,124 +21,23 @@ const (
 )
 
 // Conservative seed; unseeded categories fall through in ClassifyCell.
-var expectations = map[string]map[string]bool{
-	"Lending": {
-		"tvl":                    true,
-		"dailyFees":              true,
-		"dailyRevenue":           true,
-		"dailyHoldersRevenue":    true,
-		"dailyUserFees":          true,
-		"dailySupplySideRevenue": true,
-		"dailyProtocolRevenue":   true,
-	},
-	"DEX Aggregator": {
-		"dailyVolume": true,
-		"dailyFees":   true,
-	},
-	"Derivatives": {
-		"tvl":                    true,
-		"dailyVolume":            true,
-		"openInterestAtEnd":      true,
-		"longOpenInterestAtEnd":  true,
-		"shortOpenInterestAtEnd": true,
-		"dailyFees":              true,
-		"dailyRevenue":           true,
-		"dailyHoldersRevenue":    true,
-	},
-	"Options": {
-		"tvl":                 true,
-		"dailyNotionalVolume": true,
-		"dailyPremiumVolume":  true,
-		"dailyFees":           true,
-	},
-	"Bridge": {
-		"tvl":               true,
-		"dailyBridgeVolume": true,
-		"dailyFees":         true,
-	},
-	"Canonical Bridge": {
-		"tvl":               true,
-		"dailyBridgeVolume": true,
-	},
-	"Cross Chain Bridge": {
-		"tvl":               true,
-		"dailyBridgeVolume": true,
-		"dailyFees":         true,
-	},
-	"Bridge Aggregator": {
-		"dailyBridgeVolume": true,
-		"dailyVolume":       true,
-		"dailyFees":         true,
-	},
-	"Insurance": {
-		"tvl":                 true,
-		"dailyFees":           true,
-		"dailyRevenue":        true,
-		"dailyHoldersRevenue": true,
-	},
-	"Liquid Staking": {
-		"tvl":                    true,
-		"dailyFees":              true,
-		"dailyRevenue":           true,
-		"dailyHoldersRevenue":    true,
-		"dailySupplySideRevenue": true,
-	},
-	"CDP": {
-		"tvl":                 true,
-		"dailyFees":           true,
-		"dailyRevenue":        true,
-		"dailyHoldersRevenue": true,
-		"dailyUserFees":       true,
-	},
-	"CDP Manager": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Synthetics": {
-		"tvl":          true,
-		"dailyVolume":  true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Yield": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Yield Aggregator": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Farm": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Leveraged Farming": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
-	"Algo-Stables": {
-		"tvl":       true,
-		"dailyFees": true,
-	},
-	"Chain": {
-		"tvl":                    true,
-		"dailyFees":              true,
-		"dailyRevenue":           true,
-		"dailyTransactionsCount": true,
-		"dailyGasUsed":           true,
-		"dailyActiveUsers":       true,
-		"dailyNewUsers":          true,
-	},
-	"Indexes": {
-		"tvl":          true,
-		"dailyFees":    true,
-		"dailyRevenue": true,
-	},
+var expectations map[string]map[string]bool
+
+func init() {
+	var raw struct {
+		Categories map[string][]string `json:"categories"`
+	}
+	if err := json.Unmarshal(presetsJSON, &raw); err != nil {
+		panic("registry: presets.json malformed: " + err.Error())
+	}
+	expectations = make(map[string]map[string]bool, len(raw.Categories))
+	for cat, metrics := range raw.Categories {
+		m := make(map[string]bool, len(metrics))
+		for _, k := range metrics {
+			m[k] = true
+		}
+		expectations[cat] = m
+	}
 }
 
 // ExpectedMetrics returns the metrics this category should emit, or nil if unseeded.
