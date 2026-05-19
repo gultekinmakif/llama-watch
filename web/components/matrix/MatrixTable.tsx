@@ -166,10 +166,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     if (categoryPreset !== '') {
       result = result.filter((r) => r.category === categoryPreset)
     }
-    // Keep rows that have at least one cell of the chosen color, scanning every
-    // dimension on the row so the filter stays stable when the user toggles columns.
+    // Spotlight: keep every row visible, but mask any cell that does not match
+    // the chosen color to 'na' so the picked color stands out across the matrix.
     if (cellStatePreset !== '') {
-      result = result.filter((r) => Object.values(r.cells).includes(cellStatePreset))
+      const keep = cellStatePreset
+      result = result.map((r) => {
+        const cells = { ...r.cells }
+        for (const k of Object.keys(cells) as (keyof typeof cells)[]) {
+          if (cells[k] !== keep) cells[k] = 'na'
+        }
+        return { ...r, cells }
+      })
     }
     return result
   }, [filteredRows, selectedChains, categoryPreset, cellStatePreset])

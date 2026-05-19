@@ -47,7 +47,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
   const onAdapterChange = (next: string) => {
     replaceParams({ adapter: next || null, category: null, cols: null })
   }
-  // cellState is an orthogonal row filter; it does not touch category/adapter/cols.
+  // cellState is an orthogonal cell-spotlight; it does not touch category/adapter/cols.
   const onCellStateChange = (next: string) => {
     replaceParams({ cellState: next || null })
   }
@@ -79,7 +79,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         value={cellState}
         options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}
-        ariaLabel="filter rows by cell color"
+        ariaLabel="spotlight cells by color"
       />
     </div>
   )
