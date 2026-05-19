@@ -5,14 +5,10 @@ type CellState string
 
 const (
 	CellNA      CellState = "na"
-	CellMissing CellState = "missing"
 	CellPresent CellState = "present"
-	CellOver    CellState = "over"
 )
 
-func ClassifyCell(category, metric string, present bool) CellState {
-	_ = category
-	_ = metric
+func ClassifyCell(present bool) CellState {
 	if present {
 		return CellPresent
 	}
