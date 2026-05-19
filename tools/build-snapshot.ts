@@ -12,33 +12,9 @@ declare const process: {
   stderr: { write(s: string): void };
 };
 
-// Canonical metric set per dimType, mirrored from defillama-server getDimensionsConfig KEYS_TO_STORE (running total* aggregates dropped).
-// Coverage is dimType-level: every metric here lights up when the protocol has any adapter under that dimType.
-const KEYS_TO_STORE: Record<string, readonly string[]> = {
-  dexs: ["dailyVolume", "dailyNotionalVolume"],
-  derivatives: ["dailyVolume"],
-  aggregators: ["dailyVolume"],
-  "aggregator-derivatives": ["dailyVolume"],
-  fees: [
-    "dailyFees",
-    "dailyRevenue",
-    "dailyUserFees",
-    "dailySupplySideRevenue",
-    "dailyProtocolRevenue",
-    "dailyHoldersRevenue",
-    "dailyCreatorRevenue",
-    "dailyBribesRevenue",
-    "dailyTokenTaxes",
-  ],
-  options: ["dailyPremiumVolume", "dailyNotionalVolume"],
-  "open-interest": ["openInterestAtEnd", "shortOpenInterestAtEnd", "longOpenInterestAtEnd"],
-  "bridge-aggregators": ["dailyBridgeVolume"],
-  "active-users": ["dailyActiveUsers", "dailyTransactionsCount", "dailyGasUsed"],
-  "new-users": ["dailyNewUsers"],
-  "nft-volume": ["dailyVolume"],
-  "normalized-volume": ["dailyNormalizedVolume", "dailyActiveLiquidity"],
-  incentives: ["tokenIncentives"],
-};
+// KEYS_TO_STORE flows in from internal/registry/presets.json so Go, build-snapshot, and the web client share one source.
+import presets from "../internal/registry/presets.json" with { type: "json" };
+const KEYS_TO_STORE: Record<string, readonly string[]> = presets.dimTypes;
 
 interface CatalogProtocol {
   name: string;
