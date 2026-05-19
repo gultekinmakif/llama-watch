@@ -43,7 +43,7 @@ export function SearchBox({ count, total }: SearchBoxProps) {
         onChange={onChange}
         placeholder="search protocols"
         aria-label="search protocols"
-        className="rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
+        className="w-64 rounded border border-border bg-surface px-3 py-1 text-sm text-fg placeholder:text-fg-muted focus-visible:outline focus-visible:outline-fg-muted"
       />
       <span
         role="status"

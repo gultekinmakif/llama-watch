@@ -9,10 +9,10 @@ const SWATCHES = [
 
 export function Legend() {
   return (
-    <div className="flex items-center gap-3 text-xs text-fg-muted">
+    <div className="flex items-center gap-3 text-[11px] text-fg-muted">
       {SWATCHES.map((s) => (
         <span key={s.label} className="flex items-center gap-1.5">
-          <span aria-hidden="true" className={`inline-block h-3 w-3 rounded ${s.className}`} />
+          <span aria-hidden="true" className={`inline-block h-3.5 w-3.5 rounded-sm border border-border/30 ${s.className}`} />
           {s.label}
         </span>
       ))}

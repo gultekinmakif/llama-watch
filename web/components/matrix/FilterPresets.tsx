@@ -70,7 +70,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange }: Filte
         type="button"
         onClick={toggleInfo}
         aria-pressed={infoVisible}
-        className="inline-flex items-center rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
+        className={`inline-flex items-center rounded border ${infoVisible ? 'border-accent' : 'border-border'} bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted`}
       >
         {infoVisible ? 'hide info' : 'show info'}
       </button>
@@ -118,6 +118,7 @@ interface PresetDropdownProps {
 }
 
 function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDropdownProps) {
+  const active = value !== ''
   return (
     <SelectProvider
       value={value}
@@ -125,9 +126,10 @@ function PresetDropdown({ label, value, options, onChange, ariaLabel }: PresetDr
     >
       <Select
         aria-label={ariaLabel}
-        className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
+        className={`inline-flex items-center gap-1 rounded border ${active ? 'border-accent' : 'border-border'} bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted`}
       >
         {label}
+        <span aria-hidden="true" className="text-fg-muted">▾</span>
       </Select>
       <SelectPopover
         gutter={4}

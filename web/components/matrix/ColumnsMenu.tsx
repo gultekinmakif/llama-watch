@@ -39,6 +39,7 @@ export function ColumnsMenu({ toggleable, visibleIds, onChange }: ColumnsMenuPro
     >
       <MenuButton className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted">
         {visibleIds.length} Columns
+        <span aria-hidden="true" className="text-fg-muted">▾</span>
       </MenuButton>
       <Menu
         gutter={4}
