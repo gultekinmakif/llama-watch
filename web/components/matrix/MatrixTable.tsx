@@ -194,7 +194,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   })
 
   const tableRows = table.getRowModel().rows
-  const columnCount = table.getVisibleLeafColumns().length
+  const visibleLeafs = table.getVisibleLeafColumns()
+  const columnCount = visibleLeafs.length
+  const tableWidth = visibleLeafs.reduce(
+    (sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH),
+    0,
+  )
 
   const visibleIds = useMemo(
     () => allIds.filter((id) => columnVisibility[id] !== false),
@@ -257,10 +262,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       <PresetPills />
       <Legend />
       <div className="border border-border">
-        <table className="table-fixed border-collapse text-sm">
+        <table
+          style={{ width: tableWidth }}
+          className="table-fixed border-collapse text-sm"
+        >
           <caption className="sr-only">protocol coverage matrix</caption>
           <colgroup>
-            {table.getVisibleLeafColumns().map((col) => (
+            {visibleLeafs.map((col) => (
               <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
             ))}
           </colgroup>
