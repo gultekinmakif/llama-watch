@@ -11,7 +11,11 @@ interface VirtualBodyProps {
   columnCount: number
 }
 
-const ROW_HEIGHT = 44
+const ROW_HEIGHT = 48
+
+// Identity columns render text; dimension columns render the full-fill colored span
+// and need a 1px vertical divider so adjacent colors do not bleed together.
+const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
 
 export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyProps) {
   const virtualizer = useVirtualizer({
@@ -39,12 +43,22 @@ export function VirtualBody({ rows, scrollElement, columnCount }: VirtualBodyPro
         const row = rows[item.index]
         if (!row) return null
         return (
-          <tr key={row.id} style={{ height: ROW_HEIGHT }}>
-            {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="relative border px-2 py-1">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>
-            ))}
+          <tr
+            key={row.id}
+            style={{ height: ROW_HEIGHT }}
+            className="border-b border-border hover:bg-surface/40"
+          >
+            {row.getVisibleCells().map((cell) => {
+              const isIdentity = IDENTITY_IDS.has(cell.column.id)
+              const className = isIdentity
+                ? 'px-3 py-2'
+                : 'relative border-r border-border last:border-r-0'
+              return (
+                <td key={cell.id} className={className}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              )
+            })}
           </tr>
         )
       })}

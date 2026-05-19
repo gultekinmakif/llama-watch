@@ -66,7 +66,7 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
       className="inline-flex items-center gap-1 rounded text-left focus-visible:outline focus-visible:outline-fg-muted"
     >
       <span>{label}</span>
-      <span aria-hidden="true" className="w-3 text-xs">{indicator}</span>
+      <span aria-hidden="true" className="w-3">{indicator}</span>
     </button>
   )
 }
