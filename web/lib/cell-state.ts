@@ -6,7 +6,7 @@ import presets from '../../internal/registry/presets.json' with { type: 'json' }
 export type CellState = 'na' | 'missing' | 'present' | 'over'
 
 // Same JSON source as Go and tools/build-snapshot.ts.
-export const EXPECTATIONS: Record<string, Record<string, true>> = (() => {
+const EXPECTATIONS: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}
   for (const [category, metrics] of Object.entries(presets.categories)) {
     const set: Record<string, true> = {}
