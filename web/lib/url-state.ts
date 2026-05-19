@@ -21,18 +21,19 @@ export function encodeCsv(values: string[]): string | null {
 export function useReplaceParams(): (patch: Record<string, string | null>) => void {
   const router = useRouter()
   const pathname = usePathname()
-  const params = useSearchParams()
   return useCallback(
     (patch) => {
-      const next = new URLSearchParams(params.toString())
+      const current = new URLSearchParams(
+        typeof window === 'undefined' ? '' : window.location.search,
+      )
       for (const [key, value] of Object.entries(patch)) {
-        if (value == null || value === '') next.delete(key)
-        else next.set(key, value)
+        if (value == null || value === '') current.delete(key)
+        else current.set(key, value)
       }
-      const qs = next.toString()
+      const qs = current.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [router, pathname, params],
+    [router, pathname],
   )
 }
 
