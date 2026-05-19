@@ -9,7 +9,7 @@ const TILE: Record<CellState, string> = {
   na: 'bg-cell-na',
   missing: 'bg-cell-missing',
   present: 'bg-cell-present',
-  unexpected: 'bg-cell-over',
+  unexpected: 'bg-cell-unexpected',
 }
 
 const LABEL: Record<CellState, string> = {

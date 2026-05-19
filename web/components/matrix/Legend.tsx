@@ -3,7 +3,7 @@
 const SWATCHES = [
   { className: 'bg-cell-present', label: 'present' },
   { className: 'bg-cell-missing', label: 'missing' },
-  { className: 'bg-cell-over', label: 'unexpected' },
+  { className: 'bg-cell-unexpected', label: 'unexpected' },
   { className: 'bg-cell-na', label: 'n/a' },
 ] as const
 
