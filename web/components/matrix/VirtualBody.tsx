@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import { flexRender, type Row as TableRow } from '@tanstack/react-table'
-import { useWindowVirtualizer } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 import type { Row } from '../../lib/snapshot'
 
 interface VirtualBodyProps {
   rows: TableRow<Row>[]
   columnCount: number
+  scrollRef: RefObject<HTMLDivElement | null>
   onClearFilters?: () => void
 }
 
@@ -16,30 +17,24 @@ const ROW_HEIGHT = 56
 
 const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
 
-export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyProps) {
-  const tbodyRef = useRef<HTMLTableSectionElement>(null)
-  const [scrollMargin, setScrollMargin] = useState(0)
-  useEffect(() => {
-    if (tbodyRef.current) setScrollMargin(tbodyRef.current.offsetTop)
-  }, [])
-
-  const virtualizer = useWindowVirtualizer({
+export function VirtualBody({ rows, columnCount, scrollRef, onClearFilters }: VirtualBodyProps) {
+  const virtualizer = useVirtualizer({
     count: rows.length,
+    getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
-    scrollMargin,
   })
 
   const virtualItems = virtualizer.getVirtualItems()
   const totalSize = virtualizer.getTotalSize()
   const first = virtualItems[0]
   const last = virtualItems[virtualItems.length - 1]
-  const paddingTop = first ? Math.max(0, first.start - scrollMargin) : 0
-  const paddingBottom = last ? Math.max(0, totalSize - (last.end - scrollMargin)) : 0
+  const paddingTop = first ? first.start : 0
+  const paddingBottom = last ? totalSize - last.end : 0
 
   if (rows.length === 0) {
     return (
-      <tbody ref={tbodyRef}>
+      <tbody>
         <tr>
           <td colSpan={columnCount} className="px-3 py-16 text-center">
             <div
@@ -68,7 +63,7 @@ export function VirtualBody({ rows, columnCount, onClearFilters }: VirtualBodyPr
   }
 
   return (
-    <tbody ref={tbodyRef}>
+    <tbody>
       {paddingTop > 0 && (
         <tr aria-hidden="true">
           <td colSpan={columnCount} style={{ height: paddingTop, padding: 0, border: 0 }} />

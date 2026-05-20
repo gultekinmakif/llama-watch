@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useMemo } from 'react'
+import { useCallback, useDeferredValue, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table'
 import { matchSorter } from 'match-sorter'
 
-import type { Column as SnapshotColumn, Row } from '../../lib/snapshot'
+import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
 import type { CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
@@ -54,6 +54,7 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const sorting = useMemo<SortingState>(
     () => readInitialSorting(searchParams.get('sort'), searchParams.get('order')),
@@ -160,6 +161,16 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     })
   }, [rows, deferredQ])
 
+  // Cell-state row filter scans these keys, so a 'present' filter under a
+  // narrowed column set only keeps rows that match the narrowed columns.
+  const visibleCellKeys = useMemo<Set<ColumnKey>>(() => {
+    const set = new Set<ColumnKey>()
+    for (const col of columns) {
+      if (columnVisibility[col.key] !== false) set.add(col.key)
+    }
+    return set
+  }, [columns, columnVisibility])
+
   const selectedChains = useCsvParam('chains')
 
   // Filter options derive from row data directly, independent of column visibility.
@@ -179,13 +190,19 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     if (categoryPreset !== '') {
       result = result.filter((r) => r.category === categoryPreset)
     }
-    // Keep rows that have at least one cell of the chosen color, scanning every
-    // dimension on the row so the filter stays stable when the user toggles columns.
+    // Keep rows that have at least one cell of the chosen color in the
+    // currently-visible columns, so the filter chains with adapter/category
+    // narrows the same way as chains and category filters do.
     if (cellStatePreset !== '') {
-      result = result.filter((r) => Object.values(r.cells).includes(cellStatePreset))
+      result = result.filter((r) => {
+        for (const key of visibleCellKeys) {
+          if (r.cells[key] === cellStatePreset) return true
+        }
+        return false
+      })
     }
     return result
-  }, [filteredRows, selectedChains, categoryPreset, cellStatePreset])
+  }, [filteredRows, selectedChains, categoryPreset, cellStatePreset, visibleCellKeys])
 
   const table = useReactTable({
     data: visibleRows,
@@ -244,8 +261,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   }, [replaceParams])
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col items-stretch gap-2 md:sticky md:top-0 md:z-20 md:flex-row md:items-center md:bg-bg md:pt-5 md:pb-4">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex shrink-0 flex-col items-stretch gap-2 md:flex-row md:items-center md:pt-5 md:pb-4">
         <div className="min-w-0 flex-1">
           <SearchBox count={visibleRows.length} total={rows.length} />
         </div>
@@ -256,7 +273,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
           chainOptions={chainOptions}
         />
       </div>
-      <div className="thin-scrollbar overflow-x-auto overflow-y-visible rounded-md border border-border-strong shadow-card">
+      <div
+        ref={scrollRef}
+        className="thin-scrollbar flex-1 min-h-0 overflow-auto rounded-md border border-border-strong shadow-card"
+      >
         <table
           style={{ width: tableWidth }}
           className="table-fixed border-collapse text-sm"
@@ -267,7 +287,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
               <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
             ))}
           </colgroup>
-          <thead className="sticky z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)]">
+          <thead className="sticky top-0 z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
@@ -300,6 +320,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
           <VirtualBody
             rows={tableRows}
             columnCount={columnCount}
+            scrollRef={scrollRef}
             onClearFilters={handleClearFilters}
           />
         </table>
