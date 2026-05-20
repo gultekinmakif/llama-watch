@@ -14,32 +14,45 @@ interface Preset {
 
 const PRESETS: Preset[] = [
   {
-    id: 'dex-volume',
-    label: 'DEX volume',
-    hint: 'narrow to DEX adapters',
-    patch: { adapter: 'dexs', cellState: null },
-    matches: (p) => p.get('adapter') === 'dexs',
+    id: 'missing-fees-ethereum',
+    label: 'Missing fees on Ethereum',
+    hint: 'ethereum protocols with no fee data',
+    patch: { chains: 'ethereum', adapter: 'fees', cellState: 'missing', category: null },
+    matches: (p) =>
+      p.get('chains') === 'ethereum' &&
+      p.get('adapter') === 'fees' &&
+      p.get('cellState') === 'missing',
   },
   {
-    id: 'fees-and-revenue',
-    label: 'Fees & revenue',
-    hint: 'narrow to fees adapters',
-    patch: { adapter: 'fees', cellState: null },
-    matches: (p) => p.get('adapter') === 'fees',
+    id: 'dexs-missing-volume',
+    label: 'DEXs missing volume',
+    hint: 'dex adapters that do not emit volume',
+    patch: { adapter: 'dexs', cellState: 'missing', chains: null, category: null },
+    matches: (p) => p.get('adapter') === 'dexs' && p.get('cellState') === 'missing',
   },
   {
-    id: 'open-interest',
-    label: 'Open interest',
-    hint: 'narrow to perps adapters',
-    patch: { adapter: 'open-interest', cellState: null },
-    matches: (p) => p.get('adapter') === 'open-interest',
+    id: 'perps-missing-oi',
+    label: 'Perps missing OI',
+    hint: 'perps without open-interest data',
+    patch: { adapter: 'open-interest', cellState: 'missing', chains: null, category: null },
+    matches: (p) => p.get('adapter') === 'open-interest' && p.get('cellState') === 'missing',
   },
   {
-    id: 'missing-only',
-    label: 'Missing only',
-    hint: 'show rows with a missing cell',
-    patch: { cellState: 'missing' },
-    matches: (p) => p.get('cellState') === 'missing',
+    id: 'bridges-missing-fees',
+    label: 'Bridges missing fees',
+    hint: 'bridges with no fee data',
+    patch: { category: 'Bridge', adapter: 'fees', cellState: 'missing', chains: null },
+    matches: (p) =>
+      p.get('category') === 'Bridge' &&
+      p.get('adapter') === 'fees' &&
+      p.get('cellState') === 'missing',
+  },
+  {
+    id: 'active-users-coverage',
+    label: 'Active users coverage',
+    hint: 'protocols emitting active-user metrics',
+    patch: { adapter: 'active-users', cellState: null, chains: null, category: null },
+    matches: (p) => p.get('adapter') === 'active-users' && !p.get('cellState'),
   },
 ]
 
