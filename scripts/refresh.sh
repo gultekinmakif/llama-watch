@@ -93,8 +93,7 @@ if [ -z "${SKIP_WEB_BUILD:-}" ] && [ -f web/package.json ]; then
     --exclude=node_modules --exclude=.next --exclude=out \
     web/ "$WEB_STAGE/"
   ln -snf "$PWD/web/node_modules" "$WEB_STAGE/node_modules"
-  APP_VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0)"
-  ( cd "$WEB_STAGE" && NEXT_PUBLIC_APP_VERSION="$APP_VERSION" bun run build )
+  ( cd "$WEB_STAGE" && bun run build )
   [ -d web/out ] && mv web/out web/out.old
   mv "$WEB_STAGE/out" web/out
   rm -rf "$WEB_STAGE"
