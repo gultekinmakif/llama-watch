@@ -1,6 +1,6 @@
 import { Icon } from "../ui/Icon";
+import { APP_VERSION as VERSION } from "../../lib/version";
 
-const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "v1.0.0";
 const REPO_URL = "https://github.com/gultekinmakif/llama-watch";
 const RELEASE_URL = `${REPO_URL}/releases/tag/${VERSION}`;
 const ADAPTERS_URL = "https://github.com/DefiLlama/DefiLlama-Adapters";

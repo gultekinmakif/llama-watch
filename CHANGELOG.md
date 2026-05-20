@@ -30,7 +30,7 @@ Drawback that drove v2: the keyword walker over-matched and under-matched. A com
 # v2
 > cutoff commit: 6511fbb91d7ddb54757826ae69663c19661c90e9
 
-## Backend
+### Backend
 - **Sunset the keyword walker.** `internal/dimensions/` is deprecated. Coverage derives from upstream's `tvlModules.json` + `dimensionModules.json` release manifests.
 - **`tools/` bun TS pipeline.** `extract-protocols.ts` normalizes the catalog; `build-snapshot.ts` joins it against both manifests via the dimType bundle map.
 - **`internal/registry/` became the single source of truth.**
@@ -38,7 +38,7 @@ Drawback that drove v2: the keyword walker over-matched and under-matched. A com
 - **`cmd/sync-db` Go bulk loader.** One transaction: truncate, bulk-insert in batches.
 - **`GET /api/metrics-coverage`.** Per-metric aggregate over `matrix`.
 
-## Data Pipeline
+### Data Pipeline
 The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 
 1. **Parallel upstream fetches.** Sparse-clone `defillama-server`; `curl` `tvlModules.json` and `dimensionModules.json` from the latest releases.
@@ -47,7 +47,7 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 4. **Persist.** `bin/sync-db` truncates `matrix` + `protocol_identities` and bulk-inserts in one transaction.
 5. **Stage the frontend.** `bun run build` into a sibling stage, atomic-swap `web/out/`.
 
-## Web UI
+### Web UI
 - **Four-state cells.** Black / green / red / yellow. Legend doubles as a row filter via `?cellState=…`.
 - **Sidebar shell.** Brand, hero strip, legend, preset pills, active-filters chips, footer. Mobile drawer with backdrop.
 - **Preset pills.** One-click `category` + `adapter` filters that narrow rows and columns together.
@@ -57,6 +57,12 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 - **Scroll-to-top.** Floating accent button after the first viewport.
 - **Token palette.** All colors moved to oklch tokens in `@theme` (with claude).
 - **Version footer chip.** Build-time git SHA, links to the GitHub commit.
+
+## v2.0.2
+- **Matrix in its own scroll region.** Sticky thead and name column anchor to the wrapper, not the page. Sidebar and toolbar stay put on scroll.
+- **`cellState` filter respects visible columns.** `present` + `active-users` now matches only on that column, like `chain` and `category` already do.
+- **Quick-filter presets rebuilt.** Five gap-audit shortcuts: `Missing fees on Ethereum`, `DEXs missing volume`, `Perps missing OI`, `Bridges missing fees`, `Active users coverage`.
+- **Release pipeline.** A PR from `release/vX.Y.Z` to main auto-tags the release, publishes the GitHub release page, and rebuilds Vercel. Version lives in `web/version.json`.
 
 # v3
 > cutoff commit: None yet.
