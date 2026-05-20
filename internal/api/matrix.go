@@ -52,11 +52,11 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 }
 
 type Row struct {
-	Slug     string         `json:"slug"`
-	Name     string         `json:"name"`
-	Category *string        `json:"category,omitempty"`
-	Chains   []string       `json:"chains"`
-	Cells    map[string]int `json:"cells"`
+	Slug     string                        `json:"slug"`
+	Name     string                        `json:"name"`
+	Category *string                       `json:"category,omitempty"`
+	Chains   []string                      `json:"chains"`
+	Cells    map[string]registry.CellState `json:"cells"`
 }
 
 type MatrixResponse struct {

@@ -134,8 +134,8 @@ func TestListProtocols(t *testing.T) {
 				t.Errorf("rows[0].Cells: want %d keys (all pinned columns), got %d", len(cols), len(rows[0].Cells))
 			}
 			for k, v := range rows[0].Cells {
-				if v != 0 {
-					t.Errorf("rows[0].Cells[%q]: want 0 (no matrix rows seeded), got %d", k, v)
+				if v != registry.CellNA {
+					t.Errorf("rows[0].Cells[%q]: want %q (unseeded category, absent), got %q", k, registry.CellNA, v)
 				}
 			}
 		})
@@ -238,15 +238,15 @@ func TestListProtocols(t *testing.T) {
 			if len(rows[0].Cells) != len(cols) {
 				t.Fatalf("rows[0].Cells: want %d keys, got %d", len(cols), len(rows[0].Cells))
 			}
-			if rows[0].Cells["dailyFees"] != 1 {
-				t.Errorf("rows[0].Cells[%q]: want 1, got %d", "dailyFees", rows[0].Cells["dailyFees"])
+			if rows[0].Cells["dailyFees"] != registry.CellPresent {
+				t.Errorf("rows[0].Cells[%q]: want %q, got %q", "dailyFees", registry.CellPresent, rows[0].Cells["dailyFees"])
 			}
 			for _, c := range cols {
 				if c.Key == "dailyFees" {
 					continue
 				}
-				if rows[0].Cells[c.Key] != 0 {
-					t.Errorf("rows[0].Cells[%q]: want 0, got %d", c.Key, rows[0].Cells[c.Key])
+				if rows[0].Cells[c.Key] != registry.CellNA {
+					t.Errorf("rows[0].Cells[%q]: want %q, got %q", c.Key, registry.CellNA, rows[0].Cells[c.Key])
 				}
 			}
 		})
@@ -270,12 +270,12 @@ func TestListProtocols(t *testing.T) {
 			}
 			present := map[string]bool{"tvl": true, "dailyFees": true, "dailyVolume": true}
 			for _, c := range cols {
-				want := 0
+				want := registry.CellNA
 				if present[c.Key] {
-					want = 1
+					want = registry.CellPresent
 				}
 				if rows[0].Cells[c.Key] != want {
-					t.Errorf("rows[0].Cells[%q]: want %d, got %d", c.Key, want, rows[0].Cells[c.Key])
+					t.Errorf("rows[0].Cells[%q]: want %q, got %q", c.Key, want, rows[0].Cells[c.Key])
 				}
 			}
 		})

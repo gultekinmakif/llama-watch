@@ -1,0 +1,24 @@
+{
+  "dexs": ["dailyVolume", "dailyNotionalVolume"],
+  "aggregators": ["dailyVolume"],
+  "aggregator-derivatives": ["dailyVolume"],
+  "fees": [
+    "dailyFees",
+    "dailyRevenue",
+    "dailyUserFees",
+    "dailySupplySideRevenue",
+    "dailyProtocolRevenue",
+    "dailyHoldersRevenue",
+    "dailyCreatorRevenue",
+    "dailyBribesRevenue",
+    "dailyTokenTaxes"
+  ],
+  "options": ["dailyPremiumVolume", "dailyNotionalVolume"],
+  "open-interest": ["openInterestAtEnd", "shortOpenInterestAtEnd", "longOpenInterestAtEnd"],
+  "bridge-aggregators": ["dailyBridgeVolume"],
+  "active-users": ["dailyActiveUsers", "dailyTransactionsCount", "dailyGasUsed"],
+  "new-users": ["dailyNewUsers"],
+  "nft-volume": ["dailyVolume"],
+  "normalized-volume": ["dailyNormalizedVolume", "dailyActiveLiquidity"],
+  "incentives": ["tokenIncentives"]
+}

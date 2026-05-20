@@ -26,6 +26,7 @@ func New(cfg *config.Config) *Server {
 	mux.HandleFunc("GET /api/dimensions", api.Dimensions)
 	mux.HandleFunc("GET /api/matrix", api.Matrix)
 	mux.HandleFunc("GET /api/matrix/{slug}", api.MatrixDetail)
+	mux.HandleFunc("GET /api/metrics-coverage", api.MetricsCoverage)
 	// Static export from `web/out/`. Returns 404 from the FS when the path is
 	// missing; no SPA fallback to index.html so unknown routes 404 cleanly.
 	mux.Handle("/", http.FileServer(http.Dir("web/out")))

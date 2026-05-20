@@ -2,7 +2,7 @@
 // onto the closed column set the table renders. Keep COLUMNS in lockstep
 // with internal/registry/columns.go.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -45,8 +45,9 @@ export interface Column {
   label: string
 }
 
-// 1 = an adapter file exists for this (protocol, metric); 0 = absent.
-export type Cells = Record<ColumnKey, 0 | 1>
+import { classifyCell, type CellState } from './cell-state'
+
+export type Cells = Record<ColumnKey, CellState>
 
 export interface Row {
   slug: string
@@ -54,31 +55,44 @@ export interface Row {
   category?: string
   chains: string[]
   cells: Cells
+  // The dimType adapters the protocol is registered with, post-manifest-filter.
+  // Passed to the classifier; also surfaced so the static detail page can render four states.
+  dimTypes: string[]
   // Precomputed at build time so sort/render does not redo Object.values on every pass.
   coverage: number
+  // present + missing for this row: the size of the protocol's expected-metric set.
+  expected: number
+}
+
+export interface SnapshotStats {
+  tracked: number
+  coveragePct: number
+  updatedAt: string
 }
 
 export interface Snapshot {
   columns: Column[]
   rows: Row[]
   total: number
+  stats: SnapshotStats
 }
 
-interface RawCell {
+export interface RawCell {
   slug: string
   metric: string
   codePath: string
 }
 
-interface RawProtocol {
+export interface RawProtocol {
   slug: string
   name: string
   category?: string
   chains: string[]
   dataFile: string
+  dimTypes: string[]
 }
 
-interface RawSnapshot {
+export interface RawSnapshot {
   cells: RawCell[]
   protocols: RawProtocol[]
 }
@@ -95,7 +109,41 @@ export function loadSnapshot(): Snapshot {
       `snapshot at ${RESOLVED_SNAPSHOT_PATH} has zero protocols; static export needs at least one`,
     )
   }
-  return { columns: COLUMNS.map((c) => ({ ...c })), rows, total: rows.length }
+  // Densest columns first so the matrix opens with the highest-coverage metrics on the left.
+  const presentCounts = new Map<ColumnKey, number>()
+  for (const col of COLUMNS) presentCounts.set(col.key, 0)
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      if (r.cells[col.key] === 'present') {
+        presentCounts.set(col.key, (presentCounts.get(col.key) ?? 0) + 1)
+      }
+    }
+  }
+  const columns = COLUMNS.map((c) => ({ ...c })).sort(
+    (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
+  )
+
+  // Coverage = present cells / (present + missing) cells across the matrix.
+  // 'na' and 'unexpected' are excluded so the percentage reflects how much of the
+  // expected data we actually see.
+  let presentTotal = 0
+  let trackedTotal = 0
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      const s = r.cells[col.key]
+      if (s === 'present') {
+        presentTotal += 1
+        trackedTotal += 1
+      } else if (s === 'missing') {
+        trackedTotal += 1
+      }
+    }
+  }
+  const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
+  const updatedAt = statSync(RESOLVED_SNAPSHOT_PATH).mtime.toISOString()
+  const stats: SnapshotStats = { tracked: rows.length, coveragePct, updatedAt }
+
+  return { columns, rows, total: rows.length, stats }
 }
 
 function readRaw(): RawSnapshot {
@@ -136,13 +184,16 @@ function presenceBySlug(cells: RawCell[]): Map<string, Set<string>> {
   return out
 }
 
-function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
+export function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
   const cells = {} as Cells
   let coverage = 0
+  let expected = 0
   for (const col of COLUMNS) {
-    const value = present && present.has(col.key) ? 1 : 0
-    cells[col.key] = value
-    coverage += value
+    const isPresent = present !== undefined && present.has(col.key)
+    const state = classifyCell(p.dimTypes, col.key, isPresent)
+    cells[col.key] = state
+    if (state === 'present') coverage += 1
+    if (state === 'present' || state === 'missing') expected += 1
   }
   // Empty-string category from the wire collapses to undefined so the
   // category filter and chip strip do not show a blank entry.
@@ -150,5 +201,14 @@ function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
   // Lowercase defensively so the chain filter matches its URL token regardless
   // of upstream casing drift; today the upstream already emits lowercase.
   const chains = p.chains.map((c) => c.toLowerCase())
-  return { slug: p.slug, name: p.name, category, chains, cells, coverage }
+  return {
+    slug: p.slug,
+    name: p.name,
+    category,
+    chains,
+    cells,
+    coverage,
+    expected,
+    dimTypes: p.dimTypes,
+  }
 }

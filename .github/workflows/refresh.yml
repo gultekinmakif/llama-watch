@@ -1,0 +1,38 @@
+name: refresh
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: refresh
+        run: SKIP_WEB_BUILD=1 ./scripts/refresh.sh
+
+      - name: commit and push if snapshot changed
+        run: |
+          if git diff --quiet -- var/snapshot/snapshot.json; then
+            echo "snapshot unchanged; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add var/snapshot/snapshot.json
+          git commit -m "chore: refresh snapshot $(date -u +%Y-%m-%d)"
+          git push

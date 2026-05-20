@@ -1,117 +1,83 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
 import {
-  SelectProvider,
   Select,
-  SelectPopover,
   SelectItem,
   SelectItemCheck,
+  SelectPopover,
+  SelectProvider,
 } from '@ariakit/react'
 
-import { useReplaceParams } from '../../lib/url-state'
+import { useCsvParam, useReplaceParams } from '../../lib/url-state'
+import { Icon } from '../ui/Icon'
 
 export interface FilterBarProps {
   chainOptions: string[]
-  categoryOptions: string[]
 }
 
-type FilterKey = 'chains' | 'categories'
-
-export function FilterBar({ chainOptions, categoryOptions }: FilterBarProps) {
-  const searchParams = useSearchParams()
+export function FilterBar({ chainOptions }: FilterBarProps) {
   const replaceParams = useReplaceParams()
+  const selectedChains = useCsvParam('chains')
 
-  const selectedChains = useMemo(
-    () => searchParams.get('chains')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
-
-  const selectedCategories = useMemo(
-    () => searchParams.get('categories')?.split(',').filter(Boolean) ?? [],
-    [searchParams],
-  )
-
-  const writeParam = (key: FilterKey, values: string[]) => {
-    // chains uses lowercased tokens so the URL matches the row-side normalization.
-    const normalized = key === 'chains' ? values.map((v) => v.toLowerCase()) : values
-    replaceParams({ [key]: normalized.length === 0 ? null : normalized.join(',') })
+  const writeChains = (values: string[]) => {
+    // Lowercase to match the row-side normalization in projectRow; the chain
+    // filter compares against an already-lowercased set.
+    const normalized = values.map((v) => v.toLowerCase())
+    replaceParams({ chains: normalized.length === 0 ? null : normalized.join(',') })
   }
 
-  const chainsLabel =
-    selectedChains.length === 0
-      ? 'all chains'
-      : `${selectedChains.length} chain${selectedChains.length === 1 ? '' : 's'}`
-
-  const categoriesLabel =
-    selectedCategories.length === 0
-      ? 'all categories'
-      : `${selectedCategories.length} categor${selectedCategories.length === 1 ? 'y' : 'ies'}`
+  const active = selectedChains.length > 0
+  const label = active
+    ? selectedChains.length === 1
+      ? selectedChains[0]
+      : `${selectedChains.length} chains`
+    : 'chains'
+  const countLabel = active ? null : `${chainOptions.length}`
 
   return (
-    <>
-      <SelectProvider<string[]>
-        value={selectedChains}
-        setValue={(next) => {
-          // ariakit's setValue signature is shared single-vs-multi; re-narrow defensively.
-          const list = Array.isArray(next) ? next : [next]
-          writeParam('chains', list)
-        }}
+    <SelectProvider<string[]>
+      value={selectedChains}
+      setValue={(next) => {
+        const list = Array.isArray(next) ? next : [next]
+        writeChains(list)
+      }}
+    >
+      <Select
+        aria-label="filter by chains"
+        className={`group/pill inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors focus-visible:focus-ring ${
+          active
+            ? 'border-accent bg-accent-soft text-fg'
+            : 'border-border-strong bg-surface text-fg-muted hover:bg-surface-hover hover:text-fg'
+        }`}
       >
-        <Select
-          aria-label="filter by chains"
-          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
-        >
-          {chainsLabel}
-        </Select>
-        <SelectPopover
-          gutter={4}
-          sameWidth
-          className="z-10 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
-        >
-          {chainOptions.map((c) => (
-            <SelectItem
-              key={c}
-              value={c}
-              className="flex items-center gap-2 px-2 py-1 hover:bg-bg"
-            >
-              <SelectItemCheck />
-              <span>{c}</span>
-            </SelectItem>
-          ))}
-        </SelectPopover>
-      </SelectProvider>
-      <SelectProvider<string[]>
-        value={selectedCategories}
-        setValue={(next) => {
-          const list = Array.isArray(next) ? next : [next]
-          writeParam('categories', list)
-        }}
+        <span className={active ? 'font-medium' : ''}>{label}</span>
+        {countLabel ? (
+          <span className="hidden font-mono text-[11px] text-fg-subtle tabular-nums sm:inline">
+            {countLabel}
+          </span>
+        ) : null}
+        <Icon
+          name="chevron-down"
+          size={12}
+          className="ml-0.5 text-fg-subtle transition-transform group-aria-expanded/pill:rotate-180"
+        />
+      </Select>
+      <SelectPopover
+        gutter={6}
+        sameWidth
+        className="animate-fade-up z-50 max-h-72 min-w-48 overflow-auto rounded-md border border-border-strong bg-surface-elevated p-1 text-sm text-fg shadow-popover thin-scrollbar"
       >
-        <Select
-          aria-label="filter by categories"
-          className="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-1 text-sm text-fg focus-visible:outline focus-visible:outline-fg-muted"
-        >
-          {categoriesLabel}
-        </Select>
-        <SelectPopover
-          gutter={4}
-          sameWidth
-          className="z-10 max-h-72 min-w-48 overflow-auto rounded border border-border bg-surface p-1 text-sm text-fg shadow"
-        >
-          {categoryOptions.map((c) => (
-            <SelectItem
-              key={c}
-              value={c}
-              className="flex items-center gap-2 px-2 py-1 hover:bg-bg"
-            >
-              <SelectItemCheck />
-              <span>{c}</span>
-            </SelectItem>
-          ))}
-        </SelectPopover>
-      </SelectProvider>
-    </>
+        {chainOptions.map((c) => (
+          <SelectItem
+            key={c}
+            value={c}
+            className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-surface-hover data-[active-item]:bg-surface-hover"
+          >
+            <SelectItemCheck className="text-accent" />
+            <span>{c}</span>
+          </SelectItem>
+        ))}
+      </SelectPopover>
+    </SelectProvider>
   )
 }

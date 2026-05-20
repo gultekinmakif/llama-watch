@@ -28,6 +28,7 @@ tmp/
 .claude/
 *.md
 !Readme.md
+!CHANGELOG.md
 
 # Environment
 .env
@@ -35,7 +36,12 @@ tmp/
 
 # Plan + runtime data
 /specs/
-/var/
+/var/*
+!/var/snapshot/
+/var/snapshot/*
+!/var/snapshot/snapshot.json
+/web.stage
 /web/out/
+/web/out.old/
 /web/.next/
 /web/node_modules/

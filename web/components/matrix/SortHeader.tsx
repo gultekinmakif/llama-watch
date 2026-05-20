@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 import { useReplaceParams } from '../../lib/url-state'
+import { Icon } from '../ui/Icon'
 
 export type SortKey = 'name' | 'category' | 'coverage'
 export type SortOrder = 'asc' | 'desc'
@@ -50,7 +51,6 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
     })
   }, [columnKey, direction, isActive, replaceParams])
 
-  const indicator = direction === 'asc' ? '↑' : direction === 'desc' ? '↓' : ''
   const ariaLabel =
     direction === 'asc'
       ? `${label}, sorted ascending`
@@ -58,15 +58,22 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
         ? `${label}, sorted descending`
         : `${label}, not sorted`
 
+  const iconName = direction === 'asc' ? 'sort-asc' : direction === 'desc' ? 'sort-desc' : 'sort-none'
+
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1 rounded text-left focus-visible:outline focus-visible:outline-fg-muted"
+      data-active={direction ? '' : undefined}
+      className="group/sort -mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-left transition-colors hover:bg-surface hover:text-fg focus-visible:focus-ring data-[active]:text-fg"
     >
       <span>{label}</span>
-      <span aria-hidden="true" className="w-3 text-xs">{indicator}</span>
+      <Icon
+        name={iconName}
+        size={12}
+        className={direction ? 'text-accent' : 'text-fg-subtle opacity-0 transition-opacity group-hover/sort:opacity-100'}
+      />
     </button>
   )
 }

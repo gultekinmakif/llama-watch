@@ -74,8 +74,7 @@ func Ping(ctx context.Context) error {
 	return sqlDB.PingContext(ctx)
 }
 
-// Migrate drops the retired legacy tables then AutoMigrates the live models.
-// The DROP is idempotent so any binary calling Migrate cleans up on next boot.
+// Migrate drops the retired legacy tables, AutoMigrates the live models.
 func Migrate() error {
 	if err := db.Exec("DROP TABLE IF EXISTS protocols, adapter_files, commit_refs, refresh_runs CASCADE").Error; err != nil {
 		return err

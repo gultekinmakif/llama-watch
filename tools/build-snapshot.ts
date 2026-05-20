@@ -12,33 +12,11 @@ declare const process: {
   stderr: { write(s: string): void };
 };
 
-// Canonical metric set per dimType, mirrored from defillama-server getDimensionsConfig KEYS_TO_STORE (running total* aggregates dropped).
-// Coverage is dimType-level: every metric here lights up when the protocol has any adapter under that dimType.
-const KEYS_TO_STORE: Record<string, readonly string[]> = {
-  dexs: ["dailyVolume", "dailyNotionalVolume"],
-  derivatives: ["dailyVolume"],
-  aggregators: ["dailyVolume"],
-  "aggregator-derivatives": ["dailyVolume"],
-  fees: [
-    "dailyFees",
-    "dailyRevenue",
-    "dailyUserFees",
-    "dailySupplySideRevenue",
-    "dailyProtocolRevenue",
-    "dailyHoldersRevenue",
-    "dailyCreatorRevenue",
-    "dailyBribesRevenue",
-    "dailyTokenTaxes",
-  ],
-  options: ["dailyPremiumVolume", "dailyNotionalVolume"],
-  "open-interest": ["openInterestAtEnd", "shortOpenInterestAtEnd", "longOpenInterestAtEnd"],
-  "bridge-aggregators": ["dailyBridgeVolume"],
-  "active-users": ["dailyActiveUsers", "dailyTransactionsCount", "dailyGasUsed"],
-  "new-users": ["dailyNewUsers"],
-  "nft-volume": ["dailyVolume"],
-  "normalized-volume": ["dailyNormalizedVolume", "dailyActiveLiquidity"],
-  incentives: ["tokenIncentives"],
-};
+import presets from "../internal/registry/presets.json" with { type: "json" };
+const KEYS_TO_STORE: Record<string, readonly string[]> = presets;
+
+// dimType buckets retired upstream; the catalog still lists them but the manifest is empty.
+const RETIRED_DIMTYPES = new Set<string>(["derivatives"]);
 
 interface CatalogProtocol {
   name: string;
@@ -71,6 +49,7 @@ interface OutputProtocol {
   category: string;
   chains: string[];
   dataFile: string;
+  dimTypes: string[];
 }
 
 interface ProtocolRow {
@@ -106,6 +85,7 @@ function cellsForDimensions(
 ): Cell[] {
   const seen = new Set<string>();
   return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
+    if (RETIRED_DIMTYPES.has(dimType)) return [];
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) {
       unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
@@ -146,8 +126,18 @@ function processProtocol(
   }
   seen.add(slug);
 
+  // Every catalog-declared dimType except retired buckets.
+  const dimTypes = Object.keys(p.dimensions).filter((dt) => !RETIRED_DIMTYPES.has(dt));
+
   return {
-    protocol: { slug, name: p.name, category: p.category, chains: p.chains, dataFile },
+    protocol: {
+      slug,
+      name: p.name,
+      category: p.category,
+      chains: p.chains,
+      dataFile,
+      dimTypes,
+    },
     cells: [
       { slug, metric: "tvl", codePath: "" },
       ...cellsForDimensions(slug, p.dimensions, dimensionModules),
