@@ -23,6 +23,7 @@ export function VirtualBody({ rows, columnCount, scrollRef, onClearFilters }: Vi
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
+    initialRect: { width: 1200, height: 800 },
   })
 
   const virtualItems = virtualizer.getVirtualItems()
