@@ -1,5 +1,5 @@
 # llama-watch
-
+> Generated from [gultekinmakif/go-http-server](https://github.com/gultekinmakif/go-http-server)
 DefiLlama coverage matrix.
 
 A daily refresh sparse-clones [DefiLlama/defillama-server](https://github.com/DefiLlama/defillama-server) for the protocol catalog, fetches the [DefiLlama-Adapters](https://github.com/DefiLlama/DefiLlama-Adapters) and [dimension-adapters](https://github.com/DefiLlama/dimension-adapters) release-asset manifests, persists one row per (protocol, metric) coverage cell, and serves the result as a sortable, filterable matrix.
@@ -111,11 +111,22 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 
 The Next.js 16 static export lives under [`web/`](web/). See [`web/README.md`](web/README.md) for the frontend quick start.
 
+
 ## Development
 
 CI runs `go build`, `go vet`, `go test`, `golangci-lint`, and `shellcheck --severity=warning scripts/*.sh` on every PR.
 
 Run the same locally before pushing; install `shellcheck` via `brew install shellcheck` (or your package manager) if you don't have it.
+
+### Releases
+
+1. Cut a branch `release/vX.Y.Z` off `main`.
+2. Bump `web/version.json` to `{ "version": "vX.Y.Z" }` in that branch.
+3. Open and merge the PR to `main`.
+
+Only merged PRs from `release/v*` branches trigger a release.
+Direct pushes to `main` (including the daily snapshot refresh bot) **do not**.
+<!-- On merge, `.github/workflows/release.yml` validates that `web/version.json` matches the branch name, then creates the matching git tag and a GitHub release with auto-generated notes. Vercel sees the push to `main` and rebuilds; the build inlines `web/version.json`, so the footer chip and its release-page link both render the new version automatically. -->
 
 ## License
 
