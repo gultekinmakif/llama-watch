@@ -36,14 +36,13 @@ Runtime is `bun`. There is no `packageManager` field in `package.json`; pick bun
 
 ## Where things live
 
-- `app/` - routes, layout, global styles.
-- `lib/snapshot.ts` - build-time JSON loader and `Snapshot` type.
-- `lib/api.ts` - runtime API client and `ProtocolDetail` type.
-- `lib/url-state.ts` - `useReplaceParams` hook shared by every URL writer.
-- `components/matrix/` - the matrix table, toolbar, and virtualizer.
-- `components/detail/` - the per-protocol detail render components.
-- `components/ui/` - shared empty / error primitives.
-
-## TODOs
-
-The backlog moved to the repo root. See [`TODO.md`](../TODO.md) for the phased Action List with branch names, time estimates, and status checkboxes.
+- `app/` - routes, root layout, global styles
+- `lib/snapshot.ts` - build-time JSON loader, `Row` / `Column` / `Snapshot` / `SnapshotStats` types, `projectRow`.
+- `lib/cell-state.ts` - `classifyCell` and the four-state `CellState` union.
+- `lib/api.ts` - runtime API client and `ProtocolDetail` type for the detail page.
+- `lib/url-state.ts` - `useReplaceParams`, `useCsvParam`, and the CSV helpers shared by every URL writer.
+- `lib/presets.ts` - category and adapter preset metadata.
+- `components/sidebar/` - `AppShell`, `SidebarContent`, `Brand`, `ActiveFilters`, `SidebarFooter`.
+- `components/matrix/` - `MatrixTable`, `VirtualBody`, `SearchBox`, `FilterPresets`, `FilterBar` (chain multi-select), `ColumnsMenu`, `HeroStrip`, `Legend`, `PresetPills`, `PresenceCell`, `NameCell`, `SortHeader`.
+- `components/detail/` - the per-protocol render components.
+- `components/ui/` - shared primitives (`CopyLinkButton`, `ScrollToTop`, `Icon`, empty / error panels).
