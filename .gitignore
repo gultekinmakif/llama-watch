@@ -36,7 +36,10 @@ tmp/
 
 # Plan + runtime data
 /specs/
-/var/
+/var/*
+!/var/snapshot/
+/var/snapshot/*
+!/var/snapshot/snapshot.json
 /web.stage
 /web/out/
 /web/out.old/
