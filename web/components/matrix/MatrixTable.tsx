@@ -267,7 +267,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
               <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
             ))}
           </colgroup>
-          <thead className="sticky top-14 z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)] md:top-13">
+          <thead className="sticky top-14 z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)] md:top-0">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => {

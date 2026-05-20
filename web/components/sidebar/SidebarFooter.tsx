@@ -2,17 +2,17 @@ import { Icon } from "../ui/Icon";
 
 const VERSION = "v0.1.0";
 const REPO_URL = "https://github.com/gultekinmakif/llama-watch";
-const ADAPTERS_URL = "https://github.com/DefiLlama/dimension-adapters";
-const DEFILLAMA_URL = "https://defillama.com";
+const ADAPTERS_URL = "https://github.com/DefiLlama/DefiLlama-Adapters";
+const DIMENSIONS_URL = "https://github.com/DefiLlama/dimension-adapters";
 
 export function SidebarFooter() {
   return (
     <footer className="mt-auto flex flex-col gap-3 border-t border-border pt-5 text-[11px]">
       <nav aria-label="external links" className="flex flex-col gap-1">
-        <FooterLink href={DEFILLAMA_URL} icon="external-link">
-          defillama.com
-        </FooterLink>
         <FooterLink href={ADAPTERS_URL} icon="external-link">
+          DefiLlama/DefiLlama-Adapters
+        </FooterLink>
+        <FooterLink href={DIMENSIONS_URL} icon="external-link">
           DefiLlama/dimension-adapters
         </FooterLink>
         <FooterLink href={REPO_URL} icon="github">
