@@ -126,11 +126,8 @@ function processProtocol(
   }
   seen.add(slug);
 
-  // Drop retired buckets and any registration the manifest cannot resolve so the classifier
-  // does not raise missing-data for adapter slugs that no longer exist upstream.
-  const dimTypes = Object.entries(p.dimensions)
-    .filter(([dt, dimSlug]) => !RETIRED_DIMTYPES.has(dt) && dimensionModules[dt]?.[dimSlug] !== undefined)
-    .map(([dt]) => dt);
+  // Every catalog-declared dimType except retired buckets.
+  const dimTypes = Object.keys(p.dimensions).filter((dt) => !RETIRED_DIMTYPES.has(dt));
 
   return {
     protocol: {

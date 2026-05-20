@@ -28,6 +28,7 @@ tmp/
 .claude/
 *.md
 !Readme.md
+!CHANGELOG.md
 
 # Environment
 .env

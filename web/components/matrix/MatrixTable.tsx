@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -24,8 +24,6 @@ import { PresenceCell } from './PresenceCell'
 import { type ColumnOption } from './ColumnsMenu'
 import { FilterPresets } from './FilterPresets'
 import { SearchBox } from './SearchBox'
-import { FilterBar } from './FilterBar'
-import { Legend } from './Legend'
 
 interface MatrixTableProps {
   columns: SnapshotColumn[]
@@ -36,6 +34,16 @@ const columnHelper = createColumnHelper<Row>()
 
 const DEFAULT_HIDDEN: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
 
+// Fixed column widths so the virtualizer's row swaps cannot reflow column widths
+// mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
+const COL_WIDTH: Record<string, number> = {
+  name: 240,
+  category: 140,
+  chains: 200,
+  coverage: 110,
+}
+const METRIC_WIDTH = 90
+
 function readInitialSorting(sort: string | null, order: string | null): SortingState {
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
@@ -44,7 +52,6 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
-  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
   const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
 
@@ -61,7 +68,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         cell: ({ row }) => (
           <NameCell
             row={row.original}
-            coverage={{ value: row.original.coverage, total: columns.length }}
+            coverage={{ value: row.original.coverage, total: row.original.expected }}
           />
         ),
       }),
@@ -114,10 +121,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const adapterPreset = searchParams.get('adapter') ?? ''
   const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
 
-  // Precedence: ?cols= (manual) > ?category= (preset) > ?adapter= (preset) > defaults.
-  // The presets and ?cols= are mutually exclusive by URL invariant (toggling clears presets).
-  // ?cols=none is the sentinel for "only the forced name column visible"; without it,
-  // an empty ?cols= would collapse to delete-param via useReplaceParams and snap to defaults.
   const columnVisibility = useMemo<VisibilityState>(() => {
     const buildFromVisibleSet = (visible: Set<string>): VisibilityState => {
       visible.add('name')
@@ -129,6 +132,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     if (colsParam != null) {
       if (colsParam === 'none') return buildFromVisibleSet(new Set())
       return buildFromVisibleSet(new Set(colsParam.split(',').filter(Boolean)))
+    }
+    if (categoryPreset && adapterPreset) {
+      const catSet = new Set(expectedColumnsFor(categoryPreset))
+      const adaSet = new Set(metricsFor(adapterPreset))
+      const intersection = new Set([...catSet].filter((c) => adaSet.has(c)))
+      return buildFromVisibleSet(intersection)
     }
     if (categoryPreset) {
       return buildFromVisibleSet(new Set(expectedColumnsFor(categoryPreset)))
@@ -145,7 +154,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const deferredQ = useDeferredValue(q)
   const filteredRows = useMemo(() => {
     if (deferredQ === '') return rows
-    return matchSorter(rows, deferredQ, { keys: ['slug', 'name'], keepDiacritics: false })
+    return matchSorter(rows, deferredQ, {
+      keys: ['name', 'slug', 'category', 'chains'],
+      keepDiacritics: false,
+    })
   }, [rows, deferredQ])
 
   const selectedChains = useCsvParam('chains')
@@ -184,7 +196,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   })
 
   const tableRows = table.getRowModel().rows
-  const columnCount = table.getVisibleLeafColumns().length
+  const visibleLeafs = table.getVisibleLeafColumns()
+  const columnCount = visibleLeafs.length
+  const tableWidth = visibleLeafs.reduce(
+    (sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH),
+    0,
+  )
 
   const visibleIds = useMemo(
     () => allIds.filter((id) => columnVisibility[id] !== false),
@@ -201,48 +218,79 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
       const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
       const next = csv === defaultCsv ? null : csv === '' ? 'none' : csv
-      replaceParams({
-        cols: next,
-        category: null,
-        adapter: null,
-      })
+      replaceParams({ cols: next })
     },
     [allIds, replaceParams],
   )
 
+  const handleHideColumn = useCallback(
+    (id: string) => {
+      if (id === 'name') return
+      handleVisibleChange(visibleIds.filter((v) => v !== id))
+    },
+    [handleVisibleChange, visibleIds],
+  )
+
+  // Resets every filter that can prune rows or columns; sort/order stay.
+  const handleClearFilters = useCallback(() => {
+    replaceParams({
+      q: null,
+      cols: null,
+      category: null,
+      adapter: null,
+      cellState: null,
+      chains: null,
+    })
+  }, [replaceParams])
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <Legend />
-        <SearchBox count={visibleRows.length} total={rows.length} />
-      </div>
-      {/* role="toolbar" is a landmark grouping; arrow-key navigation is delegated to each child widget. */}
-      <div role="toolbar" aria-label="matrix controls" className="flex items-center gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col items-stretch gap-2 md:sticky md:top-0 md:z-20 md:flex-row md:items-center md:bg-bg md:pt-5 md:pb-4">
+        <div className="min-w-0 flex-1">
+          <SearchBox count={visibleRows.length} total={rows.length} />
+        </div>
         <FilterPresets
           toggleable={toggleableOptions}
           visibleIds={visibleIds}
           onColumnsChange={handleVisibleChange}
+          chainOptions={chainOptions}
         />
-        <FilterBar chainOptions={chainOptions} />
       </div>
-      <div ref={setScrollElement} className="h-[640px] overflow-auto border border-border">
-        <table className="border-collapse text-sm">
+      <div className="thin-scrollbar overflow-x-auto overflow-y-visible rounded-md border border-border-strong shadow-card">
+        <table
+          style={{ width: tableWidth }}
+          className="table-fixed border-collapse text-sm"
+        >
           <caption className="sr-only">protocol coverage matrix</caption>
-          <thead className="sticky top-0 z-10 bg-surface">
+          <colgroup>
+            {visibleLeafs.map((col) => (
+              <col key={col.id} style={{ width: COL_WIDTH[col.id] ?? METRIC_WIDTH }} />
+            ))}
+          </colgroup>
+          <thead className="sticky z-10 bg-surface shadow-[0_1px_0_var(--color-border-strong)]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
                   const sorted = h.column.getIsSorted()
                   const ariaSort =
                     sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                  const canHide = h.column.id !== 'name'
+                  const isStickyLeft = h.column.id === 'name'
+                  const isSorted = sorted !== false
                   return (
                     <th
                       key={h.id}
                       scope="col"
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
-                      className="border border-border px-2 py-1 text-left"
+                      onDoubleClick={canHide ? () => handleHideColumn(h.column.id) : undefined}
+                      title={canHide ? 'double-click to hide column' : undefined}
+                      style={isStickyLeft ? { position: 'sticky', left: 0, zIndex: 20 } : undefined}
+                      className={`relative overflow-hidden px-3 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] uppercase break-words ${isSorted ? 'text-fg' : 'text-fg-muted'} ${isStickyLeft ? 'bg-surface shadow-[1px_0_0_var(--color-border-strong)]' : ''}`}
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
+                      {isSorted ? (
+                        <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
+                      ) : null}
                     </th>
                   )
                 })}
@@ -251,8 +299,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
           </thead>
           <VirtualBody
             rows={tableRows}
-            scrollElement={scrollElement}
             columnCount={columnCount}
+            onClearFilters={handleClearFilters}
           />
         </table>
       </div>
