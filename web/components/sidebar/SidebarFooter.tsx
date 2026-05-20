@@ -1,7 +1,8 @@
 import { Icon } from "../ui/Icon";
 
-const VERSION = "v0.1.0";
+const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "v1.0.0";
 const REPO_URL = "https://github.com/gultekinmakif/llama-watch";
+const RELEASE_URL = `${REPO_URL}/releases/tag/${VERSION}`;
 const ADAPTERS_URL = "https://github.com/DefiLlama/DefiLlama-Adapters";
 const DIMENSIONS_URL = "https://github.com/DefiLlama/dimension-adapters";
 
@@ -18,9 +19,16 @@ export function SidebarFooter() {
         <FooterLink href={REPO_URL} icon="github">
           gultekinmakif/llama-watch
         </FooterLink>
-        <div className="flex items-center justify-between text-fg-subtle">
-          <span className="font-mono tabular-nums">{VERSION}</span>
-        </div>
+        <a
+          href={RELEASE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#FF7AAD' }}
+          className="inline-flex items-center gap-2 rounded px-1 py-1 -mx-1 transition-colors hover:bg-surface focus-visible:focus-ring"
+        >
+          <Icon name="external-link" size={12} className="shrink-0" />
+          <span className="truncate font-mono tabular-nums">{VERSION}</span>
+        </a>
       </nav>
     </footer>
   );
