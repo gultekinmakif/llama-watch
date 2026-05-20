@@ -70,10 +70,14 @@ bun run tools/extract-protocols.ts > "$PROTOCOLS_JSON"
 # 4. Build snapshot.json from the catalog and the two manifests, then sync into matrix and protocol_identities.
 bun run tools/build-snapshot.ts
 
-if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models -newer bin/sync-db -type f 2>/dev/null)" ]; then
-  go build -o bin/sync-db ./cmd/sync-db
+# Sync the snapshot into Postgres when a DATABASE_URL is configured. The CI
+# refresh job leaves this unset so the workflow stays bash + bun, no Go.
+if [ -n "${DATABASE_URL:-}" ]; then
+  if [ ! -x bin/sync-db ] || [ -n "$(find cmd/sync-db internal/db internal/models -newer bin/sync-db -type f 2>/dev/null)" ]; then
+    go build -o bin/sync-db ./cmd/sync-db
+  fi
+  bin/sync-db
 fi
-bin/sync-db
 
 # 5. Build the frontend in a sibling staging dir, then atomic-swap web/out/.
 #    Building in place would clear web/out/ early in next build's export phase
@@ -81,7 +85,7 @@ bin/sync-db
 #    writing. The sibling pattern keeps web/out/ untouched until the final mv.
 #    rsync skips node_modules / .next / out for speed; node_modules is reused
 #    via symlink so bun does not have to reinstall.
-if [ -f web/package.json ]; then
+if [ -z "${SKIP_WEB_BUILD:-}" ] && [ -f web/package.json ]; then
   WEB_STAGE="$PWD/web.stage"
   # Clear stragglers from a prior failed/killed run
   rm -rf "$WEB_STAGE" web/out.old
