@@ -30,7 +30,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
     <>
       <aside
         aria-label="MetaLlama sidebar"
-        className="thin-scrollbar fixed top-0 left-0 z-30 hidden h-screen w-[260px] flex-col gap-6 overflow-y-auto border-r border-border bg-bg-elevated p-5 md:flex"
+        className="thin-scrollbar fixed top-0 left-0 z-30 hidden h-screen w-[260px] flex-col gap-6 overflow-y-auto border-r border-border bg-bg-elevated px-5 pt-5 pb-5 md:flex"
       >
         {sidebar}
       </aside>

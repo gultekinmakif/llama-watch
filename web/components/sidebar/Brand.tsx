@@ -9,7 +9,7 @@ export function Brand() {
         <LogoMark />
         <span className="leading-none"> · MetaLlama</span>
       </a>
-      <p className="text-[12.5px] leading-snug text-fg-muted">
+      <p className="text-[12.5px] pt-5 leading-snug text-fg-muted">
         Live coverage matrix of every protocol DefiLlama tracks.
         Find which adapters emit which metrics, what is missing, what is unexpected.
       </p>
