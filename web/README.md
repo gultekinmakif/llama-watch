@@ -1,6 +1,6 @@
 # llama-watch web
 
-Next.js 16 static export. Built into `web/out/`; the Go server in this repo serves the tree alongside `/api/*` and `/health`.
+Next.js 16 static export. Built into `web/out/`. The tree is fully self-contained; no runtime API dependency, so any static host can serve it.
 
 ## Quick start
 
@@ -18,8 +18,6 @@ bun run build
 ```sh
 bun run dev
 ```
-
-`NEXT_PUBLIC_API_BASE` defaults to empty for same-origin in production. Set it during dev to point at a running Go server when the detail page needs live `/api/matrix/{slug}` data.
 
 ## Stack
 
@@ -39,10 +37,8 @@ Runtime is `bun`. There is no `packageManager` field in `package.json`; pick bun
 - `app/` - routes, root layout, global styles
 - `lib/snapshot.ts` - build-time JSON loader, `Row` / `Column` / `Snapshot` / `SnapshotStats` types, `projectRow`.
 - `lib/cell-state.ts` - `classifyCell` and the four-state `CellState` union.
-- `lib/api.ts` - runtime API client and `ProtocolDetail` type for the detail page.
 - `lib/url-state.ts` - `useReplaceParams`, `useCsvParam`, and the CSV helpers shared by every URL writer.
 - `lib/presets.ts` - category and adapter preset metadata.
 - `components/sidebar/` - `AppShell`, `SidebarContent`, `Brand`, `ActiveFilters`, `SidebarFooter`.
 - `components/matrix/` - `MatrixTable`, `VirtualBody`, `SearchBox`, `FilterPresets`, `FilterBar` (chain multi-select), `ColumnsMenu`, `HeroStrip`, `Legend`, `PresetPills`, `PresenceCell`, `NameCell`, `SortHeader`.
-- `components/detail/` - the per-protocol render components.
 - `components/ui/` - shared primitives (`CopyLinkButton`, `ScrollToTop`, `Icon`, empty / error panels).

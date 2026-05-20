@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0)} next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
