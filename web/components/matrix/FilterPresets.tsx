@@ -90,7 +90,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
       <FilterBar chainOptions={chainOptions} />
       <PresetDropdown
         label={cellState ? CELL_STATE_LABELS[cellState] : 'state'}
-        countLabel={cellState ? null : `4`}
+        countLabel={cellState ? null : '4'}
         value={cellState}
         options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}

@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
-import { classifyByCategory, type CellState } from '../../lib/cell-state'
+import { classifyByCategory, reclassifyRow, type CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -32,9 +32,15 @@ interface MatrixTableProps {
 
 const columnHelper = createColumnHelper<Row>()
 
-// Identity columns are governed by the `info` URL param (`info=true` to show
-// them), not by `cols`. Keeps the URL short when the user enables the info view.
+// Identity columns are governed by a single `info` URL param, not by `cols`.
+// Visible by default; `?info=false` hides them. Keeps the URL short.
 const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
+
+const CELL_STATES: ReadonlySet<CellState> = new Set(['present', 'missing', 'unexpected', 'na'])
+
+function parseCellState(raw: string | null): CellState | '' {
+  return raw != null && CELL_STATES.has(raw as CellState) ? (raw as CellState) : ''
+}
 
 // Fixed column widths so the virtualizer's row swaps cannot reflow column widths
 // mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
@@ -127,25 +133,11 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const mode = searchParams.get('mode') === 'dimensions' ? 'dimensions' : 'metrics'
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
-  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+  const cellStatePreset = parseCellState(searchParams.get('cellState'))
+  // Mode toggle: default rows ship classified by dimType bundles. Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
   const modeRows = useMemo<Row[]>(() => {
     if (mode === 'metrics') return rows
-      // Mode toggle: default rows ship classified by dimType bundles.
-      // Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
-    return rows.map((r) => {
-      const cells = {} as Row['cells']
-      let coverage = 0
-      let expected = 0
-      for (const col of columns) {
-        const was = r.cells[col.key]
-        const isPresent = was === 'present' || was === 'unexpected'
-        const state = classifyByCategory(r.category, col.key, isPresent)
-        cells[col.key] = state
-        if (state === 'present') coverage += 1
-        if (state === 'present' || state === 'missing') expected += 1
-      }
-      return { ...r, cells, coverage, expected }
-    })
+    return rows.map((r) => ({ ...r, ...reclassifyRow(r, columns, classifyByCategory) }))
   }, [rows, columns, mode])
 
   const metricIds = useMemo(
@@ -270,9 +262,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const handleHideColumn = useCallback(
     (id: string) => {
       if (id === 'name') return
+      if (INFO_IDS.has(id)) {
+        replaceParams({ info: 'false' })
+        return
+      }
       handleVisibleChange(visibleIds.filter((v) => v !== id))
     },
-    [handleVisibleChange, visibleIds],
+    [handleVisibleChange, replaceParams, visibleIds],
   )
 
   // Resets every filter that can prune rows or columns; sort/order stay.
