@@ -4,7 +4,6 @@ import { loadSnapshot } from '../lib/snapshot'
 import { MatrixTable } from '../components/matrix/MatrixTable'
 import { AppShell } from '../components/sidebar/AppShell'
 import { SidebarContent } from '../components/sidebar/SidebarContent'
-import { ScrollToTop } from '../components/ui/ScrollToTop'
 
 export default function Page() {
   const { columns, rows, stats } = loadSnapshot()
@@ -15,7 +14,6 @@ export default function Page() {
           <MatrixTable columns={columns} rows={rows} />
         </section>
       </AppShell>
-      <ScrollToTop />
     </Suspense>
   )
 }

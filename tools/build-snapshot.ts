@@ -188,4 +188,5 @@ function writeAtomic(path: string, payload: unknown): void {
 
 const out = build();
 const snapshotPath = resolve(process.cwd(), process.env.SNAPSHOT_OUT ?? "var/snapshot/snapshot.json");
-writeAtomic(snapshotPath, out);
+// generatedAt powers the HeroStrip "Updated" label. Filesystem mtime is unreliable on Vercel.
+writeAtomic(snapshotPath, { ...out, generatedAt: new Date().toISOString() });

@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -52,11 +53,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("getwd: %v", err)
 	}
-	snapshotPath := filepath.Join(cwd, "var", "snapshot", "snapshot.json")
+	// SNAPSHOT_OUT mirrors the env contract scripts/refresh.sh and tools/build-snapshot.ts honor.
+	snapshotPath := os.Getenv("SNAPSHOT_OUT")
+	if snapshotPath == "" {
+		snapshotPath = "var/snapshot/snapshot.json"
+	}
+	if !filepath.IsAbs(snapshotPath) {
+		snapshotPath = filepath.Join(cwd, snapshotPath)
+	}
 
 	snap, err := readSnapshot(snapshotPath)
 	if err != nil {
 		log.Fatalf("read snapshot %s: %v", snapshotPath, err)
+	}
+
+	// Catch duplicate slugs before TRUNCATE so a bad snapshot does not leave the
+	// matrix table half-empty if CreateInBatches trips a primary-key conflict.
+	if err := checkDuplicateSlugs(snap.Protocols); err != nil {
+		log.Fatalf("snapshot validation: %v", err)
 	}
 
 	if err := postgres.New(cfg.DatabaseURL); err != nil {
@@ -101,6 +115,17 @@ func main() {
 		"matrix_rows", len(rows),
 		"snapshot", snapshotPath,
 	)
+}
+
+func checkDuplicateSlugs(protocols []snapshotProtocol) error {
+	seen := make(map[string]struct{}, len(protocols))
+	for _, p := range protocols {
+		if _, ok := seen[p.Slug]; ok {
+			return fmt.Errorf("duplicate slug %q in snapshot.protocols", p.Slug)
+		}
+		seen[p.Slug] = struct{}{}
+	}
+	return nil
 }
 
 func readSnapshot(path string) (snapshotFile, error) {
