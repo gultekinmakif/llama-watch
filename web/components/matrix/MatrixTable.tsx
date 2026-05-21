@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useMemo, useRef } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   createColumnHelper,
@@ -54,7 +54,10 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const searchParams = useSearchParams()
   const replaceParams = useReplaceParams()
-  const scrollRef = useRef<HTMLDivElement>(null)
+  // State-backed scroll element so the virtualizer reruns when the ref attaches
+  // in the commit phase. A plain useRef returns null on the first render and the
+  // virtualizer's scroll listener never re-binds, so the visible window freezes.
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
 
   const sorting = useMemo<SortingState>(
     () => readInitialSorting(searchParams.get('sort'), searchParams.get('order')),
@@ -274,7 +277,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         />
       </div>
       <div
-        ref={scrollRef}
+        ref={setScrollEl}
         className="thin-scrollbar flex-1 min-h-0 overflow-auto rounded-md border border-border-strong shadow-card"
       >
         <table
@@ -320,7 +323,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
           <VirtualBody
             rows={tableRows}
             columnCount={columnCount}
-            scrollRef={scrollRef}
+            scrollEl={scrollEl}
             onClearFilters={handleClearFilters}
           />
         </table>
