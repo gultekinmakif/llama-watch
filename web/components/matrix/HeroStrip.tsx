@@ -1,4 +1,5 @@
 import type { SnapshotStats } from '../../lib/snapshot'
+import { CoverageModeToggle } from './CoverageModeToggle'
 
 interface HeroStripProps {
   stats: SnapshotStats
@@ -26,6 +27,7 @@ export function HeroStrip({ stats }: HeroStripProps) {
         <span className="text-[11px] text-fg-subtle">
           of expected metrics emitted
         </span>
+        <CoverageModeToggle />
       </div>
       <div className="grid grid-cols-2 gap-2 pt-2 text-[11px]">
         <Stat label="Tracked" value={trackedLabel} />
