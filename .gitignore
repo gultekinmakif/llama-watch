@@ -30,6 +30,7 @@ tmp/
 !README.md
 !CHANGELOG.md
 !web/README.md
+tools/derive-categories.ts
 
 # Environment
 .env
