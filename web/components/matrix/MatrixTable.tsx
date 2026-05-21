@@ -133,11 +133,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const mode = searchParams.get('mode') === 'dimensions' ? 'dimensions' : 'metrics'
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
-  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+  const cellStatePreset = parseCellState(searchParams.get('cellState'))
+  // Mode toggle: default rows ship classified by dimType bundles. Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
   const modeRows = useMemo<Row[]>(() => {
     if (mode === 'metrics') return rows
-      // Mode toggle: default rows ship classified by dimType bundles.
-      // Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
     return rows.map((r) => {
       const cells = {} as Row['cells']
       let coverage = 0
@@ -276,9 +275,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const handleHideColumn = useCallback(
     (id: string) => {
       if (id === 'name') return
+      if (INFO_IDS.has(id)) {
+        replaceParams({ info: 'false' })
+        return
+      }
       handleVisibleChange(visibleIds.filter((v) => v !== id))
     },
-    [handleVisibleChange, visibleIds],
+    [handleVisibleChange, replaceParams, visibleIds],
   )
 
   // Resets every filter that can prune rows or columns; sort/order stay.
