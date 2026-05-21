@@ -53,7 +53,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         </button>
         <a href="/" className="flex items-center gap-2 rounded text-base font-semibold text-fg focus-visible:focus-ring">
           <MiniLogo />
-          <span> MetaLlama</span>
+          <span>MetaLlama</span>
         </a>
         <CopyLinkButton />
       </header>
