@@ -1,7 +1,11 @@
-// Pure-runtime four-state classifier. Expected set is the union of dimType
-// bundles for the protocol's registered adapters, plus tvl.
+// Two classifiers. The default `classifyCell` reads the protocol's own adapter
+// bundles; the matrix ships in this mode so coverage stays at the
+// per-protocol-emission bar. `classifyByCategory` is the alt mode the UI flips
+// to via `?mode=dimensions`, surfacing protocols missing dimension adapters
+// against the category's curated expected set.
 
 import presets from '../../internal/registry/presets.json' with { type: 'json' }
+import { CATEGORIES_EXPECTED } from './categories'
 
 export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
 
@@ -36,6 +40,21 @@ export function classifyCell(
       }
     }
   }
+  if (present && expected) return 'present'
+  if (present && !expected) return 'unexpected'
+  if (!present && expected) return 'missing'
+  return 'na'
+}
+
+export function classifyByCategory(
+  category: string | undefined,
+  metric: string,
+  present: boolean,
+): CellState {
+  const expectedSet = category != null ? CATEGORIES_EXPECTED[category] : undefined
+  // skip categories with no expected fields.
+  if (expectedSet == null) return present ? 'present' : 'na'
+  const expected = metric === 'tvl' || expectedSet.includes(metric as never)
   if (present && expected) return 'present'
   if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'

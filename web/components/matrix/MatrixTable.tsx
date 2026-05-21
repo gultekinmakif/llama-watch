@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
-import type { CellState } from '../../lib/cell-state'
+import { classifyByCategory, type CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -123,10 +123,30 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   )
 
   const colsParam = searchParams.get('cols')
-  const infoVisible = searchParams.get('info') === 'true'
+  const infoVisible = searchParams.get('info') !== 'false'
+  const mode = searchParams.get('mode') === 'dimensions' ? 'dimensions' : 'metrics'
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
   const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+  const modeRows = useMemo<Row[]>(() => {
+    if (mode === 'metrics') return rows
+      // Mode toggle: default rows ship classified by dimType bundles.
+      // Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
+    return rows.map((r) => {
+      const cells = {} as Row['cells']
+      let coverage = 0
+      let expected = 0
+      for (const col of columns) {
+        const was = r.cells[col.key]
+        const isPresent = was === 'present' || was === 'unexpected'
+        const state = classifyByCategory(r.category, col.key, isPresent)
+        cells[col.key] = state
+        if (state === 'present') coverage += 1
+        if (state === 'present' || state === 'missing') expected += 1
+      }
+      return { ...r, cells, coverage, expected }
+    })
+  }, [rows, columns, mode])
 
   const metricIds = useMemo(
     () => allIds.filter((id) => id !== 'name' && !INFO_IDS.has(id)),
@@ -158,12 +178,12 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const q = searchParams.get('q')?.trim() ?? ''
   const deferredQ = useDeferredValue(q)
   const filteredRows = useMemo(() => {
-    if (deferredQ === '') return rows
-    return matchSorter(rows, deferredQ, {
+    if (deferredQ === '') return modeRows
+    return matchSorter(modeRows, deferredQ, {
       keys: ['name', 'slug', 'category', 'chains'],
       keepDiacritics: false,
     })
-  }, [rows, deferredQ])
+  }, [modeRows, deferredQ])
 
   // Cell-state row filter scans these keys, so a 'present' filter under a
   // narrowed column set only keeps rows that match the narrowed columns.
@@ -242,7 +262,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       const csv = visibleMetrics.join(',')
       const defaultCsv = metricIds.join(',')
       const cols = csv === defaultCsv ? null : csv === '' ? 'none' : csv
-      replaceParams({ cols, info: identityOn ? 'true' : null })
+      replaceParams({ cols, info: identityOn ? null : 'false' })
     },
     [metricIds, replaceParams],
   )

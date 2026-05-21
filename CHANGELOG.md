@@ -64,6 +64,12 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 - **Quick-filter presets rebuilt.** Five gap-audit shortcuts: `Missing fees on Ethereum`, `DEXs missing volume`, `Perps missing OI`, `Bridges missing fees`, `Active users coverage`.
 - **Release pipeline.** A PR from `release/vX.Y.Z` to main auto-tags the release, publishes the GitHub release page, and rebuilds Vercel. Version lives in `web/version.json`.
 
+## v2.1.0
+- **Coverage mode toggle.** Sidebar chip flips scoring between dimType bundles (default) and `CATEGORIES_EXPECTED` (`?mode=dimensions`). The alt mode surfaces protocols missing dimension adapters per category.
+- **`CATEGORIES_EXPECTED` expanded.** Every category in the snapshot has a curated expected set, derived empirically via `tools/derive-categories.ts`.
+- **`info` URL param.** Identity columns toggle through `?info=true|false`, no more `cols=` bloat. Visible by default.
+- **`make refresh-soft`.** Reuses on-disk upstream for fast re-classification. Refresh prints structured banners with sizes and timing.
+
 # v3
 > cutoff commit: None yet.
   

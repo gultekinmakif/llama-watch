@@ -50,9 +50,9 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
     replaceParams({ cellState: next || null })
   }
 
-  const infoVisible = params.get('info') === 'true'
+  const infoVisible = params.get('info') !== 'false'
   const toggleInfo = () => {
-    replaceParams({ info: infoVisible ? null : 'true' })
+    replaceParams({ info: infoVisible ? 'false' : null })
   }
 
   return (
