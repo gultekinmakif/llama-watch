@@ -1,5 +1,6 @@
 // 2.2: HTTP server bootstrap. Mounts routes, applies middleware, handles graceful shutdown.
-// Middleware chain at request time: 2.3 recoverer then 2.4 request_id then 2.5 logger then 2.6 handler.
+// Middleware chain at request time: 2.5 logger then 2.3 recoverer then 2.4 request_id then 2.6 handler.
+// Logger sits outermost so the access log line still fires when a handler panics inside recoverer.
 package server
 
 import (
@@ -35,7 +36,7 @@ func New(cfg *config.Config) *Server {
 		config: cfg,
 		server: &http.Server{
 			Addr:         ":" + cfg.Port,
-			Handler:      middleware.Recoverer(middleware.RequestID(middleware.Logger(mux))),
+			Handler:      middleware.Logger(middleware.Recoverer(middleware.RequestID(mux))),
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  60 * time.Second,
