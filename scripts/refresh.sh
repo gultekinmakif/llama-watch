@@ -3,6 +3,25 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# --soft: skip upstream fetch (no git, no curl).
+SOFT_REFRESH=0
+for arg in "$@"; do
+  case "$arg" in
+    --soft) SOFT_REFRESH=1 ;;
+    -h|--help)
+      cat <<EOF
+Usage: scripts/refresh.sh [--soft]
+
+Default: full refresh (fetch upstream + manifests, then extract, build, sync, web).
+--soft:  skip upstream fetch. Reuse existing var/upstream + var/snapshot files
+         on disk. Fails fast if those files do not exist.
+EOF
+      exit 0
+      ;;
+    *) echo "refresh.sh: unknown flag $arg" >&2; exit 1 ;;
+  esac
+done
+
 # Throwaway pretty-print helpers for screenshot output.
 c_blue=$'\033[1;34m'
 c_cyan=$'\033[36m'
@@ -38,54 +57,65 @@ TVL_MODULES="$SNAPSHOT_DIR/tvlModules.json"
 DIM_MODULES="$SNAPSHOT_DIR/dimensionModules.json"
 mkdir -p "$SNAPSHOT_DIR"
 
-section "Fetch upstream (parallel)"
-step "sparse clone DefiLlama/defillama-server (defi/src/protocols)"
-step "curl DefiLlama-Adapters/latest/tvlModules.json"
-step "curl dimension-adapters/latest/dimensionModules.json"
-T_FETCH=$SECONDS
+if [ "$SOFT_REFRESH" -eq 1 ]; then
+  section "Fetch upstream (skipped: --soft)"
+  for required in "$SERVER_DIR/defi/src/protocols" "$TVL_MODULES" "$DIM_MODULES"; do
+    [ -e "$required" ] || { echo "refresh.sh: --soft requires existing $required; run a full refresh first" >&2; exit 1; }
+  done
+  SERVER_SHA=$(git -C "$SERVER_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+  TVL_KIB=$(( $(wc -c < "$TVL_MODULES") / 1024 ))
+  DIM_KIB=$(( $(wc -c < "$DIM_MODULES") / 1024 ))
+  warn "reusing server@$SERVER_SHA  tvlModules ${TVL_KIB} KiB  dimensionModules ${DIM_KIB} KiB"
+else
+  section "Fetch upstream (parallel)"
+  step "sparse clone DefiLlama/defillama-server (defi/src/protocols)"
+  step "curl DefiLlama-Adapters/latest/tvlModules.json"
+  step "curl dimension-adapters/latest/dimensionModules.json"
+  T_FETCH=$SECONDS
 
-pids=()
+  pids=()
 
-(
-  if [ -d "$SERVER_DIR/.git" ]; then
-    git -C "$SERVER_DIR" fetch --depth=1 -q
-    git -C "$SERVER_DIR" reset --hard origin/master -q
-  else
-    git clone --depth=1 --filter=blob:none --sparse -q \
-      "$UPSTREAM_REMOTE/defillama-server.git" "$SERVER_DIR"
-  fi
-  # Re-applied every run so the cone is self-healing if a prior run left the default /* + !/*/ pattern.
-  git -C "$SERVER_DIR" sparse-checkout set defi/src/protocols
-) &
-pids+=("$!")
+  (
+    if [ -d "$SERVER_DIR/.git" ]; then
+      git -C "$SERVER_DIR" fetch --depth=1 -q
+      git -C "$SERVER_DIR" reset --hard origin/master -q
+    else
+      git clone --depth=1 --filter=blob:none --sparse -q \
+        "$UPSTREAM_REMOTE/defillama-server.git" "$SERVER_DIR"
+    fi
+    # Re-applied every run so the cone is self-healing if a prior run left the default /* + !/*/ pattern.
+    git -C "$SERVER_DIR" sparse-checkout set defi/src/protocols
+  ) &
+  pids+=("$!")
 
-(
-  curl -fsSL \
-    "https://github.com/DefiLlama/DefiLlama-Adapters/releases/download/latest/tvlModules.json" \
-    -o "$TVL_MODULES.tmp"
-  mv "$TVL_MODULES.tmp" "$TVL_MODULES"
-) &
-pids+=("$!")
+  (
+    curl -fsSL \
+      "https://github.com/DefiLlama/DefiLlama-Adapters/releases/download/latest/tvlModules.json" \
+      -o "$TVL_MODULES.tmp"
+    mv "$TVL_MODULES.tmp" "$TVL_MODULES"
+  ) &
+  pids+=("$!")
 
-(
-  curl -fsSL \
-    "https://github.com/DefiLlama/dimension-adapters/releases/download/latest/dimensionModules.json" \
-    -o "$DIM_MODULES.tmp"
-  mv "$DIM_MODULES.tmp" "$DIM_MODULES"
-) &
-pids+=("$!")
+  (
+    curl -fsSL \
+      "https://github.com/DefiLlama/dimension-adapters/releases/download/latest/dimensionModules.json" \
+      -o "$DIM_MODULES.tmp"
+    mv "$DIM_MODULES.tmp" "$DIM_MODULES"
+  ) &
+  pids+=("$!")
 
-# Bare `wait` only returns the last job's status. Wait on each pid so any
-# failure across the three parallel fetches aborts the script.
-fail=0
-for pid in "${pids[@]}"; do
-  if ! wait "$pid"; then fail=1; fi
-done
-[ "$fail" -eq 0 ] || { echo "refresh.sh: one or more upstream fetches failed" >&2; exit 1; }
-SERVER_SHA=$(git -C "$SERVER_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
-TVL_KIB=$(( $(wc -c < "$TVL_MODULES") / 1024 ))
-DIM_KIB=$(( $(wc -c < "$DIM_MODULES") / 1024 ))
-done_ "server@$SERVER_SHA  tvlModules ${TVL_KIB} KiB  dimensionModules ${DIM_KIB} KiB  ($((SECONDS - T_FETCH))s)"
+  # Bare `wait` only returns the last job's status. Wait on each pid so any
+  # failure across the three parallel fetches aborts the script.
+  fail=0
+  for pid in "${pids[@]}"; do
+    if ! wait "$pid"; then fail=1; fi
+  done
+  [ "$fail" -eq 0 ] || { echo "refresh.sh: one or more upstream fetches failed" >&2; exit 1; }
+  SERVER_SHA=$(git -C "$SERVER_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+  TVL_KIB=$(( $(wc -c < "$TVL_MODULES") / 1024 ))
+  DIM_KIB=$(( $(wc -c < "$DIM_MODULES") / 1024 ))
+  done_ "server@$SERVER_SHA  tvlModules ${TVL_KIB} KiB  dimensionModules ${DIM_KIB} KiB  ($((SECONDS - T_FETCH))s)"
+fi
 
 # 3. Run the bun extractor over defillama-server/data*.ts to produce $PROTOCOLS_JSON.
 section "Extract protocol catalog"
