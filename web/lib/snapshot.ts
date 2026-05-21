@@ -95,6 +95,7 @@ export interface RawProtocol {
 export interface RawSnapshot {
   cells: RawCell[]
   protocols: RawProtocol[]
+  generatedAt?: string // by tools/build-snapshot.ts
 }
 
 // Runs at build time only; sync fs is correct here.
@@ -140,7 +141,10 @@ export function loadSnapshot(): Snapshot {
     }
   }
   const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
-  const updatedAt = statSync(RESOLVED_SNAPSHOT_PATH).mtime.toISOString()
+  const updatedAt =
+    typeof raw.generatedAt === 'string'
+      ? raw.generatedAt
+      : statSync(RESOLVED_SNAPSHOT_PATH).mtime.toISOString()
   const stats: SnapshotStats = { tracked: rows.length, coveragePct, updatedAt }
 
   return { columns, rows, total: rows.length, stats }
