@@ -123,7 +123,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   )
 
   const colsParam = searchParams.get('cols')
-  const infoVisible = searchParams.get('info') === 'true'
+  const infoVisible = searchParams.get('info') !== 'false'
   const mode = searchParams.get('mode') === 'dimensions' ? 'dimensions' : 'metrics'
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
@@ -262,7 +262,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       const csv = visibleMetrics.join(',')
       const defaultCsv = metricIds.join(',')
       const cols = csv === defaultCsv ? null : csv === '' ? 'none' : csv
-      replaceParams({ cols, info: identityOn ? 'true' : null })
+      replaceParams({ cols, info: identityOn ? null : 'false' })
     },
     [metricIds, replaceParams],
   )
