@@ -45,7 +45,7 @@ export interface Column {
   label: string
 }
 
-import { classifyCell, classifyByCategory, type CellState } from './cell-state'
+import { classifyCell, classifyByCategory, reclassifyRow, type CellState } from './cell-state'
 
 export type Cells = Record<ColumnKey, CellState>
 
@@ -67,8 +67,7 @@ export interface Row {
 export interface SnapshotStats {
   tracked: number
   coveragePct: number
-  // Same matrix re-scored against CATEGORIES_EXPECTED so HeroStrip can show the
-  // dimensions-mode number when the operator flips the toggle.
+  // Re-scored against CATEGORIES_EXPECTED; HeroStrip picks this on ?mode=dimensions.
   coveragePctDimensions: number
   updatedAt: string
 }
@@ -144,20 +143,14 @@ export function loadSnapshot(): Snapshot {
     }
   }
   const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
+  
+  // powers the toggle so flipping to dimensions mode also flips the headline number.
   let presentDim = 0
   let trackedDim = 0
   for (const r of rows) {
-    for (const col of COLUMNS) {
-      const was = r.cells[col.key]
-      const isPresent = was === 'present' || was === 'unexpected'
-      const s = classifyByCategory(r.category, col.key, isPresent)
-      if (s === 'present') {
-        presentDim += 1
-        trackedDim += 1
-      } else if (s === 'missing') {
-        trackedDim += 1
-      }
-    }
+    const result = reclassifyRow(r, COLUMNS, classifyByCategory)
+    presentDim += result.coverage
+    trackedDim += result.expected
   }
   const coveragePctDimensions = trackedDim === 0 ? 0 : (presentDim / trackedDim) * 100
 

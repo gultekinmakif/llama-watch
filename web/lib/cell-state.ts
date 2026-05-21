@@ -1,13 +1,44 @@
-// Two classifiers. The default `classifyCell` reads the protocol's own adapter
-// bundles; the matrix ships in this mode so coverage stays at the
-// per-protocol-emission bar. `classifyByCategory` is the alt mode the UI flips
-// to via `?mode=dimensions`, surfacing protocols missing dimension adapters
-// against the category's curated expected set.
-
 import presets from '../../internal/registry/presets.json' with { type: 'json' }
 import { CATEGORIES_EXPECTED } from './categories'
+import type { ColumnKey } from './snapshot'
 
 export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
+
+type Classifier = (
+  category: string | undefined,
+  metric: ColumnKey,
+  present: boolean,
+) => CellState
+
+interface ReclassifyTarget {
+  category?: string
+  cells: Record<ColumnKey, CellState>
+}
+
+export interface ReclassifyResult {
+  cells: Record<ColumnKey, CellState>
+  coverage: number
+  expected: number
+}
+
+export function reclassifyRow(
+  row: ReclassifyTarget,
+  columns: readonly { key: ColumnKey }[],
+  classify: Classifier,
+): ReclassifyResult {
+  const cells = {} as Record<ColumnKey, CellState>
+  let coverage = 0
+  let expected = 0
+  for (const col of columns) {
+    const was = row.cells[col.key]
+    const isPresent = was === 'present' || was === 'unexpected'
+    const state = classify(row.category, col.key, isPresent)
+    cells[col.key] = state
+    if (state === 'present') coverage += 1
+    if (state === 'present' || state === 'missing') expected += 1
+  }
+  return { cells, coverage, expected }
+}
 
 const BUNDLES: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}

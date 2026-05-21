@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
-import { classifyByCategory, type CellState } from '../../lib/cell-state'
+import { classifyByCategory, reclassifyRow, type CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -137,20 +137,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   // Mode toggle: default rows ship classified by dimType bundles. Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
   const modeRows = useMemo<Row[]>(() => {
     if (mode === 'metrics') return rows
-    return rows.map((r) => {
-      const cells = {} as Row['cells']
-      let coverage = 0
-      let expected = 0
-      for (const col of columns) {
-        const was = r.cells[col.key]
-        const isPresent = was === 'present' || was === 'unexpected'
-        const state = classifyByCategory(r.category, col.key, isPresent)
-        cells[col.key] = state
-        if (state === 'present') coverage += 1
-        if (state === 'present' || state === 'missing') expected += 1
-      }
-      return { ...r, cells, coverage, expected }
-    })
+    return rows.map((r) => ({ ...r, ...reclassifyRow(r, columns, classifyByCategory) }))
   }, [rows, columns, mode])
 
   const metricIds = useMemo(
