@@ -189,19 +189,19 @@ function presenceBySlug(cells: RawCell[]): Map<string, Set<string>> {
 }
 
 export function projectRow(p: RawProtocol, present: Set<string> | undefined): Row {
+  // Empty-string category from the wire collapses to undefined so the
+  // category filter and chip strip do not show a blank entry.
+  const category = p.category != null && p.category !== '' ? p.category : undefined
   const cells = {} as Cells
   let coverage = 0
   let expected = 0
   for (const col of COLUMNS) {
     const isPresent = present !== undefined && present.has(col.key)
-    const state = classifyCell(p.dimTypes, col.key, isPresent)
+    const state = classifyCell(category, col.key, isPresent)
     cells[col.key] = state
     if (state === 'present') coverage += 1
     if (state === 'present' || state === 'missing') expected += 1
   }
-  // Empty-string category from the wire collapses to undefined so the
-  // category filter and chip strip do not show a blank entry.
-  const category = p.category != null && p.category !== '' ? p.category : undefined
   // Lowercase defensively so the chain filter matches its URL token regardless
   // of upstream casing drift; today the upstream already emits lowercase.
   const chains = p.chains.map((c) => c.toLowerCase())

@@ -1,19 +1,10 @@
-// Pure-runtime four-state classifier. Expected set is the union of dimType
-// bundles for the protocol's registered adapters, plus tvl.
+// Expected set is tvl + CATEGORIES_EXPECTED[category]. dimType bundles stay
+// available for column narrowing on the adapter dropdown.
 
 import presets from '../../internal/registry/presets.json' with { type: 'json' }
+import { CATEGORIES_EXPECTED } from './categories'
 
 export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
-
-const BUNDLES: Record<string, Record<string, true>> = (() => {
-  const out: Record<string, Record<string, true>> = {}
-  for (const [dt, metrics] of Object.entries(presets)) {
-    const set: Record<string, true> = {}
-    for (const m of metrics) set[m] = true
-    out[dt] = set
-  }
-  return out
-})()
 
 export function metricsForDimType(dimType: string): readonly string[] {
   const metrics = (presets as Record<string, readonly string[]>)[dimType]
@@ -23,19 +14,13 @@ export function metricsForDimType(dimType: string): readonly string[] {
 export const DIMTYPE_KEYS: readonly string[] = Object.keys(presets)
 
 export function classifyCell(
-  dimTypes: readonly string[],
+  category: string | undefined,
   metric: string,
   present: boolean,
 ): CellState {
-  let expected = metric === 'tvl'
-  if (!expected) {
-    for (const dt of dimTypes) {
-      if (BUNDLES[dt]?.[metric]) {
-        expected = true
-        break
-      }
-    }
-  }
+  const expectedSet = category != null ? CATEGORIES_EXPECTED[category] : undefined
+  const expected =
+    metric === 'tvl' || (expectedSet != null && expectedSet.includes(metric as never))
   if (present && expected) return 'present'
   if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'
