@@ -1,3 +1,7 @@
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
 import type { SnapshotStats } from '../../lib/snapshot'
 import { CoverageModeToggle } from './CoverageModeToggle'
 
@@ -6,11 +10,17 @@ interface HeroStripProps {
 }
 
 export function HeroStrip({ stats }: HeroStripProps) {
+  const params = useSearchParams()
+  const isDimensions = params.get('mode') === 'dimensions'
+  const pct = isDimensions ? stats.coveragePctDimensions : stats.coveragePct
+  const caption = isDimensions
+    ? 'of expected dimension adapters emitted'
+    : 'of expected metrics emitted'
   const trackedLabel = `${stats.tracked.toLocaleString('en-US')} protocol${stats.tracked === 1 ? '' : 's'}`
   const iso = new Date(stats.updatedAt).toISOString()
   const updatedDate = iso.slice(0, 10)
   const updatedTime = `${iso.slice(11, 16)} UTC`
-  const coverage = stats.coveragePct.toFixed(1)
+  const coverage = pct.toFixed(1)
   return (
     <section aria-label="snapshot summary" className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
@@ -23,10 +33,8 @@ export function HeroStrip({ stats }: HeroStripProps) {
           </span>
           <span className="text-base font-medium text-accent/70">%</span>
         </div>
-        <CoverageBar pct={stats.coveragePct} />
-        <span className="text-[11px] text-fg-subtle">
-          of expected metrics emitted
-        </span>
+        <CoverageBar pct={pct} />
+        <span className="text-[11px] text-fg-subtle">{caption}</span>
         <CoverageModeToggle />
       </div>
       <div className="grid grid-cols-2 gap-2 pt-2 text-[11px]">
