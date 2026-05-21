@@ -45,7 +45,7 @@ export interface Column {
   label: string
 }
 
-import { classifyCell, type CellState } from './cell-state'
+import { classifyCell, classifyByCategory, type CellState } from './cell-state'
 
 export type Cells = Record<ColumnKey, CellState>
 
@@ -67,6 +67,9 @@ export interface Row {
 export interface SnapshotStats {
   tracked: number
   coveragePct: number
+  // Same matrix re-scored against CATEGORIES_EXPECTED so HeroStrip can show the
+  // dimensions-mode number when the operator flips the toggle.
+  coveragePctDimensions: number
   updatedAt: string
 }
 
@@ -141,11 +144,33 @@ export function loadSnapshot(): Snapshot {
     }
   }
   const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
+  let presentDim = 0
+  let trackedDim = 0
+  for (const r of rows) {
+    for (const col of COLUMNS) {
+      const was = r.cells[col.key]
+      const isPresent = was === 'present' || was === 'unexpected'
+      const s = classifyByCategory(r.category, col.key, isPresent)
+      if (s === 'present') {
+        presentDim += 1
+        trackedDim += 1
+      } else if (s === 'missing') {
+        trackedDim += 1
+      }
+    }
+  }
+  const coveragePctDimensions = trackedDim === 0 ? 0 : (presentDim / trackedDim) * 100
+
   const updatedAt =
     typeof raw.generatedAt === 'string'
       ? raw.generatedAt
       : statSync(RESOLVED_SNAPSHOT_PATH).mtime.toISOString()
-  const stats: SnapshotStats = { tracked: rows.length, coveragePct, updatedAt }
+  const stats: SnapshotStats = {
+    tracked: rows.length,
+    coveragePct,
+    coveragePctDimensions,
+    updatedAt,
+  }
 
   return { columns, rows, total: rows.length, stats }
 }
