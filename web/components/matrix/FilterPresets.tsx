@@ -18,7 +18,6 @@ interface FilterPresetsProps {
   chainOptions: string[]
 }
 
-const INFO_IDS = ['category', 'chains', 'coverage'] as const
 
 const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
@@ -51,12 +50,9 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
     replaceParams({ cellState: next || null })
   }
 
-  const infoVisible = INFO_IDS.some((id) => visibleIds.includes(id))
+  const infoVisible = params.get('info') === 'true'
   const toggleInfo = () => {
-    const next = infoVisible
-      ? visibleIds.filter((id) => !(INFO_IDS as readonly string[]).includes(id))
-      : [...visibleIds, ...INFO_IDS.filter((id) => !visibleIds.includes(id))]
-    onColumnsChange(next)
+    replaceParams({ info: infoVisible ? null : 'true' })
   }
 
   return (
