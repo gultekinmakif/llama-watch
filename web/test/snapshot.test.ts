@@ -11,16 +11,14 @@ describe('projectRow', () => {
     dimTypes: ['fees'],
   }
 
-  test('classifies cells against the category expected set', () => {
+  test('classifies cells against the registered dimType bundles', () => {
     const present = new Set(['tvl', 'dailyFees'])
     const row = projectRow(baseProtocol, present)
 
     expect(row.cells.tvl).toBe('present')
     expect(row.cells.dailyFees).toBe('present')
     expect(row.cells.dailyRevenue).toBe('missing')
-    expect(row.cells.dailyVolume).toBe('missing')
-    // openInterestAtEnd not in Lending's expected set, so absence is na not missing.
-    expect(row.cells.openInterestAtEnd).toBe('na')
+    expect(row.cells.dailyVolume).toBe('na')
   })
 
   test('coverage equals the count of present metrics', () => {
