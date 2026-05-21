@@ -18,6 +18,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
+      - run: bun run test
       - name: stub snapshot for static export
         # Next refuses output:'export' on a dynamic route when generateStaticParams
         # returns an empty list, so the stub seeds one protocol to produce one path.
