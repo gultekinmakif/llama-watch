@@ -1,6 +1,5 @@
 'use client'
 
-import type { RefObject } from 'react'
 import { flexRender, type Row as TableRow } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
@@ -9,7 +8,7 @@ import type { Row } from '../../lib/snapshot'
 interface VirtualBodyProps {
   rows: TableRow<Row>[]
   columnCount: number
-  scrollRef: RefObject<HTMLDivElement | null>
+  scrollEl: HTMLDivElement | null
   onClearFilters?: () => void
 }
 
@@ -17,13 +16,12 @@ const ROW_HEIGHT = 56
 
 const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
 
-export function VirtualBody({ rows, columnCount, scrollRef, onClearFilters }: VirtualBodyProps) {
+export function VirtualBody({ rows, columnCount, scrollEl, onClearFilters }: VirtualBodyProps) {
   const virtualizer = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: () => scrollEl,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
-    initialRect: { width: 1200, height: 800 },
   })
 
   const virtualItems = virtualizer.getVirtualItems()
@@ -67,7 +65,9 @@ export function VirtualBody({ rows, columnCount, scrollRef, onClearFilters }: Vi
     <tbody>
       {paddingTop > 0 && (
         <tr aria-hidden="true">
-          <td colSpan={columnCount} style={{ height: paddingTop, padding: 0, border: 0 }} />
+          <td colSpan={columnCount} style={{ padding: 0, border: 0 }}>
+            <div style={{ height: paddingTop }} />
+          </td>
         </tr>
       )}
       {virtualItems.map((item) => {
@@ -103,7 +103,9 @@ export function VirtualBody({ rows, columnCount, scrollRef, onClearFilters }: Vi
       })}
       {paddingBottom > 0 && (
         <tr aria-hidden="true">
-          <td colSpan={columnCount} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+          <td colSpan={columnCount} style={{ padding: 0, border: 0 }}>
+            <div style={{ height: paddingBottom }} />
+          </td>
         </tr>
       )}
     </tbody>
