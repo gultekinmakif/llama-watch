@@ -27,8 +27,9 @@ tmp/
 .vscode/*
 .claude/
 *.md
-!Readme.md
+!README.md
 !CHANGELOG.md
+!web/README.md
 
 # Environment
 .env
