@@ -8,6 +8,7 @@ import (
 
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
 	"github.com/gultekinmakif/llama-watch/internal/registry"
+	"gorm.io/gorm"
 )
 
 // Matrix serves GET /api/matrix.
@@ -30,16 +31,21 @@ func Matrix(w http.ResponseWriter, r *http.Request) {
 	db := postgres.Get()
 	ctx := r.Context()
 
-	total, err := countProtocols(ctx, db, q)
-	if err != nil {
-		slog.Error("matrix count failed", "error", err)
-		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
-		return
-	}
-
-	rows, err := listProtocols(ctx, db, q)
-	if err != nil {
-		slog.Error("matrix list failed", "error", err)
+	var total int
+	var rows []Row
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		var ierr error
+		total, ierr = countProtocols(ctx, tx, q)
+		if ierr != nil {
+			slog.Error("matrix count failed", "error", ierr)
+			return ierr
+		}
+		rows, ierr = listProtocols(ctx, tx, q)
+		if ierr != nil {
+			slog.Error("matrix list failed", "error", ierr)
+		}
+		return ierr
+	}); err != nil {
 		writeErr(w, http.StatusInternalServerError, "internal", "internal error")
 		return
 	}
