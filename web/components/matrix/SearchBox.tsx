@@ -33,9 +33,18 @@ export function SearchBox({ count, total }: SearchBoxProps) {
         e.preventDefault()
         inputRef.current?.focus()
         inputRef.current?.select()
-      } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
-        e.preventDefault()
-        inputRef.current?.focus()
+      } else if (e.key === '/') {
+        const ae = document.activeElement
+        const tag = ae?.tagName
+        const inText =
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          (ae instanceof HTMLElement && ae.isContentEditable)
+        if (!inText) {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }
       }
     }
     document.addEventListener('keydown', onKey)
