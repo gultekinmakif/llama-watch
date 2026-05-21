@@ -18,6 +18,7 @@ export function CoverageModeToggle() {
       type="button"
       onClick={() => replaceParams({ mode: isDimensions ? null : 'dimensions' })}
       aria-pressed={isDimensions}
+      aria-label={`coverage scoring: ${label}. ${title}.`}
       title={title}
       className={`mt-2 inline-flex w-fit items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors focus-visible:focus-ring ${
         isDimensions
