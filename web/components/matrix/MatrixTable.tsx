@@ -32,9 +32,15 @@ interface MatrixTableProps {
 
 const columnHelper = createColumnHelper<Row>()
 
-// Identity columns are governed by the `info` URL param (`info=true` to show
-// them), not by `cols`. Keeps the URL short when the user enables the info view.
+// Identity columns are governed by a single `info` URL param, not by `cols`.
+// Visible by default; `?info=false` hides them. Keeps the URL short.
 const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
+
+const CELL_STATES: ReadonlySet<CellState> = new Set(['present', 'missing', 'unexpected', 'na'])
+
+function parseCellState(raw: string | null): CellState | '' {
+  return raw != null && CELL_STATES.has(raw as CellState) ? (raw as CellState) : ''
+}
 
 // Fixed column widths so the virtualizer's row swaps cannot reflow column widths
 // mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
