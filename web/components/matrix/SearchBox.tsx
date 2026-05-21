@@ -21,10 +21,17 @@ export function SearchBox({ count, total }: SearchBoxProps) {
   const [value, setValue] = useState(urlQ)
   const inputRef = useRef<HTMLInputElement>(null)
   // Resync on external URL changes (back/forward, deep link).
-  useEffect(() => { setValue(urlQ) }, [urlQ])
+  useEffect(() => {
+    setValue(urlQ)
+  }, [urlQ])
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
 
   // Cmd/Ctrl+K focuses the search input from anywhere on the page.
   useEffect(() => {
@@ -112,8 +119,12 @@ export function SearchBox({ count, total }: SearchBoxProps) {
           </button>
         ) : (
           <>
-            <span aria-hidden="true" className="kbd hidden sm:inline-flex">⌘</span>
-            <span aria-hidden="true" className="kbd hidden sm:inline-flex">K</span>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">
+              ⌘
+            </span>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">
+              K
+            </span>
           </>
         )}
       </div>

@@ -4,11 +4,7 @@ import type { ColumnKey } from './snapshot'
 
 export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
 
-type Classifier = (
-  category: string | undefined,
-  metric: ColumnKey,
-  present: boolean,
-) => CellState
+type Classifier = (category: string | undefined, metric: ColumnKey, present: boolean) => CellState
 
 interface ReclassifyTarget {
   category?: string
@@ -85,8 +81,7 @@ export function classifyByCategory(
   const expectedSet = category != null ? CATEGORIES_EXPECTED[category] : undefined
   // skip categories with no expected fields.
   if (expectedSet == null) return present ? 'present' : 'na'
-  const expected =
-    metric === 'tvl' || (expectedSet as readonly string[]).includes(metric)
+  const expected = metric === 'tvl' || (expectedSet as readonly string[]).includes(metric)
   if (present && expected) return 'present'
   if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'

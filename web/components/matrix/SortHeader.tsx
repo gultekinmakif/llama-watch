@@ -58,7 +58,8 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
         ? `${label}, sorted descending`
         : `${label}, not sorted`
 
-  const iconName = direction === 'asc' ? 'sort-asc' : direction === 'desc' ? 'sort-desc' : 'sort-none'
+  const iconName =
+    direction === 'asc' ? 'sort-asc' : direction === 'desc' ? 'sort-desc' : 'sort-none'
 
   return (
     <button
@@ -72,7 +73,11 @@ export function SortHeader({ columnKey, label }: SortHeaderProps) {
       <Icon
         name={iconName}
         size={12}
-        className={direction ? 'text-accent' : 'text-fg-subtle opacity-0 transition-opacity group-hover/sort:opacity-100'}
+        className={
+          direction
+            ? 'text-accent'
+            : 'text-fg-subtle opacity-0 transition-opacity group-hover/sort:opacity-100'
+        }
       />
     </button>
   )

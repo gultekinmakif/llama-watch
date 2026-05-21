@@ -42,12 +42,7 @@ describe('encodeCsv', () => {
 })
 
 describe('parseCsv <-> encodeCsv round-trip', () => {
-  const canonical: string[][] = [
-    [],
-    ['tvl'],
-    ['ethereum', 'polygon'],
-    ['a', 'b', 'c', 'd'],
-  ]
+  const canonical: string[][] = [[], ['tvl'], ['ethereum', 'polygon'], ['a', 'b', 'c', 'd']]
 
   for (const input of canonical) {
     test(`parseCsv(encodeCsv(${JSON.stringify(input)})) preserves the array`, () => {

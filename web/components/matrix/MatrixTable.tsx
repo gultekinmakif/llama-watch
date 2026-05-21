@@ -123,10 +123,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     [columns],
   )
 
-  const allIds = useMemo(
-    () => ['name', ...toggleableOptions.map((c) => c.id)],
-    [toggleableOptions],
-  )
+  const allIds = useMemo(() => ['name', ...toggleableOptions.map((c) => c.id)], [toggleableOptions])
 
   const colsParam = searchParams.get('cols')
   const infoVisible = searchParams.get('info') !== 'false'
@@ -151,7 +148,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
     let visibleMetrics: Set<string>
     if (colsParam != null) {
-      visibleMetrics = colsParam === 'none' ? new Set() : new Set(colsParam.split(',').filter(Boolean))
+      visibleMetrics =
+        colsParam === 'none' ? new Set() : new Set(colsParam.split(',').filter(Boolean))
     } else if (categoryPreset && adapterPreset) {
       const catSet = new Set(expectedColumnsFor(categoryPreset))
       const adaSet = new Set(metricsFor(adapterPreset))
@@ -231,10 +229,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const tableRows = table.getRowModel().rows
   const visibleLeafs = table.getVisibleLeafColumns()
   const columnCount = visibleLeafs.length
-  const tableWidth = visibleLeafs.reduce(
-    (sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH),
-    0,
-  )
+  const tableWidth = visibleLeafs.reduce((sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH), 0)
 
   const visibleIds = useMemo(
     () => allIds.filter((id) => columnVisibility[id] !== false),
@@ -301,10 +296,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         ref={setScrollEl}
         className="thin-scrollbar flex-1 min-h-0 overflow-auto rounded-md border border-border-strong shadow-card"
       >
-        <table
-          style={{ width: tableWidth }}
-          className="table-fixed border-collapse text-sm"
-        >
+        <table style={{ width: tableWidth }} className="table-fixed border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
           <colgroup>
             {visibleLeafs.map((col) => (
@@ -340,7 +332,10 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                       {isSorted ? (
-                        <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
+                        <span
+                          aria-hidden="true"
+                          className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent"
+                        />
                       ) : null}
                     </th>
                   )

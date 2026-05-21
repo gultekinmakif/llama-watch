@@ -68,13 +68,9 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       <span className="text-[10px] font-semibold tracking-[0.08em] text-fg-subtle uppercase">
         {label}
       </span>
-      <span className="font-mono text-[13px] text-fg tabular-nums leading-tight">
-        {value}
-      </span>
+      <span className="font-mono text-[13px] text-fg tabular-nums leading-tight">{value}</span>
       {sub ? (
-        <span className="font-mono text-[10px] text-fg-subtle tabular-nums">
-          {sub}
-        </span>
+        <span className="font-mono text-[10px] text-fg-subtle tabular-nums">{sub}</span>
       ) : null}
     </div>
   )

@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  Select,
-  SelectItem,
-  SelectItemCheck,
-  SelectPopover,
-  SelectProvider,
-} from '@ariakit/react'
+import { Select, SelectItem, SelectItemCheck, SelectPopover, SelectProvider } from '@ariakit/react'
 
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { Icon } from '../ui/Icon'

@@ -143,7 +143,7 @@ export function loadSnapshot(): Snapshot {
     }
   }
   const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
-  
+
   // powers the toggle so flipping to dimensions mode also flips the headline number.
   let presentDim = 0
   let trackedDim = 0
