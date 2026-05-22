@@ -67,6 +67,7 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 - **`info` URL param.** Identity columns (category / chains / coverage) controlled by `?info=true|false` instead of bloating `cols=`. Visible by default.
 - **Refresh script.** `--soft` flag (and `make refresh-soft`) reuses on-disk upstream files for fast re-classification. Structured banners with sizes and timing per phase.
 - **refactor.** Vitest in CI, mobile drawer announces itself and manages focus, `/` hotkey skips textareas and contenteditable, sort cycle no longer hides columns, dead `ScrollToTop` removed...
+- **perf.** `loadSnapshot` folds three `rows × COLUMNS` passes into one, and the dimensions-mode cells are precomputed at build so the toggle becomes a property pick instead of a per-render reclassification, nice.
 
 # v3
 > cutoff commit: None yet.
