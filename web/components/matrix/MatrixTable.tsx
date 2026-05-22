@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
-import { classifyByCategory, reclassifyRow, type CellState } from '../../lib/cell-state'
+import { type CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -34,7 +34,7 @@ const columnHelper = createColumnHelper<Row>()
 
 // Identity columns are governed by a single `info` URL param, not by `cols`.
 // Visible by default; `?info=false` hides them. Keeps the URL short.
-const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
+const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains'])
 
 const CELL_STATES: ReadonlySet<CellState> = new Set(['present', 'missing', 'unexpected', 'na'])
 
@@ -117,7 +117,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     () => [
       { id: 'category', label: 'category' },
       { id: 'chains', label: 'chains' },
-      { id: 'coverage', label: 'coverage' },
       ...columns.map((c) => ({ id: c.key, label: c.label })),
     ],
     [columns],
@@ -134,8 +133,13 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   // Mode toggle: default rows ship classified by dimType bundles. Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
   const modeRows = useMemo<Row[]>(() => {
     if (mode === 'metrics') return rows
-    return rows.map((r) => ({ ...r, ...reclassifyRow(r, columns, classifyByCategory) }))
-  }, [rows, columns, mode])
+    return rows.map((r) => ({
+      ...r,
+      cells: r.cellsDimensions,
+      coverage: r.coverageDimensions,
+      expected: r.expectedDimensions,
+    }))
+  }, [rows, mode])
 
   const metricIds = useMemo(
     () => allIds.filter((id) => id !== 'name' && !INFO_IDS.has(id)),
@@ -143,7 +147,8 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   )
 
   const columnVisibility = useMemo<VisibilityState>(() => {
-    const result: VisibilityState = { name: true }
+    // coverage column is rendered inside NameCell already; always hide the standalone column.
+    const result: VisibilityState = { name: true, coverage: false }
     for (const id of INFO_IDS) result[id] = infoVisible
 
     let visibleMetrics: Set<string>
@@ -244,7 +249,15 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     (nextIds: string[]) => {
       const visible = new Set(nextIds)
       visible.add('name')
-      const identityOn = metricIds.length > 0 && [...INFO_IDS].some((id) => visible.has(id))
+      let identityOn = false
+      if (metricIds.length > 0) {
+        for (const id of INFO_IDS) {
+          if (visible.has(id)) {
+            identityOn = true
+            break
+          }
+        }
+      }
       const visibleMetrics = metricIds.filter((id) => visible.has(id))
       const csv = visibleMetrics.join(',')
       const defaultCsv = metricIds.join(',')
