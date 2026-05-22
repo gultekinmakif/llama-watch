@@ -3,24 +3,21 @@
 
 ## Backend
 - Bootstrapped from the [hardhat-go template](https://github.com/gultekinmakif/go-http-server).
-- Coverage parser walked the cloned `DefiLlama-Adapters/` and `dimension-adapters/` source trees and scanned `.ts` / `.js` files by keyword (regex-grep for `dailyFees`, `dailyVolume`, etc.) to infer which metrics each adapter emitted.
-  - Tech debt from the preliminary research script.
-  - Initially accepted, then **sunset in v2** in favor of upstream's published **release-asset manifests**.
-- `cmd/refresh` Go binary owns the orchestration: shallow-cloned upstream, ran the walker, persisted `matrix` + `protocol_identities`.
-  - skipped the pipeline when upstream SHAs were unchanged.
-- `internal/api/` shipped the read surface: `/health` with a 2s Postgres ping `/api/matrix`, `/api/matrix/{slug}`, `/api/chains`, `/api/dimensions`.
-- `bash` orchestrator for `scripts/refresh.sh` + `scripts/setup-cron.sh` setup.
+- **Keyword coverage parser.** Walked the cloned adapter source trees and regex-grepped `.ts` / `.js` files for `dailyFees`, `dailyVolume`, and the rest to infer per-adapter metrics. Sunset in v2.
+- **`cmd/refresh` orchestrator.** Shallow-cloned upstream, ran the walker, persisted `matrix` + `protocol_identities`. Skipped the pipeline when upstream SHAs were unchanged.
+- **Read surface.** `/health` with a 2s Postgres ping, plus `/api/matrix`, `/api/matrix/{slug}`, `/api/chains`, `/api/dimensions`.
+- **Bash orchestrator.** `scripts/refresh.sh` plus `scripts/setup-cron.sh` for scheduler install.
 
 ## Data Pipeline
-The v1 pipeline was Go-only: **clone**, **walk**, **classify**, **persist**.
+The v1 pipeline was Go-only: clone, walk, classify, persist.
 
 1. **Sparse-clone** `DefiLlama/defillama-server` into `var/upstream/`, scoped to `defi/src/protocols`.
-2. **Walk the adapter trees.** `internal/dimensions.Walker` traversed `DefiLlama-Adapters/` and `dimension-adapters/`, opened each `.ts`/`.js` file, grepped for known metric keys (`dailyFees:`, `tvl:`, …) to infer presence per `(protocol, metric)`.
-3. **Build the matrix in memory.** One row per `(slug, metric)`, plus a sibling `protocol_identities` row carrying `(slug, name, category, chains[])`.
-4. **Persist.** One transaction: `TRUNCATE matrix`, `TRUNCATE protocol_identities`, bulk-insert from the walker output.
-5. **Serve.** `cmd/server` reads the matrix table at request time, normalizes via `internal/registry/columns.go`'s pinned column order.
+2. **Walk the adapter trees** for known metric keys (`dailyFees:`, `tvl:`, ...) to infer presence per `(protocol, metric)`.
+3. **Build the matrix in memory.** One row per `(slug, metric)`, plus a sibling `protocol_identities` row.
+4. **Persist** in one transaction: truncate both tables, bulk-insert from the walker output.
+5. **Serve.** `cmd/server` reads the matrix at request time, normalized by the pinned registry column order.
 
-Drawback that drove v2: the keyword walker over-matched and under-matched. A comment containing `dailyFees:` was a hit, an adapter exporting `dailyFees` via a re-export was a miss. The fix was to stop reading source and start reading the upstream's own metric manifest.
+The walker over-matched comments and missed re-exports. v2 swapped source-scanning for upstream's own metric manifests.
 
 ## Web UI
 - Next.js 16 + React 19 + Tailwind 4 + `@tanstack/react-table` + `@tanstack/react-virtual`. Static export into `web/out/`; the Go server's file root serves it.
@@ -48,14 +45,14 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 5. **Stage the frontend.** `bun run build` into a sibling stage, atomic-swap `web/out/`.
 
 ### Web UI
-- **Four-state cells.** Black / green / red / yellow. Legend doubles as a row filter via `?cellState=…`.
+- **Four-state cells.** Black / green / red / yellow. Legend doubles as a row filter via `?cellState=...`.
 - **Sidebar shell.** Brand, hero strip, legend, preset pills, active-filters chips, footer. Mobile drawer with backdrop.
 - **Preset pills.** One-click `category` + `adapter` filters that narrow rows and columns together.
 - **Hero strip.** Tracked / Coverage / Updated KPI subgrid above the matrix.
-- **Search box.** `match-sorter` over `name` / `slug` / `category` / `chains`, debounced + deferred. Row count in red when narrowed. `Cmd/Ctrl+K` and `/` focus.
+- **Search box.** `match-sorter` over name, slug, category, chains. Debounced and deferred, with a focus hotkey.
 - **Share button.** Copies the live URL with every active filter and sort baked in.
 - **Scroll-to-top.** Floating accent button after the first viewport.
-- **Token palette.** All colors moved to oklch tokens in `@theme` (with claude).
+- **Token palette.** Colors moved to oklch tokens in `@theme`.
 - **Version footer chip.** Build-time git SHA, links to the GitHub commit.
 
 ## v2.0.2
@@ -65,10 +62,11 @@ The v2 pipeline is **manifest-driven**: bash fans out, bun joins, Go persists.
 - **Release pipeline.** A PR from `release/vX.Y.Z` to main auto-tags the release, publishes the GitHub release page, and rebuilds Vercel. Version lives in `web/version.json`.
 
 ## v2.1.0
-- **Coverage mode toggle.** Sidebar chip flips scoring between dimType bundles (default) and `CATEGORIES_EXPECTED` (`?mode=dimensions`). The alt mode surfaces protocols missing dimension adapters per category.
-- **`CATEGORIES_EXPECTED` expanded.** Every category in the snapshot has a curated expected set, derived empirically via `tools/derive-categories.ts`.
-- **`info` URL param.** Identity columns toggle through `?info=true|false`, no more `cols=` bloat. Visible by default.
-- **`make refresh-soft`.** Reuses on-disk upstream for fast re-classification. Refresh prints structured banners with sizes and timing.
+- **Coverage mode toggle.** Sidebar chip flips the matrix between dimType-bundle scoring (default) and category-based scoring (`?mode=dimensions`), with the headline coverage % and caption following the active mode. The alt mode surfaces protocols missing dimension adapters per category.
+- **`CATEGORIES_EXPECTED` expanded.** Every category in the live snapshot now has a curated expected set, derived empirically via the new `tools/derive-categories.ts`. Re-runnable against future snapshots.
+- **`info` URL param.** Identity columns (category / chains / coverage) controlled by `?info=true|false` instead of bloating `cols=`. Visible by default.
+- **Refresh script.** `--soft` flag (and `make refresh-soft`) reuses on-disk upstream files for fast re-classification. Structured banners with sizes and timing per phase.
+- **refactor.** Vitest in CI, mobile drawer announces itself and manages focus, `/` hotkey skips textareas and contenteditable, sort cycle no longer hides columns, dead `ScrollToTop` removed...
 
 # v3
 > cutoff commit: None yet.
