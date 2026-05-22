@@ -10,8 +10,8 @@ export function Brand() {
         <span className="leading-none"> · MetaLlama</span>
       </a>
       <p className="text-[12.5px] pt-5 leading-snug text-fg-muted">
-        Live coverage matrix of every protocol DefiLlama tracks.
-        Find which adapters emit which metrics, what is missing, what is unexpected.
+        Live coverage matrix of every protocol DefiLlama tracks. Find protocols missing fees,
+        volume, or other category-expected metrics.
       </p>
     </div>
   )
@@ -19,13 +19,7 @@ export function Brand() {
 
 function LogoMark() {
   return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 22 22"
-      aria-hidden="true"
-      className="shrink-0"
-    >
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className="shrink-0">
       <rect x="0" y="0" width="10" height="10" rx="1.5" fill="var(--color-cell-present)" />
       <rect x="0" y="12" width="10" height="10" rx="1.5" fill="var(--color-cell-missing)" />
       <rect x="12" y="12" width="10" height="10" rx="1.5" fill="var(--color-cell-unexpected)" />

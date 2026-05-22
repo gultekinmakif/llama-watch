@@ -18,8 +18,6 @@ interface FilterPresetsProps {
   chainOptions: string[]
 }
 
-const INFO_IDS = ['category', 'chains', 'coverage'] as const
-
 const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
   missing: 'missing',
@@ -34,7 +32,12 @@ function toStringOptions(options: readonly string[]): { value: string; label: st
   return options.map((o) => ({ value: o, label: o }))
 }
 
-export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOptions }: FilterPresetsProps) {
+export function FilterPresets({
+  toggleable,
+  visibleIds,
+  onColumnsChange,
+  chainOptions,
+}: FilterPresetsProps) {
   const params = useSearchParams()
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
@@ -51,12 +54,9 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
     replaceParams({ cellState: next || null })
   }
 
-  const infoVisible = INFO_IDS.some((id) => visibleIds.includes(id))
+  const infoVisible = params.get('info') !== 'false'
   const toggleInfo = () => {
-    const next = infoVisible
-      ? visibleIds.filter((id) => !(INFO_IDS as readonly string[]).includes(id))
-      : [...visibleIds, ...INFO_IDS.filter((id) => !visibleIds.includes(id))]
-    onColumnsChange(next)
+    replaceParams({ info: infoVisible ? 'false' : null })
   }
 
   return (
@@ -94,17 +94,13 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
       <FilterBar chainOptions={chainOptions} />
       <PresetDropdown
         label={cellState ? CELL_STATE_LABELS[cellState] : 'state'}
-        countLabel={cellState ? null : `4`}
+        countLabel={cellState ? null : '4'}
         value={cellState}
         options={CELL_STATE_OPTIONS}
         onChange={onCellStateChange}
         ariaLabel="filter rows by cell state"
       />
-      <ColumnsMenu
-        toggleable={toggleable}
-        visibleIds={visibleIds}
-        onChange={onColumnsChange}
-      />
+      <ColumnsMenu toggleable={toggleable} visibleIds={visibleIds} onChange={onColumnsChange} />
       <CopyLinkButton />
     </div>
   )
@@ -124,7 +120,14 @@ interface PresetDropdownProps {
   ariaLabel: string
 }
 
-function PresetDropdown({ label, countLabel, value, options, onChange, ariaLabel }: PresetDropdownProps) {
+function PresetDropdown({
+  label,
+  countLabel,
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: PresetDropdownProps) {
   const active = value !== ''
   return (
     <SelectProvider

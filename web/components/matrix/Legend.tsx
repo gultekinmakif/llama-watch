@@ -38,10 +38,7 @@ export function Legend() {
                 : 'border-transparent text-fg-muted hover:bg-surface hover:text-fg'
             }`}
           >
-            <span
-              aria-hidden="true"
-              className={`inline-block h-2.5 w-2.5 rounded-sm ${s.tone}`}
-            />
+            <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 rounded-sm ${s.tone}`} />
             <span>{s.label}</span>
           </button>
         )

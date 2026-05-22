@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  Menu,
-  MenuButton,
-  MenuItemCheck,
-  MenuItemCheckbox,
-  MenuProvider,
-} from '@ariakit/react'
+import { Menu, MenuButton, MenuItemCheck, MenuItemCheckbox, MenuProvider } from '@ariakit/react'
 
 import { Icon } from '../ui/Icon'
 

@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -30,8 +31,7 @@ func main() {
 
 	if err := postgres.New(cfg.DatabaseURL); err != nil {
 		slog.Error("database connection error", "error", err)
-		return
-
+		os.Exit(1)
 	}
 	defer func() {
 		if err := postgres.Close(); err != nil {
@@ -41,7 +41,7 @@ func main() {
 
 	if err := postgres.Migrate(); err != nil {
 		slog.Error("database migration error", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -50,6 +50,6 @@ func main() {
 	srv := server.New(cfg)
 	if err := srv.Start(ctx); err != nil {
 		slog.Error("server error", "error", err)
-		return
+		os.Exit(1)
 	}
 }

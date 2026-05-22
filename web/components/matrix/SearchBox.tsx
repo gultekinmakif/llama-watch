@@ -21,10 +21,17 @@ export function SearchBox({ count, total }: SearchBoxProps) {
   const [value, setValue] = useState(urlQ)
   const inputRef = useRef<HTMLInputElement>(null)
   // Resync on external URL changes (back/forward, deep link).
-  useEffect(() => { setValue(urlQ) }, [urlQ])
+  useEffect(() => {
+    setValue(urlQ)
+  }, [urlQ])
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
 
   // Cmd/Ctrl+K focuses the search input from anywhere on the page.
   useEffect(() => {
@@ -33,9 +40,18 @@ export function SearchBox({ count, total }: SearchBoxProps) {
         e.preventDefault()
         inputRef.current?.focus()
         inputRef.current?.select()
-      } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
-        e.preventDefault()
-        inputRef.current?.focus()
+      } else if (e.key === '/') {
+        const ae = document.activeElement
+        const tag = ae?.tagName
+        const inText =
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          (ae instanceof HTMLElement && ae.isContentEditable)
+        if (!inText) {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }
       }
     }
     document.addEventListener('keydown', onKey)
@@ -103,8 +119,12 @@ export function SearchBox({ count, total }: SearchBoxProps) {
           </button>
         ) : (
           <>
-            <span aria-hidden="true" className="kbd hidden sm:inline-flex">⌘</span>
-            <span aria-hidden="true" className="kbd hidden sm:inline-flex">K</span>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">
+              ⌘
+            </span>
+            <span aria-hidden="true" className="kbd hidden sm:inline-flex">
+              K
+            </span>
           </>
         )}
       </div>

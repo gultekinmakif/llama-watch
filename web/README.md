@@ -21,24 +21,14 @@ bun run dev
 
 ## Stack
 
-- Next.js 16
-- React 19
-- TypeScript 5
-- Tailwind CSS 4
-- `@tanstack/react-table` 8
-- `@tanstack/react-virtual` 3
-- `@ariakit/react` for accessible primitives
-- `match-sorter` 8
+Next.js 16, React 19, TypeScript 5, Tailwind 4, `@tanstack/react-table` 8, `@tanstack/react-virtual` 3, `@ariakit/react`, `match-sorter` 8.
 
-Runtime is `bun`. There is no `packageManager` field in `package.json`; pick bun explicitly.
+Runtime is `bun`. `package.json` has no `packageManager` field; pick bun explicitly.
 
 ## Where things live
 
-- `app/` - routes, root layout, global styles
-- `lib/snapshot.ts` - build-time JSON loader, `Row` / `Column` / `Snapshot` / `SnapshotStats` types, `projectRow`.
-- `lib/cell-state.ts` - `classifyCell` and the four-state `CellState` union.
-- `lib/url-state.ts` - `useReplaceParams`, `useCsvParam`, and the CSV helpers shared by every URL writer.
-- `lib/presets.ts` - category and adapter preset metadata.
-- `components/sidebar/` - `AppShell`, `SidebarContent`, `Brand`, `ActiveFilters`, `SidebarFooter`.
-- `components/matrix/` - `MatrixTable`, `VirtualBody`, `SearchBox`, `FilterPresets`, `FilterBar` (chain multi-select), `ColumnsMenu`, `HeroStrip`, `Legend`, `PresetPills`, `PresenceCell`, `NameCell`, `SortHeader`.
-- `components/ui/` - shared primitives (`CopyLinkButton`, `ScrollToTop`, `Icon`, empty / error panels).
+- `app/` - routes, root layout, global styles.
+- `lib/` - snapshot loader and shared types, cell-state classifier, URL-param helpers, preset metadata.
+- `components/sidebar/` - app shell and sidebar pieces.
+- `components/matrix/` - the table, virtual body, search, filters, columns menu, hero strip, legend, presence cell.
+- `components/ui/` - shared primitives (copy-link button, icon, empty / error panels).

@@ -1,4 +1,4 @@
-.PHONY: build build-server build-sync-db run dev refresh test tidy clean help
+.PHONY: build build-server build-sync-db run dev refresh refresh-soft test tidy clean help
 .DEFAULT_GOAL := help
 
 build: build-server build-sync-db ## Build all binaries into bin/
@@ -17,6 +17,9 @@ dev: ## Run with hot reload via air
 
 refresh: ## Run the cron orchestrator end-to-end
 	@./scripts/refresh.sh
+
+refresh-soft: ## Re-run extract + build + sync + web against existing var/ (no upstream fetch)
+	@./scripts/refresh.sh --soft
 
 test: ## Run all tests
 	go test ./...

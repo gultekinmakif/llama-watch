@@ -14,7 +14,7 @@ import {
 import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
-import type { CellState } from '../../lib/cell-state'
+import { type CellState } from '../../lib/cell-state'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -32,7 +32,15 @@ interface MatrixTableProps {
 
 const columnHelper = createColumnHelper<Row>()
 
-const DEFAULT_HIDDEN: ReadonlySet<string> = new Set(['category', 'chains', 'coverage'])
+// Identity columns are governed by a single `info` URL param, not by `cols`.
+// Visible by default; `?info=false` hides them. Keeps the URL short.
+const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains'])
+
+const CELL_STATES: ReadonlySet<CellState> = new Set(['present', 'missing', 'unexpected', 'na'])
+
+function parseCellState(raw: string | null): CellState | '' {
+  return raw != null && CELL_STATES.has(raw as CellState) ? (raw as CellState) : ''
+}
 
 // Fixed column widths so the virtualizer's row swaps cannot reflow column widths
 // mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
@@ -109,60 +117,68 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     () => [
       { id: 'category', label: 'category' },
       { id: 'chains', label: 'chains' },
-      { id: 'coverage', label: 'coverage' },
       ...columns.map((c) => ({ id: c.key, label: c.label })),
     ],
     [columns],
   )
 
-  const allIds = useMemo(
-    () => ['name', ...toggleableOptions.map((c) => c.id)],
-    [toggleableOptions],
-  )
+  const allIds = useMemo(() => ['name', ...toggleableOptions.map((c) => c.id)], [toggleableOptions])
 
   const colsParam = searchParams.get('cols')
+  const infoVisible = searchParams.get('info') !== 'false'
+  const mode = searchParams.get('mode') === 'dimensions' ? 'dimensions' : 'metrics'
   const categoryPreset = searchParams.get('category') ?? ''
   const adapterPreset = searchParams.get('adapter') ?? ''
-  const cellStatePreset = (searchParams.get('cellState') ?? '') as CellState | ''
+  const cellStatePreset = parseCellState(searchParams.get('cellState'))
+  // Mode toggle: default rows ship classified by dimType bundles. Under ?mode=dimensions, re-classify against CATEGORIES_EXPECTED.
+  const modeRows = useMemo<Row[]>(() => {
+    if (mode === 'metrics') return rows
+    return rows.map((r) => ({
+      ...r,
+      cells: r.cellsDimensions,
+      coverage: r.coverageDimensions,
+      expected: r.expectedDimensions,
+    }))
+  }, [rows, mode])
+
+  const metricIds = useMemo(
+    () => allIds.filter((id) => id !== 'name' && !INFO_IDS.has(id)),
+    [allIds],
+  )
 
   const columnVisibility = useMemo<VisibilityState>(() => {
-    const buildFromVisibleSet = (visible: Set<string>): VisibilityState => {
-      visible.add('name')
-      const result: VisibilityState = {}
-      for (const id of allIds) result[id] = visible.has(id)
-      return result
-    }
+    // coverage column is rendered inside NameCell already; always hide the standalone column.
+    const result: VisibilityState = { name: true, coverage: false }
+    for (const id of INFO_IDS) result[id] = infoVisible
 
+    let visibleMetrics: Set<string>
     if (colsParam != null) {
-      if (colsParam === 'none') return buildFromVisibleSet(new Set())
-      return buildFromVisibleSet(new Set(colsParam.split(',').filter(Boolean)))
-    }
-    if (categoryPreset && adapterPreset) {
+      visibleMetrics =
+        colsParam === 'none' ? new Set() : new Set(colsParam.split(',').filter(Boolean))
+    } else if (categoryPreset && adapterPreset) {
       const catSet = new Set(expectedColumnsFor(categoryPreset))
       const adaSet = new Set(metricsFor(adapterPreset))
-      const intersection = new Set([...catSet].filter((c) => adaSet.has(c)))
-      return buildFromVisibleSet(intersection)
+      visibleMetrics = new Set([...catSet].filter((c) => adaSet.has(c)))
+    } else if (categoryPreset) {
+      visibleMetrics = new Set(expectedColumnsFor(categoryPreset))
+    } else if (adapterPreset) {
+      visibleMetrics = new Set(metricsFor(adapterPreset))
+    } else {
+      visibleMetrics = new Set(metricIds)
     }
-    if (categoryPreset) {
-      return buildFromVisibleSet(new Set(expectedColumnsFor(categoryPreset)))
-    }
-    if (adapterPreset) {
-      return buildFromVisibleSet(new Set(metricsFor(adapterPreset)))
-    }
-    const result: VisibilityState = {}
-    for (const id of allIds) result[id] = !DEFAULT_HIDDEN.has(id)
+    for (const id of metricIds) result[id] = visibleMetrics.has(id)
     return result
-  }, [colsParam, categoryPreset, adapterPreset, allIds])
+  }, [colsParam, infoVisible, categoryPreset, adapterPreset, metricIds])
 
   const q = searchParams.get('q')?.trim() ?? ''
   const deferredQ = useDeferredValue(q)
   const filteredRows = useMemo(() => {
-    if (deferredQ === '') return rows
-    return matchSorter(rows, deferredQ, {
+    if (deferredQ === '') return modeRows
+    return matchSorter(modeRows, deferredQ, {
       keys: ['name', 'slug', 'category', 'chains'],
       keepDiacritics: false,
     })
-  }, [rows, deferredQ])
+  }, [modeRows, deferredQ])
 
   // Cell-state row filter scans these keys, so a 'present' filter under a
   // narrowed column set only keeps rows that match the narrowed columns.
@@ -218,37 +234,49 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
   const tableRows = table.getRowModel().rows
   const visibleLeafs = table.getVisibleLeafColumns()
   const columnCount = visibleLeafs.length
-  const tableWidth = visibleLeafs.reduce(
-    (sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH),
-    0,
-  )
+  const tableWidth = visibleLeafs.reduce((sum, col) => sum + (COL_WIDTH[col.id] ?? METRIC_WIDTH), 0)
 
   const visibleIds = useMemo(
     () => allIds.filter((id) => columnVisibility[id] !== false),
     [allIds, columnVisibility],
   )
 
-  // Manual column toggle clears active presets so the dropdown labels reset to placeholders.
-  // The 'none' sentinel keeps the all-toggleable-off URL state reachable; an empty string
-  // would be dropped by useReplaceParams and silently snap back to defaults.
+  // Splits the incoming visible-set into metrics (cols param) and identity (info
+  // param). Metric default is "all visible", so cols clears to null when the set
+  // matches; otherwise the 'none' sentinel keeps an all-off URL state reachable
+  // since useReplaceParams would otherwise drop an empty string.
   const handleVisibleChange = useCallback(
     (nextIds: string[]) => {
       const visible = new Set(nextIds)
       visible.add('name')
-      const csv = allIds.filter((id) => id !== 'name' && visible.has(id)).join(',')
-      const defaultCsv = allIds.filter((id) => id !== 'name' && !DEFAULT_HIDDEN.has(id)).join(',')
-      const next = csv === defaultCsv ? null : csv === '' ? 'none' : csv
-      replaceParams({ cols: next })
+      let identityOn = false
+      if (metricIds.length > 0) {
+        for (const id of INFO_IDS) {
+          if (visible.has(id)) {
+            identityOn = true
+            break
+          }
+        }
+      }
+      const visibleMetrics = metricIds.filter((id) => visible.has(id))
+      const csv = visibleMetrics.join(',')
+      const defaultCsv = metricIds.join(',')
+      const cols = csv === defaultCsv ? null : csv === '' ? 'none' : csv
+      replaceParams({ cols, info: identityOn ? null : 'false' })
     },
-    [allIds, replaceParams],
+    [metricIds, replaceParams],
   )
 
   const handleHideColumn = useCallback(
     (id: string) => {
       if (id === 'name') return
+      if (INFO_IDS.has(id)) {
+        replaceParams({ info: 'false' })
+        return
+      }
       handleVisibleChange(visibleIds.filter((v) => v !== id))
     },
-    [handleVisibleChange, visibleIds],
+    [handleVisibleChange, replaceParams, visibleIds],
   )
 
   // Resets every filter that can prune rows or columns; sort/order stay.
@@ -256,6 +284,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
     replaceParams({
       q: null,
       cols: null,
+      info: null,
       category: null,
       adapter: null,
       cellState: null,
@@ -280,10 +309,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         ref={setScrollEl}
         className="thin-scrollbar flex-1 min-h-0 overflow-auto rounded-md border border-border-strong shadow-card"
       >
-        <table
-          style={{ width: tableWidth }}
-          className="table-fixed border-collapse text-sm"
-        >
+        <table style={{ width: tableWidth }} className="table-fixed border-collapse text-sm">
           <caption className="sr-only">protocol coverage matrix</caption>
           <colgroup>
             {visibleLeafs.map((col) => (
@@ -305,14 +331,24 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
                       key={h.id}
                       scope="col"
                       aria-sort={h.column.getCanSort() ? ariaSort : undefined}
-                      onDoubleClick={canHide ? () => handleHideColumn(h.column.id) : undefined}
-                      title={canHide ? 'double-click to hide column' : undefined}
+                      onDoubleClick={
+                        canHide
+                          ? (e) => {
+                              // prevents double-hide trigger crash on the inner SortHeader button
+                              if (e.target === e.currentTarget) handleHideColumn(h.column.id)
+                            }
+                          : undefined
+                      }
+                      title={canHide ? 'double-click outside the sort button to hide' : undefined}
                       style={isStickyLeft ? { position: 'sticky', left: 0, zIndex: 20 } : undefined}
                       className={`relative overflow-hidden px-3 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] uppercase break-words ${isSorted ? 'text-fg' : 'text-fg-muted'} ${isStickyLeft ? 'bg-surface shadow-[1px_0_0_var(--color-border-strong)]' : ''}`}
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
                       {isSorted ? (
-                        <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
+                        <span
+                          aria-hidden="true"
+                          className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent"
+                        />
                       ) : null}
                     </th>
                   )

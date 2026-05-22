@@ -1,9 +1,40 @@
-// Pure-runtime four-state classifier. Expected set is the union of dimType
-// bundles for the protocol's registered adapters, plus tvl.
-
 import presets from '../../internal/registry/presets.json' with { type: 'json' }
+import { CATEGORIES_EXPECTED } from './categories'
+import type { ColumnKey } from './snapshot'
 
 export type CellState = 'na' | 'missing' | 'present' | 'unexpected'
+
+type Classifier = (category: string | undefined, metric: ColumnKey, present: boolean) => CellState
+
+interface ReclassifyTarget {
+  category?: string
+  cells: Record<ColumnKey, CellState>
+}
+
+export interface ReclassifyResult {
+  cells: Record<ColumnKey, CellState>
+  coverage: number
+  expected: number
+}
+
+export function reclassifyRow(
+  row: ReclassifyTarget,
+  columns: readonly { key: ColumnKey }[],
+  classify: Classifier,
+): ReclassifyResult {
+  const cells = {} as Record<ColumnKey, CellState>
+  let coverage = 0
+  let expected = 0
+  for (const col of columns) {
+    const was = row.cells[col.key]
+    const isPresent = was === 'present' || was === 'unexpected'
+    const state = classify(row.category, col.key, isPresent)
+    cells[col.key] = state
+    if (state === 'present') coverage += 1
+    if (state === 'present' || state === 'missing') expected += 1
+  }
+  return { cells, coverage, expected }
+}
 
 const BUNDLES: Record<string, Record<string, true>> = (() => {
   const out: Record<string, Record<string, true>> = {}
@@ -36,6 +67,21 @@ export function classifyCell(
       }
     }
   }
+  if (present && expected) return 'present'
+  if (present && !expected) return 'unexpected'
+  if (!present && expected) return 'missing'
+  return 'na'
+}
+
+export function classifyByCategory(
+  category: string | undefined,
+  metric: string,
+  present: boolean,
+): CellState {
+  const expectedSet = category != null ? CATEGORIES_EXPECTED[category] : undefined
+  // skip categories with no expected fields.
+  if (expectedSet == null) return present ? 'present' : 'na'
+  const expected = metric === 'tvl' || (expectedSet as readonly string[]).includes(metric)
   if (present && expected) return 'present'
   if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'
