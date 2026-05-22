@@ -23,7 +23,7 @@ export function CoverageModeToggle() {
       className={`mt-2 inline-flex w-fit items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors focus-visible:focus-ring ${
         isDimensions
           ? 'border-accent/60 bg-accent-soft text-accent-strong'
-          : 'border-border/60 bg-surface/40 text-fg-subtle hover:border-border hover:text-fg'
+          : 'border-accent/30 bg-accent-soft/40 text-accent/80 hover:border-accent/60 hover:bg-accent-soft hover:text-accent-strong'
       }`}
     >
       <span aria-hidden="true">⇄</span>

@@ -55,6 +55,8 @@ export interface Row {
   category?: string
   chains: string[]
   cells: Cells
+  // Dimensions-mode cells precomputed at build so ?mode=dimensions is a property pick.
+  cellsDimensions: Cells
   // The dimType adapters the protocol is registered with, post-manifest-filter.
   // Passed to the classifier; also surfaced so the static detail page can render four states.
   dimTypes: string[]
@@ -62,6 +64,8 @@ export interface Row {
   coverage: number
   // present + missing for this row: the size of the protocol's expected-metric set.
   expected: number
+  coverageDimensions: number
+  expectedDimensions: number
 }
 
 export interface SnapshotStats {
@@ -112,46 +116,33 @@ export function loadSnapshot(): Snapshot {
       `snapshot at ${RESOLVED_SNAPSHOT_PATH} has zero protocols; static export needs at least one`,
     )
   }
-  // Densest columns first so the matrix opens with the highest-coverage metrics on the left.
+  // Single pass over rows × COLUMNS for per-column density + coverage. The
+  // dimensions-mode totals come from per-row precomputed counts on Row, so
+  // we just sum them. 'na' and 'unexpected' stay out of the coverage denom.
   const presentCounts = new Map<ColumnKey, number>()
   for (const col of COLUMNS) presentCounts.set(col.key, 0)
-  for (const r of rows) {
-    for (const col of COLUMNS) {
-      if (r.cells[col.key] === 'present') {
-        presentCounts.set(col.key, (presentCounts.get(col.key) ?? 0) + 1)
-      }
-    }
-  }
-  const columns = COLUMNS.map((c) => ({ ...c })).sort(
-    (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
-  )
-
-  // Coverage = present cells / (present + missing) cells across the matrix.
-  // 'na' and 'unexpected' are excluded so the percentage reflects how much of the
-  // expected data we actually see.
   let presentTotal = 0
   let trackedTotal = 0
+  let presentDim = 0
+  let trackedDim = 0
   for (const r of rows) {
     for (const col of COLUMNS) {
       const s = r.cells[col.key]
       if (s === 'present') {
+        presentCounts.set(col.key, (presentCounts.get(col.key) ?? 0) + 1)
         presentTotal += 1
         trackedTotal += 1
       } else if (s === 'missing') {
         trackedTotal += 1
       }
     }
+    presentDim += r.coverageDimensions
+    trackedDim += r.expectedDimensions
   }
+  const columns = COLUMNS.map((c) => ({ ...c })).sort(
+    (a, b) => (presentCounts.get(b.key) ?? 0) - (presentCounts.get(a.key) ?? 0),
+  )
   const coveragePct = trackedTotal === 0 ? 0 : (presentTotal / trackedTotal) * 100
-  
-  // powers the toggle so flipping to dimensions mode also flips the headline number.
-  let presentDim = 0
-  let trackedDim = 0
-  for (const r of rows) {
-    const result = reclassifyRow(r, COLUMNS, classifyByCategory)
-    presentDim += result.coverage
-    trackedDim += result.expected
-  }
   const coveragePctDimensions = trackedDim === 0 ? 0 : (presentDim / trackedDim) * 100
 
   const updatedAt =
@@ -223,14 +214,18 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
   // Lowercase defensively so the chain filter matches its URL token regardless
   // of upstream casing drift; today the upstream already emits lowercase.
   const chains = p.chains.map((c) => c.toLowerCase())
+  const dim = reclassifyRow({ category, cells }, COLUMNS, classifyByCategory)
   return {
     slug: p.slug,
     name: p.name,
     category,
     chains,
     cells,
+    cellsDimensions: dim.cells,
     coverage,
     expected,
+    coverageDimensions: dim.coverage,
+    expectedDimensions: dim.expected,
     dimTypes: p.dimTypes,
   }
 }

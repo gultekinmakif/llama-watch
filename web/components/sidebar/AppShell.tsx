@@ -51,7 +51,10 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         >
           <Icon name="menu" size={16} />
         </button>
-        <a href="/" className="flex items-center gap-2 rounded text-base font-semibold text-fg focus-visible:focus-ring">
+        <a
+          href="/"
+          className="flex items-center gap-2 rounded text-base font-semibold text-fg focus-visible:focus-ring"
+        >
           <MiniLogo />
           <span>MetaLlama</span>
         </a>

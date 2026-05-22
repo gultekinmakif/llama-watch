@@ -42,9 +42,7 @@ export function VirtualBody({ rows, columnCount, scrollEl, onClearFilters }: Vir
               className="mx-auto flex max-w-sm flex-col items-center gap-3 text-sm text-fg-muted"
             >
               <span className="text-base text-fg">No protocols match these filters</span>
-              <p className="text-xs text-fg-subtle">
-                Try removing a filter or clearing them all.
-              </p>
+              <p className="text-xs text-fg-subtle">Try removing a filter or clearing them all.</p>
               {onClearFilters ? (
                 <button
                   type="button"

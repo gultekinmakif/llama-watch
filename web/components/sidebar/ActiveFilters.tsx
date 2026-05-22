@@ -125,7 +125,11 @@ export function ActiveFilters() {
             >
               <span className="text-fg-subtle">{c.label}</span>
               <span className="truncate font-medium">{c.value}</span>
-              <Icon name="x" size={11} className="shrink-0 text-fg-subtle transition-colors group-hover/chip:text-danger" />
+              <Icon
+                name="x"
+                size={11}
+                className="shrink-0 text-fg-subtle transition-colors group-hover/chip:text-danger"
+              />
             </button>
           </li>
         ))}

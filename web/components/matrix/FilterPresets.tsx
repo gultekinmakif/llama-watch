@@ -18,7 +18,6 @@ interface FilterPresetsProps {
   chainOptions: string[]
 }
 
-
 const CELL_STATE_LABELS: Record<CellState, string> = {
   present: 'present',
   missing: 'missing',
@@ -33,7 +32,12 @@ function toStringOptions(options: readonly string[]): { value: string; label: st
   return options.map((o) => ({ value: o, label: o }))
 }
 
-export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOptions }: FilterPresetsProps) {
+export function FilterPresets({
+  toggleable,
+  visibleIds,
+  onColumnsChange,
+  chainOptions,
+}: FilterPresetsProps) {
   const params = useSearchParams()
   const replaceParams = useReplaceParams()
   const category = params.get('category') ?? ''
@@ -96,11 +100,7 @@ export function FilterPresets({ toggleable, visibleIds, onColumnsChange, chainOp
         onChange={onCellStateChange}
         ariaLabel="filter rows by cell state"
       />
-      <ColumnsMenu
-        toggleable={toggleable}
-        visibleIds={visibleIds}
-        onChange={onColumnsChange}
-      />
+      <ColumnsMenu toggleable={toggleable} visibleIds={visibleIds} onChange={onColumnsChange} />
       <CopyLinkButton />
     </div>
   )
@@ -120,7 +120,14 @@ interface PresetDropdownProps {
   ariaLabel: string
 }
 
-function PresetDropdown({ label, countLabel, value, options, onChange, ariaLabel }: PresetDropdownProps) {
+function PresetDropdown({
+  label,
+  countLabel,
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: PresetDropdownProps) {
   const active = value !== ''
   return (
     <SelectProvider

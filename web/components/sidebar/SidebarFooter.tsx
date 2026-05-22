@@ -1,10 +1,10 @@
-import { Icon } from "../ui/Icon";
-import { APP_VERSION as VERSION } from "../../lib/version";
+import { Icon } from '../ui/Icon'
+import { APP_VERSION as VERSION } from '../../lib/version'
 
-const REPO_URL = "https://github.com/gultekinmakif/llama-watch";
-const RELEASE_URL = `${REPO_URL}/releases/tag/${VERSION}`;
-const ADAPTERS_URL = "https://github.com/DefiLlama/DefiLlama-Adapters";
-const DIMENSIONS_URL = "https://github.com/DefiLlama/dimension-adapters";
+const REPO_URL = 'https://github.com/gultekinmakif/llama-watch'
+const RELEASE_URL = `${REPO_URL}/releases/tag/${VERSION}`
+const ADAPTERS_URL = 'https://github.com/DefiLlama/DefiLlama-Adapters'
+const DIMENSIONS_URL = 'https://github.com/DefiLlama/dimension-adapters'
 
 export function SidebarFooter() {
   return (
@@ -31,7 +31,7 @@ export function SidebarFooter() {
         </a>
       </nav>
     </footer>
-  );
+  )
 }
 
 function FooterLink({
@@ -39,9 +39,9 @@ function FooterLink({
   icon,
   children,
 }: {
-  href: string;
-  icon: "github" | "external-link";
-  children: React.ReactNode;
+  href: string
+  icon: 'github' | 'external-link'
+  children: React.ReactNode
 }) {
   return (
     <a
@@ -57,5 +57,5 @@ function FooterLink({
       />
       <span className="truncate">{children}</span>
     </a>
-  );
+  )
 }
