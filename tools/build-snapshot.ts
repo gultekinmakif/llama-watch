@@ -50,6 +50,12 @@ interface OutputProtocol {
   chains: string[];
   dataFile: string;
   dimTypes: string[];
+  tvl?: number;
+}
+
+interface TvlApiProtocol {
+  module?: string;
+  tvl?: number;
 }
 
 interface ProtocolRow {
@@ -164,10 +170,40 @@ function build(): { cells: Cell[]; protocols: OutputProtocol[] } {
 
   flushDriftCounters();
 
+  const protocols = rows.map((r) => r.protocol);
+  mergeTvl(root, protocols);
+
   return {
     cells: rows.flatMap((r) => r.cells),
-    protocols: rows.map((r) => r.protocol),
+    protocols,
   };
+}
+
+function mergeTvl(root: string, protocols: OutputProtocol[]): void {
+  const tvlPath = resolve(root, process.env.TVL_PATH ?? "var/snapshot/tvl.json");
+  let raw: string;
+  try {
+    raw = readFileSync(tvlPath, "utf8");
+  } catch {
+    process.stderr.write(`build-snapshot: tvl.json not found at ${tvlPath}, skipping TVL merge\n`);
+    return;
+  }
+  const apiProtocols: TvlApiProtocol[] = JSON.parse(raw);
+  const tvlBySlug = new Map<string, number>();
+  for (const p of apiProtocols) {
+    if (!p.module) continue;
+    const slug = normalizeSlug(p.module);
+    if (slug && p.tvl != null) tvlBySlug.set(slug, p.tvl);
+  }
+  let matched = 0;
+  for (const p of protocols) {
+    const tvl = tvlBySlug.get(p.slug);
+    if (tvl != null) {
+      p.tvl = tvl;
+      matched++;
+    }
+  }
+  process.stderr.write(`build-snapshot: TVL merged for ${matched}/${protocols.length} protocols\n`);
 }
 
 function flushDriftCounters(): void {
