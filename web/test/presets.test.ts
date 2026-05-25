@@ -21,10 +21,9 @@ describe('CATEGORIES', () => {
 })
 
 describe('expectedColumnsFor', () => {
-  test('returns a non-empty array including tvl and dailyFees for Lending', () => {
+  test('returns a non-empty array including dailyFees for Lending', () => {
     const cols = expectedColumnsFor('Lending')
     expect(cols.length).toBeGreaterThan(0)
-    expect(cols).toContain('tvl')
     expect(cols).toContain('dailyFees')
   })
 
@@ -36,7 +35,7 @@ describe('expectedColumnsFor', () => {
     const first = expectedColumnsFor('Lending')
     first.pop()
     const second = expectedColumnsFor('Lending')
-    expect(second).toContain('tvl')
+    expect(second).toContain('dailyFees')
     expect(second.length).toBeGreaterThan(first.length)
   })
 })

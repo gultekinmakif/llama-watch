@@ -71,6 +71,7 @@ else
   step "sparse clone DefiLlama/defillama-server (defi/src/protocols)"
   step "curl DefiLlama-Adapters/latest/tvlModules.json"
   step "curl dimension-adapters/latest/dimensionModules.json"
+  step "curl DefiLlama /protocols -> tvl.json"
   T_FETCH=$SECONDS
 
   pids=()
@@ -104,8 +105,15 @@ else
   ) &
   pids+=("$!")
 
+  (
+    curl -sSf "https://api.llama.fi/protocols" \
+      -o "$SNAPSHOT_DIR/tvl.json.tmp"
+    mv "$SNAPSHOT_DIR/tvl.json.tmp" "$SNAPSHOT_DIR/tvl.json"
+  ) &
+  pids+=("$!")
+
   # Bare `wait` only returns the last job's status. Wait on each pid so any
-  # failure across the three parallel fetches aborts the script.
+  # failure across the four parallel fetches aborts the script.
   fail=0
   for pid in "${pids[@]}"; do
     if ! wait "$pid"; then fail=1; fi
@@ -114,7 +122,8 @@ else
   SERVER_SHA=$(git -C "$SERVER_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
   TVL_KIB=$(( $(wc -c < "$TVL_MODULES") / 1024 ))
   DIM_KIB=$(( $(wc -c < "$DIM_MODULES") / 1024 ))
-  done_ "server@$SERVER_SHA  tvlModules ${TVL_KIB} KiB  dimensionModules ${DIM_KIB} KiB  ($((SECONDS - T_FETCH))s)"
+  TVL_JSON_KIB=$(( $(wc -c < "$SNAPSHOT_DIR/tvl.json") / 1024 ))
+  done_ "server@$SERVER_SHA  tvlModules ${TVL_KIB} KiB  dimensionModules ${DIM_KIB} KiB  tvl.json ${TVL_JSON_KIB} KiB  ($((SECONDS - T_FETCH))s)"
 fi
 
 # 3. Run the bun extractor over defillama-server/data*.ts to produce $PROTOCOLS_JSON.
@@ -135,6 +144,7 @@ SNAPSHOT_PROTOS=$(bun -e "const s = await Bun.file('$SNAPSHOT_OUT').json(); cons
 SNAPSHOT_CELLS=$(bun -e "const s = await Bun.file('$SNAPSHOT_OUT').json(); console.log(s.cells.length)" 2>/dev/null || echo "?")
 SNAPSHOT_KIB=$(( $(wc -c < "$SNAPSHOT_OUT") / 1024 ))
 done_ "$SNAPSHOT_PROTOS protocols, $SNAPSHOT_CELLS cells, ${SNAPSHOT_KIB} KiB  ($((SECONDS - T_BUILD))s)"
+
 
 # Sync the snapshot into Postgres when a DATABASE_URL is configured. The CI
 # refresh job leaves this unset so the workflow stays bash + bun, no Go.

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gultekinmakif/llama-watch/internal/config"
 	"github.com/gultekinmakif/llama-watch/internal/db/postgres"
@@ -35,6 +36,11 @@ type snapshotProtocol struct {
 type snapshotFile struct {
 	Cells     []snapshotCell     `json:"cells"`
 	Protocols []snapshotProtocol `json:"protocols"`
+}
+
+type tvlProtocol struct {
+	Module string  `json:"module"`
+	TVL    float64 `json:"tvl"`
 }
 
 func main() {
@@ -73,6 +79,11 @@ func main() {
 		log.Fatalf("snapshot validation: %v", err)
 	}
 
+	tvlBySlug, err := loadTVL(cwd)
+	if err != nil {
+		log.Fatalf("load tvl.json: %v", err)
+	}
+
 	if err := postgres.New(cfg.DatabaseURL); err != nil {
 		log.Fatalf("database connection: %v", err)
 	}
@@ -87,7 +98,7 @@ func main() {
 	}
 
 	db := postgres.Get()
-	identities := buildIdentities(snap.Protocols)
+	identities := buildIdentities(snap.Protocols, tvlBySlug)
 	rows := buildMatrix(snap.Cells)
 
 	err = db.Transaction(func(tx *gorm.DB) error {
@@ -110,8 +121,15 @@ func main() {
 		log.Fatalf("sync transaction: %v", err)
 	}
 
+	tvlCount := 0
+	for _, id := range identities {
+		if id.TvlUSD != nil {
+			tvlCount++
+		}
+	}
 	lg.Info("sync-db complete",
 		"protocols", len(identities),
+		"protocols_with_tvl", tvlCount,
 		"matrix_rows", len(rows),
 		"snapshot", snapshotPath,
 	)
@@ -140,7 +158,7 @@ func readSnapshot(path string) (snapshotFile, error) {
 	return snap, nil
 }
 
-func buildIdentities(in []snapshotProtocol) []models.ProtocolIdentity {
+func buildIdentities(in []snapshotProtocol, tvl map[string]*float64) []models.ProtocolIdentity {
 	out := make([]models.ProtocolIdentity, len(in))
 	for i, p := range in {
 		out[i] = models.ProtocolIdentity{
@@ -149,6 +167,11 @@ func buildIdentities(in []snapshotProtocol) []models.ProtocolIdentity {
 			Category: nilIfEmpty(p.Category),
 			Chains:   pq.StringArray(p.Chains),
 			DataFile: nilIfEmpty(p.DataFile),
+		}
+		if tvl != nil {
+			if v, ok := tvl[p.Slug]; ok {
+				out[i].TvlUSD = v
+			}
 		}
 	}
 	return out
@@ -173,4 +196,47 @@ func buildMatrix(in []snapshotCell) []models.Matrix {
 		}
 	}
 	return out
+}
+
+func loadTVL(cwd string) (map[string]*float64, error) {
+	tvlPath := os.Getenv("TVL_PATH")
+	if tvlPath == "" {
+		tvlPath = "var/snapshot/tvl.json"
+	}
+	if !filepath.IsAbs(tvlPath) {
+		tvlPath = filepath.Join(cwd, tvlPath)
+	}
+	raw, err := os.ReadFile(tvlPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			slog.Warn("tvl.json not found, skipping TVL population", "path", tvlPath)
+			return nil, nil
+		}
+		return nil, err
+	}
+	var protocols []tvlProtocol
+	if err := json.Unmarshal(raw, &protocols); err != nil {
+		return nil, fmt.Errorf("parse tvl.json: %w", err)
+	}
+	out := make(map[string]*float64, len(protocols))
+	for _, p := range protocols {
+		slug := normalizeModule(p.Module)
+		if slug != "" {
+			v := p.TVL
+			out[slug] = &v
+		}
+	}
+	return out, nil
+}
+
+// Mirrors normalizeSlug in tools/build-snapshot.ts; both must stay in sync.
+func normalizeModule(mod string) string {
+	s := mod
+	if strings.HasSuffix(s, ".js") {
+		s = s[:len(s)-3]
+	} else if strings.HasSuffix(s, ".ts") {
+		s = s[:len(s)-3]
+	}
+	s = strings.TrimSuffix(s, "/index")
+	return s
 }

@@ -14,7 +14,7 @@ interface VirtualBodyProps {
 
 const ROW_HEIGHT = 56
 
-const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'category', 'chains', 'coverage'])
+const IDENTITY_IDS: ReadonlySet<string> = new Set(['name', 'tvl', 'category', 'chains', 'coverage'])
 
 export function VirtualBody({ rows, columnCount, scrollEl, onClearFilters }: VirtualBodyProps) {
   const virtualizer = useVirtualizer({

@@ -6,7 +6,6 @@ import type { ColumnKey } from './snapshot'
 
 export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
   '(none)': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -23,7 +22,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'shortOpenInterestAtEnd',
   ],
   'AI Agents': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -35,7 +33,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Algo-Stables': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -49,7 +46,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Anchor BTC': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -61,7 +57,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Basis Trading': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -75,7 +70,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   Bridge: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -90,7 +84,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyBridgeVolume',
   ],
   CDP: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -103,10 +96,9 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyVolume',
     'dailyNotionalVolume',
   ],
-  CEX: ['tvl'],
-  'Canonical Bridge': ['tvl'],
+  CEX: [],
+  'Canonical Bridge': [],
   CeDeFi: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -117,10 +109,9 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyBribesRevenue',
     'dailyTokenTaxes',
   ],
-  Chain: ['tvl'],
-  'Charity Fundraising': ['tvl'],
+  Chain: [],
+  'Charity Fundraising': [],
   'Cross Chain Bridge': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -134,9 +125,8 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
     'dailyBridgeVolume',
   ],
-  'DCA Tools': ['tvl'],
+  'DCA Tools': [],
   'DEX Aggregator': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -151,7 +141,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyBridgeVolume',
   ],
   'Decentralized AI': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -163,7 +152,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Decentralized BTC': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -175,7 +163,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Derivatives: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -198,7 +185,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyGasUsed',
   ],
   'Developer Tools': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -210,7 +196,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Dual-Token Stablecoin': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -222,7 +207,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Farm: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -236,7 +220,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Gamified Mining': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -248,7 +231,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Gaming: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -259,9 +241,8 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyBribesRevenue',
     'dailyTokenTaxes',
   ],
-  'Governance Incentives': ['tvl'],
+  'Governance Incentives': [],
   Indexes: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -273,7 +254,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Insurance: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -285,7 +265,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Launchpad: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -299,7 +278,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   Lending: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -313,7 +291,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Leveraged Farming': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -327,7 +304,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Liquid Restaking': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -339,7 +315,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Liquid Staking': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -350,9 +325,8 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyBribesRevenue',
     'dailyTokenTaxes',
   ],
-  'Liquidity Automation': ['tvl'],
+  'Liquidity Automation': [],
   'Liquidity Manager': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -364,7 +338,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Luck Games': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -378,7 +351,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'NFT Lending': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -390,7 +362,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'NFT Marketplace': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -403,9 +374,7 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyVolume',
     'dailyNotionalVolume',
   ],
-  'OTC Marketplace': ['tvl', 'dailyVolume', 'dailyNotionalVolume'],
   'Onchain Capital Allocator': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -417,7 +386,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Options: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -431,7 +399,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyPremiumVolume',
   ],
   'Options Vault': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -444,10 +411,8 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
     'dailyPremiumVolume',
   ],
-  Oracle: ['tvl'],
-  'Partially Algorithmic Stablecoin': ['tvl', 'dailyVolume'],
+  Oracle: [],
   Payments: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -460,9 +425,8 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyVolume',
     'dailyNotionalVolume',
   ],
-  Ponzi: ['tvl'],
+  Ponzi: [],
   'Prediction Market': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -479,7 +443,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'shortOpenInterestAtEnd',
   ],
   Privacy: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -492,7 +455,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyVolume',
   ],
   'RWA Lending': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -504,7 +466,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Reserve Currency': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -516,7 +477,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Restaked BTC': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -528,7 +488,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Restaking: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -540,7 +499,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Risk Curators': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -552,7 +510,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Services: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -564,7 +521,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   SoFi: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -578,7 +534,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Staking Pool': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -590,7 +545,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Synthetics: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -608,7 +562,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'shortOpenInterestAtEnd',
   ],
   'Telegram Bot': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -622,7 +575,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Token Locker': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -634,7 +586,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   'Uncollateralized Lending': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -646,7 +597,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyTokenTaxes',
   ],
   Yield: [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -660,7 +610,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyNotionalVolume',
   ],
   'Yield Aggregator': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
@@ -673,7 +622,6 @@ export const CATEGORIES_EXPECTED: Record<string, readonly ColumnKey[]> = {
     'dailyVolume',
   ],
   'Yield Lottery': [
-    'tvl',
     'dailyFees',
     'dailyRevenue',
     'dailyUserFees',
