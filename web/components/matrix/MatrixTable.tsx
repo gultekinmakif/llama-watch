@@ -90,7 +90,9 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         id: 'tvl',
         header: () => <SortHeader columnKey="tvl" label="tvl" />,
         cell: ({ getValue }) => (
-          <span className="font-mono text-xs tabular-nums text-fg-muted">{formatTvl(getValue())}</span>
+          <span className="font-mono text-xs tabular-nums text-fg-muted">
+            {formatTvl(getValue())}
+          </span>
         ),
         sortingFn: (a, b) => (a.original.tvl ?? 0) - (b.original.tvl ?? 0),
         sortUndefined: 'last',
@@ -113,15 +115,14 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
         header: () => <SortHeader columnKey="coverage" label="coverage" />,
       }),
     ]
-    const dimension = columns
-      .map((col) =>
-        columnHelper.accessor((r) => r.cells[col.key], {
-          id: col.key,
-          header: col.label,
-          enableSorting: false,
-          cell: ({ getValue }) => <PresenceCell state={getValue()} />,
-        }),
-      )
+    const dimension = columns.map((col) =>
+      columnHelper.accessor((r) => r.cells[col.key], {
+        id: col.key,
+        header: col.label,
+        enableSorting: false,
+        cell: ({ getValue }) => <PresenceCell state={getValue()} />,
+      }),
+    )
     return [...identity, ...dimension]
   }, [columns])
 
