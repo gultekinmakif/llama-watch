@@ -58,7 +58,7 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
   }
-  return [{ id: 'coverage', desc: true }]
+  return [{ id: 'tvl', desc: true }]
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
