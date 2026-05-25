@@ -136,6 +136,16 @@ SNAPSHOT_CELLS=$(bun -e "const s = await Bun.file('$SNAPSHOT_OUT').json(); conso
 SNAPSHOT_KIB=$(( $(wc -c < "$SNAPSHOT_OUT") / 1024 ))
 done_ "$SNAPSHOT_PROTOS protocols, $SNAPSHOT_CELLS cells, ${SNAPSHOT_KIB} KiB  ($((SECONDS - T_BUILD))s)"
 
+section "Fetch TVL"
+if [ "$SOFT_REFRESH" -eq 1 ] && [ -f "$SNAPSHOT_DIR/tvl.json" ]; then
+  warn "reusing existing tvl.json ($(wc -c < "$SNAPSHOT_DIR/tvl.json" | tr -d ' ') bytes)"
+else
+  step "curl DefiLlama /protocols -> tvl.json"
+  T_TVL=$SECONDS
+  curl -sSf "https://api.llama.fi/protocols" -o "$SNAPSHOT_DIR/tvl.json"
+  done_ "$(wc -c < "$SNAPSHOT_DIR/tvl.json" | tr -d ' ') bytes  ($((SECONDS - T_TVL))s)"
+fi
+
 # Sync the snapshot into Postgres when a DATABASE_URL is configured. The CI
 # refresh job leaves this unset so the workflow stays bash + bun, no Go.
 if [ -n "${DATABASE_URL:-}" ]; then
