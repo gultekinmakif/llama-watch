@@ -228,6 +228,7 @@ func loadTVL(cwd string) (map[string]float64, error) {
 	return out, nil
 }
 
+// Mirrors normalizeSlug in tools/build-snapshot.ts; both must stay in sync.
 func normalizeModule(mod string) string {
 	s := mod
 	if strings.HasSuffix(s, ".js") {

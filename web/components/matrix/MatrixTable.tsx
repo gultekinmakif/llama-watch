@@ -114,7 +114,6 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       }),
     ]
     const dimension = columns
-      .filter((col) => col.key !== 'tvl')
       .map((col) =>
         columnHelper.accessor((r) => r.cells[col.key], {
           id: col.key,
@@ -131,7 +130,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
       { id: 'tvl', label: 'tvl' },
       { id: 'category', label: 'category' },
       { id: 'chains', label: 'chains' },
-      ...columns.filter((c) => c.key !== 'tvl').map((c) => ({ id: c.key, label: c.label })),
+      ...columns.map((c) => ({ id: c.key, label: c.label })),
     ],
     [columns],
   )

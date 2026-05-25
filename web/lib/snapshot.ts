@@ -12,7 +12,6 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const RESOLVED_SNAPSHOT_PATH = resolve(HERE, '..', '..', 'var', 'snapshot', 'snapshot.json')
 
 const COLUMNS = [
-  { key: 'tvl', label: 'TVL' },
   { key: 'dailyFees', label: 'Daily Fees' },
   { key: 'dailyRevenue', label: 'Daily Revenue' },
   { key: 'dailyVolume', label: 'Daily Volume' },

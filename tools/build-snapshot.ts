@@ -100,8 +100,8 @@ function cellsForDimensions(
   });
 }
 
+// Mirrors normalizeModule in cmd/sync-db/main.go; both must stay in sync.
 function normalizeSlug(modulePath: string): string {
-  // TODO: For now, any distinct slug is ok, we will make defillama slugs work later.
   let s = modulePath;
   if (s.endsWith(".js")) s = s.slice(0, -3);
   else if (s.endsWith(".ts")) s = s.slice(0, -3);
@@ -139,7 +139,6 @@ function processProtocol(
       dimTypes,
     },
     cells: [
-      { slug, metric: "tvl", codePath: "" },
       ...cellsForDimensions(slug, p.dimensions, dimensionModules),
     ],
   };
