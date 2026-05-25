@@ -97,7 +97,7 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 
 	sortRaw := q.Get("sort")
 	if sortRaw == "" {
-		out.Sort = "coverage"
+		out.Sort = "tvl"
 	} else if _, ok := defaultOrderBySort[sortRaw]; ok {
 		out.Sort = sortRaw
 	} else {
