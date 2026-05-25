@@ -158,7 +158,7 @@ func readSnapshot(path string) (snapshotFile, error) {
 	return snap, nil
 }
 
-func buildIdentities(in []snapshotProtocol, tvl map[string]float64) []models.ProtocolIdentity {
+func buildIdentities(in []snapshotProtocol, tvl map[string]*float64) []models.ProtocolIdentity {
 	out := make([]models.ProtocolIdentity, len(in))
 	for i, p := range in {
 		out[i] = models.ProtocolIdentity{
@@ -170,7 +170,7 @@ func buildIdentities(in []snapshotProtocol, tvl map[string]float64) []models.Pro
 		}
 		if tvl != nil {
 			if v, ok := tvl[p.Slug]; ok {
-				out[i].TvlUSD = &v
+				out[i].TvlUSD = v
 			}
 		}
 	}
@@ -198,7 +198,7 @@ func buildMatrix(in []snapshotCell) []models.Matrix {
 	return out
 }
 
-func loadTVL(cwd string) (map[string]float64, error) {
+func loadTVL(cwd string) (map[string]*float64, error) {
 	tvlPath := os.Getenv("TVL_PATH")
 	if tvlPath == "" {
 		tvlPath = "var/snapshot/tvl.json"
@@ -218,11 +218,12 @@ func loadTVL(cwd string) (map[string]float64, error) {
 	if err := json.Unmarshal(raw, &protocols); err != nil {
 		return nil, fmt.Errorf("parse tvl.json: %w", err)
 	}
-	out := make(map[string]float64, len(protocols))
+	out := make(map[string]*float64, len(protocols))
 	for _, p := range protocols {
 		slug := normalizeModule(p.Module)
-		if slug != "" && p.TVL > 0 {
-			out[slug] = p.TVL
+		if slug != "" {
+			v := p.TVL
+			out[slug] = &v
 		}
 	}
 	return out, nil
