@@ -12,25 +12,23 @@ describe('projectRow', () => {
   }
 
   test('classifies cells against the registered dimType bundles', () => {
-    const present = new Set(['tvl', 'dailyFees'])
+    const present = new Set(['dailyFees'])
     const row = projectRow(baseProtocol, present)
 
-    expect(row.cells.tvl).toBe('present')
     expect(row.cells.dailyFees).toBe('present')
     expect(row.cells.dailyRevenue).toBe('missing')
     expect(row.cells.dailyVolume).toBe('na')
   })
 
   test('coverage equals the count of present metrics', () => {
-    const present = new Set(['tvl', 'dailyFees', 'dailyRevenue'])
+    const present = new Set(['dailyFees', 'dailyRevenue'])
     const row = projectRow(baseProtocol, present)
-    expect(row.coverage).toBe(3)
+    expect(row.coverage).toBe(2)
   })
 
   test('coverage is 0 when presence set is undefined', () => {
     const row = projectRow(baseProtocol, undefined)
     expect(row.coverage).toBe(0)
-    expect(row.cells.tvl).toBe('missing')
   })
 
   test('empty-string category collapses to undefined', () => {

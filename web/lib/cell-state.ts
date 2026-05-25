@@ -58,13 +58,11 @@ export function classifyCell(
   metric: string,
   present: boolean,
 ): CellState {
-  let expected = metric === 'tvl'
-  if (!expected) {
-    for (const dt of dimTypes) {
-      if (BUNDLES[dt]?.[metric]) {
-        expected = true
-        break
-      }
+  let expected = false
+  for (const dt of dimTypes) {
+    if (BUNDLES[dt]?.[metric]) {
+      expected = true
+      break
     }
   }
   if (present && expected) return 'present'
@@ -81,7 +79,7 @@ export function classifyByCategory(
   const expectedSet = category != null ? CATEGORIES_EXPECTED[category] : undefined
   // skip categories with no expected fields.
   if (expectedSet == null) return present ? 'present' : 'na'
-  const expected = metric === 'tvl' || (expectedSet as readonly string[]).includes(metric)
+  const expected = (expectedSet as readonly string[]).includes(metric)
   if (present && expected) return 'present'
   if (present && !expected) return 'unexpected'
   if (!present && expected) return 'missing'

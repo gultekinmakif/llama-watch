@@ -7,9 +7,9 @@ type Column struct {
 }
 
 // Closed, fixed column set; order is load-bearing. Use Columns() for a safe copy.
-// Keys mirror defillama-server getDimensionsConfig KEYS_TO_STORE flattened across dimTypes, plus tvl.
+// Keys mirror defillama-server getDimensionsConfig KEYS_TO_STORE flattened across dimTypes.
+// TVL presence removed; tvl_usd on protocol_identities supersedes it.
 var columns = []Column{
-	{Key: "tvl", Label: "TVL"},
 	{Key: "dailyFees", Label: "Daily Fees"},
 	{Key: "dailyRevenue", Label: "Daily Revenue"},
 	{Key: "dailyVolume", Label: "Daily Volume"},

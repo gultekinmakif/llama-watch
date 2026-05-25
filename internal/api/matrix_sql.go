@@ -50,6 +50,7 @@ func listProtocols(ctx context.Context, db *gorm.DB, q MatrixQuery) ([]Row, erro
 			Slug:     p.Slug,
 			Name:     p.Name,
 			Category: p.Category,
+			TvlUSD:   p.TvlUSD,
 			Chains:   []string(p.Chains),
 			Cells:    cells,
 		})
@@ -79,6 +80,8 @@ func applyMatrixOrder(tx *gorm.DB, q MatrixQuery) *gorm.DB {
 		tx = tx.Order("category " + q.Order + " NULLS LAST")
 	case "coverage":
 		tx = tx.Order("(SELECT COUNT(*) FROM matrix WHERE matrix.slug = protocol_identities.slug) " + q.Order)
+	case "tvl":
+		tx = tx.Order("tvl_usd " + q.Order + " NULLS LAST")
 	}
 	return tx.Order("slug")
 }

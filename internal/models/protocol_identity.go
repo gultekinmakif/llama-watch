@@ -9,6 +9,7 @@ type ProtocolIdentity struct {
 	Category *string        `gorm:"column:category;type:text;index:idx_protocol_identities_category" json:"category,omitempty"`
 	Chains   pq.StringArray `gorm:"column:chains;type:text[];not null;default:'{}';index:idx_protocol_identities_chains,type:gin" json:"chains"`
 	DataFile *string        `gorm:"column:data_file;type:text" json:"data_file,omitempty"`
+	TvlUSD   *float64       `gorm:"column:tvl_usd;type:numeric" json:"tvl_usd,omitempty"`
 }
 
 func (ProtocolIdentity) TableName() string { return "protocol_identities" }

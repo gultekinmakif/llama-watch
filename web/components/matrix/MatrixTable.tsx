@@ -15,6 +15,7 @@ import { matchSorter } from 'match-sorter'
 
 import type { Column as SnapshotColumn, ColumnKey, Row } from '../../lib/snapshot'
 import { type CellState } from '../../lib/cell-state'
+import { formatTvl } from '../../lib/format'
 import { expectedColumnsFor, metricsFor } from '../../lib/presets'
 import { useCsvParam, useReplaceParams } from '../../lib/url-state'
 import { VirtualBody } from './VirtualBody'
@@ -34,7 +35,7 @@ const columnHelper = createColumnHelper<Row>()
 
 // Identity columns are governed by a single `info` URL param, not by `cols`.
 // Visible by default; `?info=false` hides them. Keeps the URL short.
-const INFO_IDS: ReadonlySet<string> = new Set(['category', 'chains'])
+const INFO_IDS: ReadonlySet<string> = new Set(['tvl', 'category', 'chains'])
 
 const CELL_STATES: ReadonlySet<CellState> = new Set(['present', 'missing', 'unexpected', 'na'])
 
@@ -46,6 +47,7 @@ function parseCellState(raw: string | null): CellState | '' {
 // mid-scroll. Identity columns get bespoke sizes; every metric column gets METRIC_WIDTH.
 const COL_WIDTH: Record<string, number> = {
   name: 240,
+  tvl: 110,
   category: 140,
   chains: 200,
   coverage: 110,
@@ -56,7 +58,7 @@ function readInitialSorting(sort: string | null, order: string | null): SortingS
   if (isSortKey(sort) && isSortOrder(order)) {
     return [{ id: sort, desc: order === 'desc' }]
   }
-  return [{ id: 'coverage', desc: true }]
+  return [{ id: 'tvl', desc: true }]
 }
 
 export function MatrixTable({ columns, rows }: MatrixTableProps) {
@@ -83,6 +85,17 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
             coverage={{ value: row.original.coverage, total: row.original.expected }}
           />
         ),
+      }),
+      columnHelper.accessor((r) => r.tvl ?? null, {
+        id: 'tvl',
+        header: () => <SortHeader columnKey="tvl" label="tvl" />,
+        cell: ({ getValue }) => (
+          <span className="font-mono text-xs tabular-nums text-fg-muted">
+            {formatTvl(getValue())}
+          </span>
+        ),
+        sortingFn: (a, b) => (a.original.tvl ?? 0) - (b.original.tvl ?? 0),
+        sortUndefined: 'last',
       }),
       columnHelper.accessor((r) => r.category, {
         id: 'category',
@@ -115,6 +128,7 @@ export function MatrixTable({ columns, rows }: MatrixTableProps) {
 
   const toggleableOptions = useMemo<ColumnOption[]>(
     () => [
+      { id: 'tvl', label: 'tvl' },
       { id: 'category', label: 'category' },
       { id: 'chains', label: 'chains' },
       ...columns.map((c) => ({ id: c.key, label: c.label })),

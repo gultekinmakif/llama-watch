@@ -3,9 +3,9 @@ import { describe, test, expect } from 'vitest'
 import { classifyByCategory, classifyCell } from '../lib/cell-state'
 
 describe('classifyCell (dimType bundle scoring)', () => {
-  test('tvl is universally expected', () => {
-    expect(classifyCell([], 'tvl', true)).toBe('present')
-    expect(classifyCell([], 'tvl', false)).toBe('missing')
+  test('metric not in any bundle is unexpected when present, na when absent', () => {
+    expect(classifyCell([], 'tvl', true)).toBe('unexpected')
+    expect(classifyCell([], 'tvl', false)).toBe('na')
   })
 
   test('metric inside a registered dimType bundle is expected', () => {
@@ -44,7 +44,7 @@ describe('classifyByCategory (category-driven scoring)', () => {
     expect(classifyByCategory('Liquidations', 'dailyFees', false)).toBe('na')
   })
 
-  test('tvl is universally expected even without a curated set', () => {
+  test('metric not in curated set is na when absent, present when present with undefined category', () => {
     expect(classifyByCategory(undefined, 'tvl', true)).toBe('present')
     expect(classifyByCategory(undefined, 'tvl', false)).toBe('na')
   })

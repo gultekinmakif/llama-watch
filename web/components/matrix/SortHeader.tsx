@@ -6,10 +6,10 @@ import { useSearchParams } from 'next/navigation'
 import { useReplaceParams } from '../../lib/url-state'
 import { Icon } from '../ui/Icon'
 
-export type SortKey = 'name' | 'category' | 'coverage'
+export type SortKey = 'name' | 'category' | 'coverage' | 'tvl'
 export type SortOrder = 'asc' | 'desc'
 
-const SORT_KEYS: readonly SortKey[] = ['name', 'category', 'coverage']
+const SORT_KEYS: readonly SortKey[] = ['name', 'category', 'coverage', 'tvl']
 
 export function isSortKey(value: string | null | undefined): value is SortKey {
   return value != null && (SORT_KEYS as readonly string[]).includes(value)

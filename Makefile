@@ -1,4 +1,4 @@
-.PHONY: build build-server build-sync-db run dev refresh refresh-soft test tidy clean help
+.PHONY: build build-server build-sync-db run dev refresh refresh-soft test lint tidy clean help
 .DEFAULT_GOAL := help
 
 build: build-server build-sync-db ## Build all binaries into bin/
@@ -20,6 +20,9 @@ refresh: ## Run the cron orchestrator end-to-end
 
 refresh-soft: ## Re-run extract + build + sync + web against existing var/ (no upstream fetch)
 	@./scripts/refresh.sh --soft
+
+lint: ## Run golangci-lint (matches CI)
+	golangci-lint run
 
 test: ## Run all tests
 	go test ./...

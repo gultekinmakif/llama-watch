@@ -38,13 +38,14 @@ const (
 
 // Whitelist of sort keys. Referenced by both the parser and the error message
 // so they cannot drift apart.
-var sortWhitelist = []string{"name", "category", "coverage"}
+var sortWhitelist = []string{"name", "category", "coverage", "tvl"}
 
 // Default order per sort key when ?order= is absent.
 var defaultOrderBySort = map[string]string{
 	"name":     "asc",
 	"category": "asc",
 	"coverage": "desc",
+	"tvl":      "desc",
 }
 
 // ParseMatrixQuery parses and validates the /api/matrix query string.
@@ -96,7 +97,7 @@ func ParseMatrixQuery(r *http.Request) (MatrixQuery, error) {
 
 	sortRaw := q.Get("sort")
 	if sortRaw == "" {
-		out.Sort = "coverage"
+		out.Sort = "tvl"
 	} else if _, ok := defaultOrderBySort[sortRaw]; ok {
 		out.Sort = sortRaw
 	} else {

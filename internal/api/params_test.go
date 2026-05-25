@@ -86,6 +86,11 @@ func TestParseMatrixQuery_HappyPaths(t *testing.T) {
 			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "desc"},
 		},
 		{
+			name: "sort tvl defaults to desc",
+			url:  "/api/matrix?sort=tvl",
+			want: MatrixQuery{Limit: 200, Sort: "tvl", Order: "desc"},
+		},
+		{
 			name: "explicit asc overrides default-desc on coverage",
 			url:  "/api/matrix?sort=coverage&order=asc",
 			want: MatrixQuery{Limit: 200, Sort: "coverage", Order: "asc"},
