@@ -54,6 +54,7 @@ export interface Row {
   name: string
   category?: string
   chains: string[]
+  tvl?: number
   cells: Cells
   // Dimensions-mode cells precomputed at build so ?mode=dimensions is a property pick.
   cellsDimensions: Cells
@@ -94,6 +95,7 @@ export interface RawProtocol {
   name: string
   category?: string
   chains: string[]
+  tvl?: number
   dataFile: string
   dimTypes: string[]
 }
@@ -220,6 +222,7 @@ export function projectRow(p: RawProtocol, present: Set<string> | undefined): Ro
     name: p.name,
     category,
     chains,
+    tvl: p.tvl,
     cells,
     cellsDimensions: dim.cells,
     coverage,
