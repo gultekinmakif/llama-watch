@@ -237,8 +237,6 @@ func normalizeModule(mod string) string {
 	} else if strings.HasSuffix(s, ".ts") {
 		s = s[:len(s)-3]
 	}
-	if strings.HasSuffix(s, "/index") {
-		s = s[:len(s)-6]
-	}
+	s = strings.TrimSuffix(s, "/index")
 	return s
 }
