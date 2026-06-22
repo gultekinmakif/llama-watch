@@ -104,6 +104,9 @@ The script detects your OS and installs the matching scheduler: launchd on macOS
 
 The Next.js 16 static export lives under [`web/`](web/). See [`web/README.md`](web/README.md) for the frontend quick start.
 
+## Docs
+
+- [`docs/coverage-model.md`](docs/coverage-model.md): how `present` / `missing` / `unexpected` / `na` cells are decided, and where to extend when DefiLlama adds a new dimType bucket.
 
 ## Development
 

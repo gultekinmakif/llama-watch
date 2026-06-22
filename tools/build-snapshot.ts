@@ -16,9 +16,9 @@ import presets from "../internal/registry/presets.json" with { type: "json" };
 const KEYS_TO_STORE: Record<string, readonly string[]> = presets;
 
 // dimType buckets retired upstream; the catalog still lists them but the manifest is empty.
-const RETIRED_DIMTYPES = new Set<string>(["derivatives"]);
+export const RETIRED_DIMTYPES = new Set<string>(["derivatives"]);
 
-interface CatalogProtocol {
+export interface CatalogProtocol {
   name: string;
   category: string;
   chains: string[];
@@ -28,22 +28,22 @@ interface CatalogProtocol {
 
 type CatalogFile = Record<string, CatalogProtocol[]>;
 
-interface DimensionEntry {
+export interface DimensionEntry {
   codePath?: string;
 }
 
-type DimensionModules = Record<string, Record<string, DimensionEntry>>;
+export type DimensionModules = Record<string, Record<string, DimensionEntry>>;
 
 // Keyed by adapter path (e.g. "wbtc.js", "curve/index.js"); values carry metadata, we do not care
 type TvlModules = Record<string, unknown>;
 
-interface Cell {
+export interface Cell {
   slug: string;
   metric: string;
   codePath: string;
 }
 
-interface OutputProtocol {
+export interface OutputProtocol {
   slug: string;
   name: string;
   category: string;
@@ -58,7 +58,7 @@ interface TvlApiProtocol {
   tvl?: number;
 }
 
-interface ProtocolRow {
+export interface ProtocolRow {
   protocol: OutputProtocol;
   cells: Cell[];
 }
@@ -81,22 +81,25 @@ function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
-// Emits one cell per (dimType, metric). A protocol can register under multiple dimTypes that overlap
-// on the same metric (e.g. dexs + aggregators both carry dailyVolume); first-seen wins so the matrix
-// PK stays unique.
-function cellsForDimensions(
+// One cell per (dimType, metric); first-seen wins when dimTypes share a metric (dexs + aggregators
+// both carry dailyVolume) to keep the matrix PK unique. Also returns the dimTypes that resolved so
+// processProtocol can drop unresolved/retired buckets; otherwise classifyCell flags their metrics
+// 'missing' for protocols that never shipped an adapter under that bucket.
+export function cellsForDimensions(
   slug: string,
   dimensions: Record<string, string>,
   dimensionModules: DimensionModules,
-): Cell[] {
+): { cells: Cell[]; resolvedDimTypes: Set<string> } {
   const seen = new Set<string>();
-  return Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
+  const resolvedDimTypes = new Set<string>();
+  const cells = Object.entries(dimensions).flatMap(([dimType, dimSlug]) => {
     if (RETIRED_DIMTYPES.has(dimType)) return [];
     const entry = dimensionModules[dimType]?.[dimSlug];
     if (!entry) {
       unresolvedManifestEntries.set(dimType, (unresolvedManifestEntries.get(dimType) ?? 0) + 1);
       return [];
     }
+    resolvedDimTypes.add(dimType);
     const codePath = entry.codePath ?? "";
     return metricsForDimType(dimType).flatMap((metric) => {
       if (seen.has(metric)) return [];
@@ -104,6 +107,7 @@ function cellsForDimensions(
       return [{ slug, metric, codePath }];
     });
   });
+  return { cells, resolvedDimTypes };
 }
 
 // Mirrors normalizeModule in cmd/sync-db/main.go; both must stay in sync.
@@ -116,7 +120,7 @@ function normalizeSlug(modulePath: string): string {
 }
 
 // Returns null when the protocol has no TVL adapter somehow
-function processProtocol(
+export function processProtocol(
   p: CatalogProtocol,
   dataFile: string,
   tvlModules: TvlModules,
@@ -132,8 +136,9 @@ function processProtocol(
   }
   seen.add(slug);
 
-  // Every catalog-declared dimType except retired buckets.
-  const dimTypes = Object.keys(p.dimensions).filter((dt) => !RETIRED_DIMTYPES.has(dt));
+  // Resolved dimTypes only, the rest would false-positive classifyCell into 'missing'
+  const { cells, resolvedDimTypes } = cellsForDimensions(slug, p.dimensions, dimensionModules);
+  const dimTypes = Object.keys(p.dimensions).filter((dt) => resolvedDimTypes.has(dt));
 
   return {
     protocol: {
@@ -144,9 +149,7 @@ function processProtocol(
       dataFile,
       dimTypes,
     },
-    cells: [
-      ...cellsForDimensions(slug, p.dimensions, dimensionModules),
-    ],
+    cells,
   };
 }
 
@@ -221,7 +224,11 @@ function writeAtomic(path: string, payload: unknown): void {
   renameSync(tmp, path);
 }
 
-const out = build();
-const snapshotPath = resolve(process.cwd(), process.env.SNAPSHOT_OUT ?? "var/snapshot/snapshot.json");
-// generatedAt powers the HeroStrip "Updated" label. Filesystem mtime is unreliable on Vercel.
-writeAtomic(snapshotPath, { ...out, generatedAt: new Date().toISOString() });
+// Guard so tests can import this module without triggering the build pipeline.
+// import.meta.main is true only when bun invokes this file as the entry script.
+if ((import.meta as unknown as { main: boolean }).main) {
+  const out = build();
+  const snapshotPath = resolve(process.cwd(), process.env.SNAPSHOT_OUT ?? "var/snapshot/snapshot.json");
+  // generatedAt powers the HeroStrip "Updated" label. Filesystem mtime is unreliable on Vercel.
+  writeAtomic(snapshotPath, { ...out, generatedAt: new Date().toISOString() });
+}

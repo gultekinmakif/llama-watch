@@ -30,6 +30,7 @@ tmp/
 !README.md
 !CHANGELOG.md
 !web/README.md
+!docs/coverage-model.md
 tools/derive-categories.ts
 
 # Environment
