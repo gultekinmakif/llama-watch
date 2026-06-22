@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: refresh
@@ -25,14 +26,17 @@ jobs:
       - name: refresh
         run: SKIP_WEB_BUILD=1 ./scripts/refresh.sh
 
-      - name: commit and push if snapshot changed
-        run: |
-          if git diff --quiet -- var/snapshot/snapshot.json; then
-            echo "snapshot unchanged; nothing to commit"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add var/snapshot/snapshot.json
-          git commit -m "chore: refresh snapshot $(date -u +%Y-%m-%d)"
-          git push
+      - name: open or update PR if snapshot changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: refresh/snapshot
+          base: main
+          add-paths: var/snapshot/snapshot.json
+          commit-message: "chore: refresh snapshot"
+          title: "chore: refresh snapshot"
+          body: |
+            Automated daily refresh of `var/snapshot/snapshot.json`.
+
+            Branch is reused; each run force-pushes the latest snapshot.
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
